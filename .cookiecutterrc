@@ -12,7 +12,7 @@
 #
 # Alternatively, you can run:
 #
-#    cookiecutter --overwrite-if-exists --config-file=python-framestructure/.cookiecutterrc gh:ionelmc/cookiecutter-pylibrary
+#    cookiecutter --overwrite-if-exists --config-file=.cookiecutterrc gh:ionelmc/cookiecutter-pylibrary
 
 default_context:
 
@@ -43,7 +43,7 @@ default_context:
     package_name:              'framestructure'
     pre_commit:                'yes'
     project_name:              'framestructure'
-    project_short_description: 'Objects for organizing data in a frame structures.'
+    project_short_description: 'Objects for organizing data in frame structures.'
     pypi_badge:                'yes'
     pypi_disable_upload:       'no'
     release_date:              'today'
