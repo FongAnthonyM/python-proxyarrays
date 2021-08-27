@@ -37,7 +37,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
 
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, path=None, frames=None, update=True, init=True, **kwargs):
+    def __init__(self, path=None, frames=None, update=True, open_=False, init=True, **kwargs):
         super().__init__(init=False)
         self._path = None
 
@@ -50,7 +50,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
         self.frame_names = set()
 
         if init:
-            self.construct(path=path, frames=frames, update=update, **kwargs)
+            self.construct(path=path, frames=frames, update=update, open_=open_, **kwargs)
 
     @property
     def path(self):
@@ -78,20 +78,20 @@ class DirectoryTimeFrame(TimeSeriesFrame):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, path=None, frames=None, update=True, **kwargs):
+    def construct(self, path=None, frames=None, update=True, open_=False, **kwargs):
         super().construct(frames=frames, update=update)
 
         if path is not None:
             self.path = path
 
         if path is not None:
-            self.construct_frames(**kwargs)
+            self.construct_frames(open_=open_, **kwargs)
 
-    def construct_frames(self, **kwargs):
+    def construct_frames(self, open_=False, **kwargs):
         for path in self.path.glob(self.glob_condition):
             if path not in self.frame_names:
                 if self.frame_creation_condition(path):
-                    self.frames.append(self.frame_type(path, **kwargs))
+                    self.frames.append(self.frame_type(path, open_=open_, **kwargs))
                     self.frame_names.add(path)
         self.frames.sort(key=lambda frame: frame.start)
 
