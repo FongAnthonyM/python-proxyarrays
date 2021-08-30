@@ -24,7 +24,7 @@ def read(*names, **kwargs):
 setup(
     name='framestructure',
     version='0.1.0',
-    license='BSD-2-Clause',
+    license='MIT',
     description='Objects for organizing data in frame structures.',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
