@@ -23,6 +23,7 @@ from baseobjects import BaseObject
 
 # Definitions #
 # Classes #
+# Todo: Create a cache base object and a file/edit mode base object to inherit from
 class DataFrameInterface(BaseObject):
     # Magic Methods #
     # Construction/Destruction

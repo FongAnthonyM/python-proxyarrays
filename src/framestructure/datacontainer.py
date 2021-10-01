@@ -30,7 +30,7 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
 
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, frames=None, data=None, shape=None, init=True, **kwargs):
+    def __init__(self, frames=None, data=None, shape=None, mode='a', init=True, **kwargs):
         # Parent Attributes #
         super().__init__()
 
@@ -55,7 +55,7 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
 
         # Object Construction #
         if init:
-            self.construct(frames=frames, data=data, shape=shape, **kwargs)
+            self.construct(frames=frames, data=data, shape=shape, mode=mode, **kwargs)
 
     @property
     def shape(self):
@@ -63,12 +63,15 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, frames=None, data=None, shape=None, **kwargs):
+    def construct(self, frames=None, data=None, shape=None, mode=None, **kwargs):
         if shape is not None and self.data is None:
             self.data = np.zeros(shape=shape, **kwargs)
 
         if data is not None:
             self.data = data
+
+        if mode is not None:
+            self.mode = mode
 
         if frames is not None:
             if isinstance(frames, np.ndarray):

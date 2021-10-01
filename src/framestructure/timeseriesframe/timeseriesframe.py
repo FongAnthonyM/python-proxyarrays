@@ -39,7 +39,7 @@ class TimeSeriesFrame(DataFrame):
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, frames=None, update=True, init=True):
+    def __init__(self, frames=None, mode='a', update=True, init=True):
         super().__init__(init=False)
 
         self._date = None
@@ -60,7 +60,7 @@ class TimeSeriesFrame(DataFrame):
         self.end_sample = None
 
         if init:
-            self.construct(frames, update)
+            self.construct(frames=frames, mode=mode, update=update)
 
     @property
     def start(self):
@@ -113,8 +113,8 @@ class TimeSeriesFrame(DataFrame):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, frames=None, update=True):
-        super().construct(frames=frames, update=update)
+    def construct(self, frames=None, mode=None, update=True):
+        super().construct(frames=frames, mode=mode, update=update)
 
     def frame_sort_key(self, frame):
         return frame.start

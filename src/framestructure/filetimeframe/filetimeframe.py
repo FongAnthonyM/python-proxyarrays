@@ -137,7 +137,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
             self.set_file(file)
 
         # Parent Construction
-        super().construct(frames=frames)
+        super().construct(frames=frames, **kwargs)
 
     # Cache and Memory
     def refresh(self):
@@ -156,7 +156,9 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         else:
             raise ValueError("file must be a path or str")
 
-    def open(self, mode='a', **kwargs):
+    def open(self, mode=None, **kwargs):
+        if mode is None:
+            mode = self.mode
         self.file.open(mode, **kwargs)
         self.refresh()
         return self
