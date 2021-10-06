@@ -296,7 +296,7 @@ class TimeSeriesFrame(DataFrame):
                 else:
                     frame_samples = -1
 
-            return frame_samples + inner_samples, true_timestamp
+            return int(frame_samples + inner_samples), true_timestamp
 
     # Get with Time
     def get_time_range(self, start=None, end=None, aprox=False, tails=False):
