@@ -188,7 +188,7 @@ class DataFrame(DataFrameInterface):
         return self._lengths
 
     def get_length(self):
-        self._length = sum(self.get_lengths())
+        self._length = int(sum(self.get_lengths()))
         return self._length
 
     def get_item(self, item):
