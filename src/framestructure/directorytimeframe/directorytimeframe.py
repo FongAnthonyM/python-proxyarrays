@@ -85,7 +85,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
             self.path = path
 
         if path is not None:
-            self.construct_frames(open_=open_, mode=mode, **kwargs)
+            self.construct_frames(open_=open_, mode=self.mode, **kwargs)
 
     def construct_frames(self, open_=False, **kwargs):
         for path in self.path.glob(self.glob_condition):

@@ -294,7 +294,7 @@ class TimeSeriesFrame(DataFrame):
                 if timestamp <= frame.end:
                     inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox)
                 else:
-                    frame_samples = -1
+                    frame_samples = frame.length
 
             return frame_samples + inner_samples, true_timestamp
 
