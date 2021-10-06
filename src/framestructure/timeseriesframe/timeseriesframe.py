@@ -291,10 +291,10 @@ class TimeSeriesFrame(DataFrame):
 
             if index is not None:
                 frame = self.frames[index]
-                if timestamp <= frame.end:
-                    inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox)
+                if tails or index < len(self.frames) or timestamp <= frame.end:
+                    inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox, tails=True)
                 else:
-                    frame_samples = frame.length
+                    frame_samples = -1
 
             return frame_samples + inner_samples, true_timestamp
 
