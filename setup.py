@@ -1,6 +1,20 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+""" setup.py
+The setup for this package.
+"""
+# Package Header #
+from src.framestructure.__header__ import *
 
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
+# Default Libraries #
 import io
 import re
 from glob import glob
@@ -9,10 +23,13 @@ from os.path import dirname
 from os.path import join
 from os.path import splitext
 
+# Downloaded Libraries #
 from setuptools import find_packages
 from setuptools import setup
 
 
+# Definitions #
+# Functions #
 def read(*names, **kwargs):
     with io.open(
         join(dirname(__file__), *names),
@@ -21,10 +38,11 @@ def read(*names, **kwargs):
         return fh.read()
 
 
+# Main #
 setup(
-    name='framestructure',
-    version='0.1.0',
-    license='MIT',
+    name=__package_name__,
+    version=__version__,
+    license=__license__,
     description='Objects for organizing data in frame structures.',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
