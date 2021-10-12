@@ -3,15 +3,17 @@
 """ directorytimeframe.py
 Description:
 """
-__author__ = "Anthony Fong"
-__copyright__ = "Copyright 2021, Anthony Fong"
-__credits__ = ["Anthony Fong"]
-__license__ = ""
-__version__ = "1.0.0"
-__maintainer__ = "Anthony Fong"
-__email__ = ""
-__status__ = "Prototype"
+# Package Header #
+from ..__header__ import *
 
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
 # Default Libraries #
 import pathlib
 
@@ -37,7 +39,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
 
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, path=None, frames=None, update=True, open_=False, init=True, **kwargs):
+    def __init__(self, path=None, frames=None, mode='a', update=True, open_=False, init=True, **kwargs):
         super().__init__(init=False)
         self._path = None
 
@@ -50,7 +52,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
         self.frame_names = set()
 
         if init:
-            self.construct(path=path, frames=frames, update=update, open_=open_, **kwargs)
+            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, **kwargs)
 
     @property
     def path(self):
@@ -78,14 +80,14 @@ class DirectoryTimeFrame(TimeSeriesFrame):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, path=None, frames=None, update=True, open_=False, **kwargs):
-        super().construct(frames=frames, update=update)
+    def construct(self, path=None, frames=None, mode=None, update=True, open_=False, **kwargs):
+        super().construct(frames=frames, mode=mode, update=update)
 
         if path is not None:
             self.path = path
 
         if path is not None:
-            self.construct_frames(open_=open_, **kwargs)
+            self.construct_frames(open_=open_, mode=self.mode, **kwargs)
 
     def construct_frames(self, open_=False, **kwargs):
         for path in self.path.glob(self.glob_condition):
@@ -101,11 +103,12 @@ class DirectoryTimeFrame(TimeSeriesFrame):
 
     # Get a Range of Frames
     def get_range(self, start=None, stop=None, step=None, frame=None):
-        with self:
-            return super().get_range(start=start, stop=stop, step=step, frame=frame)
+        return super().get_range(start=start, stop=stop, step=step, frame=frame)
 
     # Path and File System
-    def open(self, mode='a', **kwargs):
+    def open(self, mode=None, **kwargs):
+        if mode is None:
+            mode = self.mode
         for frame in self.frames:
             frame.open(mode, **kwargs)
         return self

@@ -3,15 +3,17 @@
 """ filetimeframe.py
 Description:
 """
-__author__ = "Anthony Fong"
-__copyright__ = "Copyright 2021, Anthony Fong"
-__credits__ = ["Anthony Fong"]
-__license__ = ""
-__version__ = "1.0.0"
-__maintainer__ = "Anthony Fong"
-__email__ = ""
-__status__ = "Prototype"
+# Package Header #
+from ..__header__ import *
 
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
 # Default Libraries #
 from abc import abstractmethod
 import pathlib
@@ -137,7 +139,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
             self.set_file(file)
 
         # Parent Construction
-        super().construct(frames=frames)
+        super().construct(frames=frames, **kwargs)
 
     # Cache and Memory
     def refresh(self):
@@ -156,7 +158,9 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         else:
             raise ValueError("file must be a path or str")
 
-    def open(self, mode='a', **kwargs):
+    def open(self, mode=None, **kwargs):
+        if mode is None:
+            mode = self.mode
         self.file.open(mode, **kwargs)
         self.refresh()
         return self

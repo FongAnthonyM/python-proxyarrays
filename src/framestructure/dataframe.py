@@ -3,15 +3,17 @@
 """ dataframe.py
 Description:
 """
-__author__ = "Anthony Fong"
-__copyright__ = "Copyright 2021, Anthony Fong"
-__credits__ = ["Anthony Fong"]
-__license__ = ""
-__version__ = "1.0.0"
-__maintainer__ = "Anthony Fong"
-__email__ = ""
-__status__ = "Prototype"
+# Package Header #
+from .__header__ import *
 
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
 # Default Libraries #
 from contextlib import contextmanager
 
@@ -32,7 +34,7 @@ class DataFrame(DataFrameInterface):
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, frames=None, update=True, init=True):
+    def __init__(self, frames=None, mode='a', update=True, init=True):
         # Parent Attributes #
         super().__init__()
 
@@ -63,7 +65,7 @@ class DataFrame(DataFrameInterface):
 
         # Object Construction #
         if init:
-            self.construct(frames, update)
+            self.construct(frames=frames, mode=mode, update=update)
 
     @property
     def shapes(self):
@@ -109,9 +111,12 @@ class DataFrame(DataFrameInterface):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, frames=None, update=None):
+    def construct(self, frames=None, mode=None, update=None):
         if frames is not None:
             self.frames = frames
+
+        if mode is not None:
+            self.mode = mode
 
         if update is not None:
             self.is_updating = update
@@ -185,7 +190,7 @@ class DataFrame(DataFrameInterface):
         return self._lengths
 
     def get_length(self):
-        self._length = sum(self.get_lengths())
+        self._length = int(sum(self.get_lengths()))
         return self._length
 
     def get_item(self, item):

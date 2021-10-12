@@ -3,15 +3,17 @@
 """ timeseriesframe.py
 Description:
 """
-__author__ = "Anthony Fong"
-__copyright__ = "Copyright 2021, Anthony Fong"
-__credits__ = ["Anthony Fong"]
-__license__ = ""
-__version__ = "1.0.0"
-__maintainer__ = "Anthony Fong"
-__email__ = ""
-__status__ = "Prototype"
+# Package Header #
+from ..__header__ import *
 
+# Header #
+__author__ = __author__
+__credits__ = __credits__
+__maintainer__ = __maintainer__
+__email__ = __email__
+
+
+# Imports #
 # Default Libraries #
 import datetime  # Todo: Consider Pandas Timestamp for nanosecond resolution
 
@@ -39,7 +41,7 @@ class TimeSeriesFrame(DataFrame):
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, frames=None, update=True, init=True):
+    def __init__(self, frames=None, mode='a', update=True, init=True):
         super().__init__(init=False)
 
         self._date = None
@@ -60,7 +62,7 @@ class TimeSeriesFrame(DataFrame):
         self.end_sample = None
 
         if init:
-            self.construct(frames, update)
+            self.construct(frames=frames, mode=mode, update=update)
 
     @property
     def start(self):
@@ -113,8 +115,8 @@ class TimeSeriesFrame(DataFrame):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, frames=None, update=True):
-        super().construct(frames=frames, update=update)
+    def construct(self, frames=None, mode=None, update=True):
+        super().construct(frames=frames, mode=mode, update=update)
 
     def frame_sort_key(self, frame):
         return frame.start
@@ -291,12 +293,12 @@ class TimeSeriesFrame(DataFrame):
 
             if index is not None:
                 frame = self.frames[index]
-                if timestamp <= frame.end:
-                    inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox)
+                if tails or index < len(self.frames) or timestamp <= frame.end:
+                    inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox, tails=True)
                 else:
                     frame_samples = -1
 
-            return frame_samples + inner_samples, true_timestamp
+            return int(frame_samples + inner_samples), true_timestamp
 
     # Get with Time
     def get_time_range(self, start=None, end=None, aprox=False, tails=False):
