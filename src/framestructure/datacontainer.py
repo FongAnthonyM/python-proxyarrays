@@ -34,7 +34,7 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
     # Construction/Destruction
     def __init__(self, frames=None, data=None, shape=None, mode='a', init=True, **kwargs):
         # Parent Attributes #
-        super().__init__()
+        super().__init__(init=False)
 
         # Descriptors #
         # System
