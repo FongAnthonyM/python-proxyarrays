@@ -211,23 +211,22 @@ class TimeSeriesFrame(DataFrame):
 
     # Data
     def get_time(self, super_index):
-        with self.cache():
-            # Check if index is in range.
-            if super_index >= self.length or (super_index + self.length) < 0:
-                raise IndexError("index is out of range")
+        # Check if index is in range.
+        if super_index >= self.length or (super_index + self.length) < 0:
+            raise IndexError("index is out of range")
 
-            # Change negative indexing into positive.
-            if super_index < 0:
-                super_index = self.length + super_index
+        # Change negative indexing into positive.
+        if super_index < 0:
+            super_index = self.length + super_index
 
-            # Find
-            previous = 0
-            for frame_index, frame_length in enumerate(self.lengths):
-                end = previous + frame_length
-                if super_index < end:
-                    return self.frames[frame_index].get_time(int(super_index - previous))
-                else:
-                    previous = end
+        # Find
+        previous = 0
+        for frame_index, frame_length in enumerate(self.lengths):
+            end = previous + frame_length
+            if super_index < end:
+                return self.frames[frame_index].get_time(int(super_index - previous))
+            else:
+                previous = end
 
     def get_times(self, start=None, stop=None, step=None):
         if start is not None and stop is not None:
@@ -291,22 +290,21 @@ class TimeSeriesFrame(DataFrame):
         return [index] + location, true_timestamp
 
     def find_time_sample(self, timestamp, aprox=False, tails=False):
-        with self.cache():
-            if isinstance(timestamp, float):
-                timestamp = datetime.datetime.fromtimestamp(timestamp)
-            index = self.find_frame_time(timestamp, tails)
-            frame_samples = sum(self.lengths[:index])
-            inner_samples = 0
-            true_timestamp = timestamp
+        if isinstance(timestamp, float):
+            timestamp = datetime.datetime.fromtimestamp(timestamp)
+        index = self.find_frame_time(timestamp, tails)
+        frame_samples = sum(self.lengths[:index])
+        inner_samples = 0
+        true_timestamp = timestamp
 
-            if index is not None:
-                frame = self.frames[index]
-                if tails or index < len(self.frames) or timestamp <= frame.end:
-                    inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox, tails=True)
-                else:
-                    frame_samples = -1
+        if index is not None:
+            frame = self.frames[index]
+            if tails or index < len(self.frames) or timestamp <= frame.end:
+                inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox, tails=True)
+            else:
+                frame_samples = -1
 
-            return int(frame_samples + inner_samples), true_timestamp
+        return int(frame_samples + inner_samples), true_timestamp
 
     # Get with Time
     def get_time_range(self, start=None, end=None, aprox=False, tails=False):
