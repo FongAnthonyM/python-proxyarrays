@@ -36,7 +36,7 @@ class DataFrame(DataFrameInterface):
     # Construction/Destruction
     def __init__(self, frames=None, mode='a', update=True, init=True):
         # Parent Attributes #
-        super().__init__()
+        super().__init__(init=False)
 
         # New Attributes #
         # Descriptors #
