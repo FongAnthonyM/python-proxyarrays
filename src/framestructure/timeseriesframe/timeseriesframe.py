@@ -18,6 +18,7 @@ __email__ = __email__
 import datetime  # Todo: Consider Pandas Timestamp for nanosecond resolution
 
 # Downloaded Libraries #
+from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
 # Local Libraries #
@@ -47,17 +48,11 @@ class TimeSeriesFrame(DataFrame):
         self._date = None
         self.date_format = "%Y-%m-%d"
 
-        self._sample_rates = None
-        self._sample_rate = None
-        self._sample_period = None
         self.target_sample_rate = None
 
-        self._is_continuous = None
         self.time_tolerance = 0.000001
         self.fill_type = self.default_fill_type
 
-        self._start = None
-        self._end = None
         self.start_sample = None
         self.end_sample = None
 
@@ -66,17 +61,17 @@ class TimeSeriesFrame(DataFrame):
 
     @property
     def start(self):
-        if self._start is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_start.caching_call()
+        except AttributeError:
             return self.get_start()
-        else:
-            return self._start
 
     @property
     def end(self):
-        if self._end is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_end.caching_call()
+        except AttributeError:
             return self.get_end()
-        else:
-            return self._end
 
     @property
     def date(self):
@@ -86,32 +81,40 @@ class TimeSeriesFrame(DataFrame):
             self.start.date()
 
     @property
+    def time_axis(self):
+        """"""
+        try:
+            return self.get_time_axis.caching_call()
+        except AttributeError:
+            return self.get_time_axis()
+
+    @property
     def sample_rates(self):
-        if self._sample_rates is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_sample_rates.caching_call()
+        except AttributeError:
             return self.get_sample_rates()
-        else:
-            return self._sample_rates
 
     @property
     def sample_rate(self):
-        if self._sample_rate is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_sample_rate.caching_call()
+        except AttributeError:
             return self.get_sample_rate()
-        else:
-            return self._sample_rate
 
     @property
     def sample_period(self):
-        if self._sample_period is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_sample_period.caching_call()
+        except AttributeError:
             return self.get_sample_period()
-        else:
-            return self._sample_period
 
     @property
     def is_continuous(self):
-        if self._is_continuous is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_is_continuous.caching_call()
+        except AttributeError:
             return self.get_is_continuous()
-        else:
-            return self._is_continuous
 
     # Instance Methods
     # Constructors/Destructors
@@ -132,29 +135,29 @@ class TimeSeriesFrame(DataFrame):
         self.get_is_continuous()
 
     # Getters
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_start(self):
         if self.frames:
             start = self.frames[0].start
             if isinstance(start, datetime.datetime):
-                self._start = start
+                return start
             else:
-                self._start = datetime.datetime.fromtimestamp(start)
+                return datetime.datetime.fromtimestamp(start)
         else:
-            self._start = None
+            self.get_start.clear_cache()
+            return None
 
-        return self._start
-
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_end(self):
         if self.frames:
             end = self.frames[-1].end
             if isinstance(end, datetime.datetime):
-                self._end = end
+                return end
             else:
-                self._end = datetime.datetime.fromtimestamp(end)
+                return datetime.datetime.fromtimestamp(end)
         else:
-            self._end = None
-
-        return self._end
+            self.get_start.clear_cache()
+            return None
 
     def get_start_timestamps(self):
         starts = np.empty(len(self.frames))
@@ -168,38 +171,43 @@ class TimeSeriesFrame(DataFrame):
             ends[index] = frame.end.timestamp()
         return ends
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_time_axis(self):
-        time_axis = self.frames[0].get_time_axis
+        time_axis = self.frames[0].time_axis
         for index in range(1, len(self.frames)):
-            time_axis = self.smart_append(time_axis, self.frames[index].get_time_axis, axis=0)
+            time_axis = self.smart_append(time_axis, self.frames[index].time_axis, axis=0)
         return time_axis
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_sample_rates(self):
-        self._sample_rates = (frame.sample_rate for frame in self.frames)
-        return self._sample_rates
+        self.get_sample_rate.clear_cache()
+        return (frame.sample_rate for frame in self.frames)
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_sample_rate(self):
-        sample_rates = list(self.get_sample_rates())
+        self.get_sample_period.clear_cache()
+        sample_rates = list(self.sample_rates)
         if sample_rates:
             rate = sample_rates.pop()
             if rate:
                 for sample_rate in sample_rates:
                     if not sample_rate or rate != sample_rate:
-                        self._sample_rate = False
-            self._sample_rate = rate
+                        return False
+            return rate
         else:
-            self._sample_rate = False
-        return self._sample_rate
+            return False
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_sample_period(self):
-        self._sample_period = self.get_sample_rate()
-        if not isinstance(self._sample_period, bool):
-            self._sample_period = 1 / self._sample_period
-        return self._sample_period
+        sample_rate = self.sample_rate
+        if not isinstance(sample_rate, bool):
+            return 1 / sample_rate
+        else:
+            return sample_rate
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_is_continuous(self):
-        self._is_continuous = self.validate_continuous()
-        return self._is_continuous
+        return self.validate_continuous()
 
     # Data
     def get_time(self, super_index):

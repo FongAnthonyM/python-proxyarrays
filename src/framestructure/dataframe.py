@@ -18,7 +18,7 @@ __email__ = __email__
 from contextlib import contextmanager
 
 # Downloaded Libraries #
-from baseobjects import BaseObject
+from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
 # Local Libraries #
@@ -42,17 +42,12 @@ class DataFrame(DataFrameInterface):
         # Descriptors #
         # System
         self._cache = False
-        self.is_cache = True
         self.is_updating = True
         self.is_combine = False
         self.returns_frame = False
         self.mode = 'a'
 
         # Shape
-        self._shapes = None
-        self._shape = None
-        self._lengths = None
-        self._length = None
         self.target_shape = None
         self.axis = 0
 
@@ -69,38 +64,31 @@ class DataFrame(DataFrameInterface):
 
     @property
     def shapes(self):
-        if self._shapes is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_shapes.caching_call()
+        except AttributeError:
             return self.get_shapes()
-        else:
-            return self._shapes
 
     @property
     def shape(self):
-        if self._shape is None or (self.is_updating and not self._cache):
-            return self.get_shape()
-        else:
-            return self._shape
+        try:
+            self.get_shape.caching_call()
+        except AttributeError:
+            return self.get_shape
 
     @property
     def lengths(self):
-        if self._lengths is None or (self.is_updating and not self._cache):
-            return self.get_lengths()
-        else:
-            return self._lengths
+        try:
+            self.get_lengths.caching_call()
+        except AttributeError:
+            self.get_lengths()
 
     @property
     def length(self):
-        if self._length is None or (self.is_updating and not self._cache):
-            return self.get_length()
-        else:
-            return self._length
-
-    # Container Methods
-    def __len__(self):
-        return self.get_length()
-
-    def __getitem__(self, item):
-        return self.get_item(item)
+        try:
+            self.get_length.caching_call()
+        except AttributeError:
+            self.get_length()
 
     # Arithmetic
     def __add__(self, other):
@@ -126,19 +114,6 @@ class DataFrame(DataFrameInterface):
         return self.combine_frames()
 
     # Cache and Memory
-    @contextmanager
-    def cache(self):
-        was_cache = self._cache
-
-        if self.is_cache:
-            self._cache = True
-        else:
-            self._cache = False
-
-        yield self.is_cache
-
-        self._cache = was_cache
-
     def refresh(self):
         self.get_shapes()
         self.get_shape()
@@ -146,10 +121,11 @@ class DataFrame(DataFrameInterface):
         self.get_length()
 
     # Getters
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_shapes(self):
-        self._shapes = tuple(frame.shape for frame in self.frames)
-        return self._shapes
+        return tuple(frame.shape for frame in self.frames)
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -169,10 +145,9 @@ class DataFrame(DataFrameInterface):
                 shape[ax] = sum(shape_array[:, ax])
             else:
                 shape[ax] = min(shape_array[:, ax])
-        self._shape = tuple(shape)
+        return tuple(shape)
 
-        return self._shape
-
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_lengths(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -186,12 +161,12 @@ class DataFrame(DataFrameInterface):
         for index, s in enumerate(shapes):
             shape_array[index, :n_dims[index]] = s
 
-        self._lengths = tuple(shape_array[:, self.axis])
-        return self._lengths
+        self.get_length.clear_cache()
+        return tuple(shape_array[:, self.axis])
 
+    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
     def get_length(self):
-        self._length = int(sum(self.get_lengths()))
-        return self._length
+        return int(sum(self.lengths))
 
     def get_item(self, item):
         if isinstance(item, slice):
@@ -217,7 +192,7 @@ class DataFrame(DataFrameInterface):
 
     # Shape
     def validate_shape(self):
-        shapes = list(self.get_shapes())
+        shapes = list(self.shapes)
         if shapes:
             shape = list(shapes.pop())
             shape.pop(self.axis)
@@ -261,47 +236,45 @@ class DataFrame(DataFrameInterface):
 
     # Find within Frames
     def find_frame_index(self, super_index):
-        with self.cache():
+        # Check if index is in range.
+        if super_index >= self.length or (super_index + self.length) < 0:
+            raise IndexError("index is out of range")
+
+        # Change negative indexing into positive.
+        if super_index < 0:
+            super_index = self.length - super_index
+
+        # Find
+        previous = 0
+        for frame_index, frame_length in enumerate(self.lengths):
+            end = previous + frame_length
+            if super_index < end:
+                return frame_index, int(super_index - previous), int(previous)
+            else:
+                previous = end
+
+    def find_frame_indices(self, super_indices):
+        super_indices = list(super_indices)
+        for index, super_index in enumerate(super_indices):
             # Check if index is in range.
             if super_index >= self.length or (super_index + self.length) < 0:
                 raise IndexError("index is out of range")
 
             # Change negative indexing into positive.
             if super_index < 0:
-                super_index = self.length - super_index
+                super_indices[index] = self.length + super_index
 
-            # Find
-            previous = 0
-            for frame_index, frame_length in enumerate(self.lengths):
-                end = previous + frame_length
-                if super_index < end:
-                    return frame_index, int(super_index - previous), int(previous)
-                else:
-                    previous = end
-
-    def find_frame_indices(self, super_indices):
-        with self.cache():
-            super_indices = list(super_indices)
+        # Find
+        indices = [None] * len(super_indices)
+        previous = 0
+        for frame_index, frame_length in enumerate(self.lengths):
+            end = previous + frame_length
             for index, super_index in enumerate(super_indices):
-                # Check if index is in range.
-                if super_index >= self.length or (super_index + self.length) < 0:
-                    raise IndexError("index is out of range")
+                if previous <= super_index < end:
+                    indices[index] = [frame_index, int(super_index - previous), int(previous)]
+            previous = end
 
-                # Change negative indexing into positive.
-                if super_index < 0:
-                    super_indices[index] = self.length + super_index
-
-            # Find
-            indices = [None] * len(super_indices)
-            previous = 0
-            for frame_index, frame_length in enumerate(self.lengths):
-                end = previous + frame_length
-                for index, super_index in enumerate(super_indices):
-                    if previous <= super_index < end:
-                        indices[index] = [frame_index, int(super_index - previous), int(previous)]
-                previous = end
-
-            return indices
+        return indices
 
     # Get a Range of Frames
     def get_range(self, start=None, stop=None, step=None, frame=None):

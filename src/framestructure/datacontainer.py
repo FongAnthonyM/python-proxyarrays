@@ -38,8 +38,6 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
 
         # Descriptors #
         # System
-        self._cache = True
-        self.is_cache = True
         self.is_updating = True
         self.mode = 'a'
 
@@ -89,20 +87,6 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
     # Editable Copy Methods
     def default_editable_method(self):
         return self.editable_type()
-
-    # Cache and Memory
-    @contextmanager
-    def cache(self):
-        was_cache = self._cache
-
-        if self.is_cache:
-            self._cache = True
-        else:
-            self._cache = False
-
-        yield self.is_cache
-
-        self._cache = was_cache
 
     # Getters
     def get_length(self):
