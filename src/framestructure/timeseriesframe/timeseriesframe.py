@@ -135,7 +135,7 @@ class TimeSeriesFrame(DataFrame):
         self.get_is_continuous()
 
     # Getters
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_start(self):
         if self.frames:
             start = self.frames[0].start
@@ -147,7 +147,7 @@ class TimeSeriesFrame(DataFrame):
             self.get_start.clear_cache()
             return None
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_end(self):
         if self.frames:
             end = self.frames[-1].end
@@ -171,19 +171,19 @@ class TimeSeriesFrame(DataFrame):
             ends[index] = frame.end.timestamp()
         return ends
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_time_axis(self):
         time_axis = self.frames[0].time_axis
         for index in range(1, len(self.frames)):
             time_axis = self.smart_append(time_axis, self.frames[index].time_axis, axis=0)
         return time_axis
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_rates(self):
         self.get_sample_rate.clear_cache()
         return (frame.sample_rate for frame in self.frames)
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_rate(self):
         self.get_sample_period.clear_cache()
         sample_rates = list(self.sample_rates)
@@ -197,7 +197,7 @@ class TimeSeriesFrame(DataFrame):
         else:
             return False
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_period(self):
         sample_rate = self.sample_rate
         if not isinstance(sample_rate, bool):
@@ -205,7 +205,7 @@ class TimeSeriesFrame(DataFrame):
         else:
             return sample_rate
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_is_continuous(self):
         return self.validate_continuous()
 

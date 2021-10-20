@@ -128,7 +128,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
     def get_time_axis(self):
         return self.time_axis
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_period(self):
         return 1 / self.sample_rate
 

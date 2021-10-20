@@ -121,11 +121,11 @@ class DataFrame(DataFrameInterface):
         self.get_length()
 
     # Getters
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_shapes(self):
         return tuple(frame.shape for frame in self.frames)
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -147,7 +147,7 @@ class DataFrame(DataFrameInterface):
                 shape[ax] = min(shape_array[:, ax])
         return tuple(shape)
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_lengths(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -164,7 +164,7 @@ class DataFrame(DataFrameInterface):
         self.get_length.clear_cache()
         return tuple(shape_array[:, self.axis])
 
-    @timed_keyless_cache_method(call_type="clearing_call", collective=False)
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_length(self):
         return int(sum(self.lengths))
 
