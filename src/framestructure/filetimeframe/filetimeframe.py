@@ -130,9 +130,9 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     # Cache and Memory
     def refresh(self):
         self.load_data()
-        self.load_time_axis()
         self.get_start()
         self.get_end()
+        self.get_time_axis()
         self.get_sample_rate()
         self.get_sample_period()
         self.get_is_continuous()
@@ -148,7 +148,6 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         if mode is None:
             mode = self.mode
         self.file.open(mode, **kwargs)
-        self.refresh()
         return self
 
     def close(self):

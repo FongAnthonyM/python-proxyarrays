@@ -382,9 +382,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
             return None
 
     def validate_continuous(self, tolerance=None):
-        if self._is_continuous is None or not self.is_cache:
-            self._is_continuous = self.evaluate_continuity(tolerance=tolerance)
-        return self._is_continuous
+        return self.evaluate_continuity(tolerance=tolerance)
 
     def make_continuous(self, axis=None, tolerance=None):
         self.time_correction_interpolate(axis=axis, tolerance=tolerance)

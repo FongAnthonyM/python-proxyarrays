@@ -100,6 +100,8 @@ class DataFrame(DataFrameInterface):
     # Instance Methods
     # Constructors/Destructors
     def construct(self, frames=None, mode=None, update=None):
+        super().construct()
+
         if frames is not None:
             self.frames = frames
 
