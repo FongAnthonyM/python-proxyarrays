@@ -52,10 +52,9 @@ class DataFrameInterface(CachingObject):
         return self.editable_method(**kwargs)
 
     # Caching
+    @abstractmethod
     def clear_all_caches(self):
-        self.clear_caches()
-        for frame in self.frames:
-            frame.clear_all_caches()
+        pass
 
     # Getters
     @abstractmethod

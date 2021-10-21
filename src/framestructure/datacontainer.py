@@ -84,6 +84,10 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
         copy_.mode = 'a'
         return copy_
 
+    # Caching
+    def clear_all_caches(self):
+        self.clear_caches()
+
     # Editable Copy Methods
     def default_editable_method(self):
         return self.editable_type()

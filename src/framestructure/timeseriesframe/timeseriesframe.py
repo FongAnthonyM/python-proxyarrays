@@ -293,7 +293,7 @@ class TimeSeriesFrame(DataFrame):
         if isinstance(timestamp, float):
             timestamp = datetime.datetime.fromtimestamp(timestamp)
         index = self.find_frame_time(timestamp, tails)
-        frame_samples = sum(self.lengths[:index])
+        frame_samples = int(sum(self.lengths[:index]))
         inner_samples = 0
         true_timestamp = timestamp
 

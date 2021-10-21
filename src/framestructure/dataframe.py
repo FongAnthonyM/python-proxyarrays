@@ -72,23 +72,23 @@ class DataFrame(DataFrameInterface):
     @property
     def shape(self):
         try:
-            self.get_shape.caching_call()
+            return self.get_shape.caching_call()
         except AttributeError:
             return self.get_shape
 
     @property
     def lengths(self):
         try:
-            self.get_lengths.caching_call()
+            return self.get_lengths.caching_call()
         except AttributeError:
-            self.get_lengths()
+            return self.get_lengths()
 
     @property
     def length(self):
         try:
-            self.get_length.caching_call()
+            return self.get_length.caching_call()
         except AttributeError:
-            self.get_length()
+            return self.get_length()
 
     # Arithmetic
     def __add__(self, other):
@@ -120,6 +120,11 @@ class DataFrame(DataFrameInterface):
         self.get_lengths()
         self.get_length()
 
+    def clear_all_caches(self):
+        self.clear_caches()
+        for frame in self.frames:
+            frame.clear_all_caches()
+
     # Getters
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_shapes(self):
@@ -131,8 +136,8 @@ class DataFrame(DataFrameInterface):
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
         for index, frame in enumerate(self.frames):
-            shapes[index] = frame.shape
-            n_dims[index] = len(shapes[index])
+            shapes[index] = shape = frame.shape
+            n_dims[index] = len(shape)
 
         max_dims = max(n_dims)
         shape_array = np.zeros((n_frames, max_dims), dtype='i')
