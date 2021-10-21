@@ -64,8 +64,6 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
     # Instance Methods
     # Constructors/Destructors
     def construct(self, frames=None, data=None, shape=None, mode=None, **kwargs):
-        super().construct()
-
         if shape is not None and self.data is None:
             self.data = np.zeros(shape=shape, **kwargs)
 

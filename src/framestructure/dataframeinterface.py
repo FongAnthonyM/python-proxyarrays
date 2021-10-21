@@ -30,7 +30,7 @@ class DataFrameInterface(CachingObject):
     # Magic Methods #
     # Construction/Destruction
     def __init__(self, init=True):
-        super().__init__(init=False)
+        super().__init__()
         self.editable_method = self.default_editable_method
 
         if init:
