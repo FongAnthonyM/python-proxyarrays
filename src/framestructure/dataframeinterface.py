@@ -18,7 +18,7 @@ __email__ = __email__
 from abc import abstractmethod
 
 # Downloaded Libraries #
-from baseobjects import BaseObject
+from baseobjects.cachingtools import CachingObject
 
 # Local Libraries #
 
@@ -26,15 +26,22 @@ from baseobjects import BaseObject
 # Definitions #
 # Classes #
 # Todo: Create a cache base object and a file/edit mode base object to inherit from
-class DataFrameInterface(BaseObject):
+class DataFrameInterface(CachingObject):
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, init=False):
+    def __init__(self, init=True):
+        super().__init__()
         self.editable_method = self.default_editable_method
+
+        if init:
+            self.construct()
 
     # Container Methods
     def __len__(self):
-        return self.get_length()
+        try:
+            return self.get_length.caching_call()
+        except AttributeError:
+            return self.get_length()
 
     def __getitem__(self, item):
         return self.get_item(item)
@@ -43,6 +50,11 @@ class DataFrameInterface(BaseObject):
     # Constructors/Destructors
     def editable_copy(self, **kwargs):
         return self.editable_method(**kwargs)
+
+    # Caching
+    @abstractmethod
+    def clear_all_caches(self):
+        pass
 
     # Getters
     @abstractmethod

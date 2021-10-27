@@ -34,12 +34,10 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
     # Construction/Destruction
     def __init__(self, frames=None, data=None, shape=None, mode='a', init=True, **kwargs):
         # Parent Attributes #
-        super().__init__()
+        super().__init__(init=False)
 
         # Descriptors #
         # System
-        self._cache = True
-        self.is_cache = True
         self.is_updating = True
         self.mode = 'a'
 
@@ -86,23 +84,13 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
         copy_.mode = 'a'
         return copy_
 
+    # Caching
+    def clear_all_caches(self):
+        self.clear_caches()
+
     # Editable Copy Methods
     def default_editable_method(self):
         return self.editable_type()
-
-    # Cache and Memory
-    @contextmanager
-    def cache(self):
-        was_cache = self._cache
-
-        if self.is_cache:
-            self._cache = True
-        else:
-            self._cache = False
-
-        yield self.is_cache
-
-        self._cache = was_cache
 
     # Getters
     def get_length(self):

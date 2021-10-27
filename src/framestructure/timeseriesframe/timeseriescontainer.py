@@ -19,6 +19,7 @@ import datetime
 import math
 
 # Downloaded Libraries #
+from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 from scipy import interpolate
 from dspobjects import Resample
@@ -65,8 +66,6 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
         self._date = None
         self.time_tolerance = 0.000001
         self.sample_rate = None
-        self._sample_period = None
-        self._is_continuous = None
 
         # Interpolate
         self.interpolate_type = "linear"
@@ -107,10 +106,10 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
 
     @property
     def sample_period(self):
-        if self._sample_period is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_sample_period.caching_call()
+        except AttributeError:
             return self.get_sample_period()
-        else:
-            return self._sample_period
 
     # Instance Methods #
     # Constructors/Destructors
@@ -129,9 +128,9 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
     def get_time_axis(self):
         return self.time_axis
 
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_period(self):
-        self._sample_period = 1 / self.sample_rate
-        return self._sample_period
+        return 1 / self.sample_rate
 
     def get_correction(self, name):
         name.lower()
@@ -383,9 +382,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
             return None
 
     def validate_continuous(self, tolerance=None):
-        if self._is_continuous is None or not self.is_cache:
-            self._is_continuous = self.evaluate_continuity(tolerance=tolerance)
-        return self._is_continuous
+        return self.evaluate_continuity(tolerance=tolerance)
 
     def make_continuous(self, axis=None, tolerance=None):
         self.time_correction_interpolate(axis=axis, tolerance=tolerance)

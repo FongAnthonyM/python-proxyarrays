@@ -19,6 +19,7 @@ from abc import abstractmethod
 import pathlib
 
 # Downloaded Libraries #
+from baseobjects.cachingtools import timed_keyless_cache_method
 
 # Local Libraries #
 from ..timeseriesframe import TimeSeriesContainer
@@ -43,14 +44,6 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     # Magic Methods
     # Construction/Destruction
     def __init__(self, file=None, frames=None, init=True):
-        # Overriding Property Attributes #
-        self._start = None
-        self._end = None
-        self._sample_rate = None
-
-        self._time_axis = None
-        self._data = None
-
         # Parent Attributes #
         super().__init__(init=False)
         self.is_updating = False
@@ -65,10 +58,10 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def data(self):
-        if self._data is None or (self.is_updating and not self._cache):
+        try:
+            return self.load_data.caching_call()
+        except AttributeError:
             return self.load_data()
-        else:
-            return self._data
 
     @data.setter
     def data(self, value):
@@ -77,10 +70,10 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def time_axis(self):
-        if self._time_axis is None or (self.is_updating and not self._cache):
-            return self.load_time_axis()
-        else:
-            return self._time_axis
+        try:
+            return self.get_time_axis.caching_call()
+        except AttributeError:
+            return self.get_time_axis()
 
     @time_axis.setter
     def time_axis(self, value):
@@ -93,24 +86,24 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def start(self):
-        if self._start is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_start.caching_call()
+        except AttributeError:
             return self.get_start()
-        else:
-            return self._start
 
     @property
     def end(self):
-        if self._end is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_end.caching_call()
+        except AttributeError:
             return self.get_end()
-        else:
-            return self._end
 
     @property
     def sample_rate(self):
-        if self._sample_rate is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_sample_rate.caching_call()
+        except AttributeError:
             return self.get_sample_rate()
-        else:
-            return self._sample_rate
 
     @sample_rate.setter
     def sample_rate(self, value):
@@ -118,18 +111,11 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
             raise AttributeError("can't set attribute")
 
     @property
-    def sample_period(self):
-        if self._sample_period is None or (self.is_updating and not self._cache):
-            return self.get_sample_period()
-        else:
-            return self._sample_period
-
-    @property
     def is_continuous(self):
-        if self._is_continuous is None or (self.is_updating and not self._cache):
+        try:
+            return self.get_is_continuous.caching_call()
+        except AttributeError:
             return self.get_is_continuous()
-        else:
-            return self._is_continuous
 
     # Instance Methods
     # Constructors/Destructors
@@ -144,9 +130,9 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     # Cache and Memory
     def refresh(self):
         self.load_data()
-        self.load_time_axis()
         self.get_start()
         self.get_end()
+        self.get_time_axis()
         self.get_sample_rate()
         self.get_sample_period()
         self.get_is_continuous()
@@ -162,7 +148,6 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         if mode is None:
             mode = self.mode
         self.file.open(mode, **kwargs)
-        self.refresh()
         return self
 
     def close(self):
@@ -172,33 +157,28 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     def load_data(self):
         pass
 
+    # Getters
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_start(self):
+        return self.file.start
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_end(self):
+        return self.file.end
+
     @abstractmethod
-    def load_time_axis(self):
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_time_axis(self):
         pass
 
-    # Getters
-    def get_start(self):
-        self._start = self.file.start
-        return self._start
-
-    def get_end(self):
-        self._end = self.file.end
-        return self._end
-
-    def get_time_axis(self):
-        return self.time_axis[...]
-
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_rate(self):
-        self._sample_rate = self.file.sample_rate
-        return self._sample_rate
+        self.get_sample_period.clear_cache()
+        return self.file.sample_rate
 
-    def get_sample_period(self):
-        self._sample_period = 1 / self.get_sample_rate()
-        return self._sample_period
-
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_is_continuous(self):
-        self._is_continuous = self.validate_continuous()
-        return self._is_continuous
+        return self.validate_continuous()
 
     # Setters
     @abstractmethod

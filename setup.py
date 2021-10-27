@@ -89,7 +89,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'baseobjects>=1.4.3', 'dspobjects', 'numpy', 'scipy'
+        'baseobjects>=1.5.0', 'dspobjects', 'numpy', 'scipy'
     ],
     extras_require={
         "dev": ['pytest>=6.2.3'],

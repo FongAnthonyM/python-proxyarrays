@@ -67,13 +67,6 @@ class BlankDataFrame(DataFrameInterface):
     def shape(self, value):
         self._shape = value
 
-    # Container Methods
-    def __len__(self):
-        return self.get_length()
-
-    def __getitem__(self, item):
-        return self.get_item(item)
-
     # Instance Methods #
     # Constructors/Destructors
     def construct(self, shape=None, dtype=None):
