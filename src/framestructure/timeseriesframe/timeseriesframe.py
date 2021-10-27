@@ -181,7 +181,7 @@ class TimeSeriesFrame(DataFrame):
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_rates(self):
         self.get_sample_rate.clear_cache()
-        return (frame.sample_rate for frame in self.frames)
+        return tuple(frame.sample_rate for frame in self.frames)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_sample_rate(self):
