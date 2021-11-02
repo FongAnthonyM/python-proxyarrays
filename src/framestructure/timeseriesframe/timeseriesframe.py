@@ -230,12 +230,12 @@ class TimeSeriesFrame(DataFrame):
 
     def get_times(self, start=None, stop=None, step=None):
         if start is not None and stop is not None:
-            start_index, stop_index = self.find_frame_indices([start, stop])
+            start_index, stop_index = self.find_inner_frame_indices([start, stop])
         elif start is not None:
-            start_index = self.find_frame_index(start)
+            start_index = self.find_inner_frame_index(start)
             stop_index = [len(self.frames) - 1, None, None]
         elif stop is not None:
-            stop_index = self.find_frame_index(stop)
+            stop_index = self.find_inner_frame_index(stop)
             start_index = [0, None, None]
         else:
             start_index = [0, None, None]
