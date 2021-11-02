@@ -357,7 +357,7 @@ class DataFrame(DataFrameInterface):
         elif frame_stop < 0:
             frame_stop = len(self.frames) + frame_stop
         if inner_stop is None:
-            inner_stop = self.length
+            inner_stop = self.lengths[frame_stop]
 
         # Get Data
         if frame_start == frame_stop:
