@@ -18,6 +18,7 @@ __email__ = __email__
 from contextlib import contextmanager
 from bisect import bisect_right
 import math
+from warnings import warn
 
 # Downloaded Libraries #
 from baseobjects.cachingtools import timed_keyless_cache_method
@@ -147,8 +148,7 @@ class DataFrame(DataFrameInterface):
         self.get_lengths.clear_cache()
         return tuple(frame.shape for frame in self.frames)
 
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_shape(self):
+    def get_min_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
@@ -168,6 +168,33 @@ class DataFrame(DataFrameInterface):
             else:
                 shape[ax] = min(shape_array[:, ax])
         return tuple(shape)
+
+    def get_max_shape(self):
+        n_frames = len(self.frames)
+        n_dims = [None] * n_frames
+        shapes = [None] * n_frames
+        for index, frame in enumerate(self.frames):
+            shapes[index] = shape = frame.shape
+            n_dims[index] = len(shape)
+
+        max_dims = max(n_dims)
+        shape_array = np.zeros((n_frames, max_dims), dtype='i')
+        for index, s in enumerate(shapes):
+            shape_array[index, :n_dims[index]] = s
+
+        shape = [None] * max_dims
+        for ax in range(max_dims):
+            if ax == self.axis:
+                shape[ax] = sum(shape_array[:, ax])
+            else:
+                shape[ax] = max(shape_array[:, ax])
+        return tuple(shape)
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_shape(self):
+        if not self.validate_shape():
+            warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape." )
+        return self.get_min_shape()
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_lengths(self):
@@ -363,7 +390,7 @@ class DataFrame(DataFrameInterface):
         if frame_start == frame_stop:
             data = self.frames[frame_start][inner_start:inner_stop:step]
         else:
-            t_shape = list(self.shape)
+            t_shape = list(self.get_max_shape())
             samples = frame_start_indices[frame_stop] + inner_stop - frame_start_indices[frame_start] - inner_start
             if step is not None:
                 samples = math.ceil(samples/step)
