@@ -148,6 +148,7 @@ class DataFrame(DataFrameInterface):
         self.get_lengths.clear_cache()
         return tuple(frame.shape for frame in self.frames)
 
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_min_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -169,6 +170,7 @@ class DataFrame(DataFrameInterface):
                 shape[ax] = min(shape_array[:, ax])
         return tuple(shape)
 
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_max_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
@@ -194,7 +196,10 @@ class DataFrame(DataFrameInterface):
     def get_shape(self):
         if not self.validate_shape():
             warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape." )
-        return self.get_min_shape()
+        try:
+            return self.get_max_shape.caching_call()
+        except AttributeError:
+            return self.get_min_shape()
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_lengths(self):
@@ -390,7 +395,10 @@ class DataFrame(DataFrameInterface):
         if frame_start == frame_stop:
             data = self.frames[frame_start][inner_start:inner_stop:step]
         else:
-            t_shape = list(self.get_max_shape())
+            try:
+                t_shape = list(self.get_max_shape.caching_call())
+            except AttributeError:
+                t_shape = list(self.get_max_shape())
             samples = frame_start_indices[frame_stop] + inner_stop - frame_start_indices[frame_start] - inner_start
             if step is not None:
                 samples = math.ceil(samples/step)
