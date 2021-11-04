@@ -327,7 +327,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
             if aprox or timestamp == self.time_axis[index]:
                 return index, datetime.datetime.fromtimestamp(self.time_axis[index])
 
-        return -1, datetime.datetime.fromtimestamp(timestamp)
+        return None, datetime.datetime.fromtimestamp(timestamp)
 
     def find_time_sample(self, timestamp, aprox=False, tails=False):
         return self.find_time_index(timestamp=timestamp, aprox=aprox, tails=tails)

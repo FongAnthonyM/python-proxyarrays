@@ -293,6 +293,7 @@ class TimeSeriesFrame(DataFrame):
         if isinstance(timestamp, float):
             timestamp = datetime.datetime.fromtimestamp(timestamp)
         index = self.find_frame_time(timestamp, tails)
+        samples = None
         frame_samples = int(sum(self.lengths[:index]))
         inner_samples = 0
         true_timestamp = timestamp
@@ -301,21 +302,26 @@ class TimeSeriesFrame(DataFrame):
             frame = self.frames[index]
             if tails or index < len(self.frames) or timestamp <= frame.end:
                 inner_samples, true_timestamp = frame.find_time_sample(timestamp=timestamp, aprox=aprox, tails=True)
-            else:
-                frame_samples = -1
+                if inner_samples is not None:
+                    samples = int(frame_samples + inner_samples)
 
-        return int(frame_samples + inner_samples), true_timestamp
+        return samples, true_timestamp
 
     # Get with Time
-    def get_time_range(self, start=None, end=None, aprox=False, tails=False):
+    def get_time_range(self, start=None, end=None, aprox=True, tails=False):
         start_sample, true_start = self.find_time_sample(start, aprox, tails)
         end_sample, true_end = self.find_time_sample(end, aprox, tails)
 
         return self.get_times(start_sample, end_sample), true_start, true_end
 
-    def data_range_time(self, start=None, end=None, aprox=False, tails=False):
+    def data_range_time(self, start=None, end=None, aprox=True, tails=False):
         start_sample, true_start = self.find_time_sample(start, aprox, tails)
+        if start_sample is None:
+            raise IndexError("could not start in this frame")
+
         end_sample, true_end = self.find_time_sample(end, aprox, tails)
+        if end_sample is None:
+            raise IndexError("could not find end in this frame")
 
         return self.get_range(start_sample, end_sample), true_start, true_end
 
