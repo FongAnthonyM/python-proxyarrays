@@ -197,7 +197,7 @@ class DataFrame(DataFrameInterface):
         if not self.validate_shape():
             warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape." )
         try:
-            return self.get_max_shape.caching_call()
+            return self.get_min_shape.caching_call()
         except AttributeError:
             return self.get_min_shape()
 
@@ -403,7 +403,8 @@ class DataFrame(DataFrameInterface):
             if step is not None:
                 samples = math.ceil(samples/step)
             t_shape[self.axis] = samples
-            data = np.zeros(t_shape)
+            data = np.empty(t_shape)
+            data.fill(np.nan)
 
             previous = 0
             frist_data = self.frames[frame_start][inner_start::step]
