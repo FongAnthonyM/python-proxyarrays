@@ -92,7 +92,7 @@ setup(
         'baseobjects>=1.5.0', 'dspobjects', 'numpy', 'scipy'
     ],
     extras_require={
-        "dev": ['pytest>=6.2.3'],
+        "dev": ['pytest>=6.2.3', 'nox'],
     },
     entry_points={
         'console_scripts': [
