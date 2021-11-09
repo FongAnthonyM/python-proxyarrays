@@ -14,14 +14,14 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import datetime  # Todo: Consider Pandas Timestamp for nanosecond resolution
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from ..dataframe import DataFrame
 from .blanktimeframe import BlankTimeFrame
 

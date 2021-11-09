@@ -14,14 +14,14 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import datetime
 import math
 
-# Downloaded Libraries #
+# Third-Party Packages #
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from ..blankdataframe import BlankDataFrame
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 

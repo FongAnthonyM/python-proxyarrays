@@ -14,7 +14,7 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import io
 import re
 from glob import glob
@@ -23,7 +23,7 @@ from os.path import dirname
 from os.path import join
 from os.path import splitext
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from setuptools import find_packages
 from setuptools import setup
 

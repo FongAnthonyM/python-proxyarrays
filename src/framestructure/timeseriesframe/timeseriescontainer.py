@@ -14,17 +14,17 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import datetime
 import math
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 from scipy import interpolate
 from dspobjects import Resample
 
-# Local Libraries #
+# Local Packages #
 from ..datacontainer import DataContainer
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 

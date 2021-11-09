@@ -14,14 +14,14 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from abc import abstractmethod
 import pathlib
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 
-# Local Libraries #
+# Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
 from ..directorytimeframe import DirectoryTimeFrameInterface
 

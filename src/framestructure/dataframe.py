@@ -14,17 +14,17 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from contextlib import contextmanager
 from bisect import bisect_right
 import math
 from warnings import warn
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from .dataframeinterface import DataFrameInterface
 from .datacontainer import DataContainer
 

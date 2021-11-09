@@ -14,14 +14,14 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from contextlib import contextmanager
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects import StaticWrapper
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from .dataframeinterface import DataFrameInterface
 
 
