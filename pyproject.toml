@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "python-framestructure"
-version = "0.0.0"
+name = "framestructure"
+version = "0.2.1"
 description = "Frame Structure"
 authors = ["Anthony Fong <FongAnthonyM@gmail.com>"]
 license = "MIT"
@@ -20,7 +20,7 @@ Changelog = "https://github.com/FongAnthonyM/python-framestructure/releases"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-baseobjects = "v1.5.1"
+baseobjects = "^1.5.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
