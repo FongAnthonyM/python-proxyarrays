@@ -44,10 +44,6 @@ setup(
     version=__version__,
     license=__license__,
     description='Objects for organizing data in frame structures.',
-    long_description='%s\n%s' % (
-        re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
-    ),
     author='Anthony Michael Fong',
     author_email='FongAnthonyM@gmail.com',
     url='https://github.com/fonganthonym/python-framestructure',
