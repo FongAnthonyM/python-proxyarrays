@@ -13,5 +13,5 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 # Imports #
-# Local Libraries #
+# Local Packages #
 from .filetimeframe import FileTimeFrame

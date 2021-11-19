@@ -14,12 +14,12 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 
-# Downloaded Libraries #
+# Third-Party Packages #
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from .dataframeinterface import DataFrameInterface
 
 

@@ -14,7 +14,7 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import io
 import re
 from glob import glob
@@ -23,7 +23,7 @@ from os.path import dirname
 from os.path import join
 from os.path import splitext
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from setuptools import find_packages
 from setuptools import setup
 
@@ -44,10 +44,6 @@ setup(
     version=__version__,
     license=__license__,
     description='Objects for organizing data in frame structures.',
-    long_description='%s\n%s' % (
-        re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
-        re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
-    ),
     author='Anthony Michael Fong',
     author_email='FongAnthonyM@gmail.com',
     url='https://github.com/fonganthonym/python-framestructure',
@@ -92,7 +88,7 @@ setup(
         'baseobjects>=1.5.0', 'dspobjects', 'numpy', 'scipy'
     ],
     extras_require={
-        "dev": ['pytest>=6.2.3'],
+        "dev": ['pytest>=6.2.3', 'nox'],
     },
     entry_points={
         'console_scripts': [

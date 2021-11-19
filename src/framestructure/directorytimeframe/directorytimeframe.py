@@ -14,12 +14,12 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import pathlib
 
-# Downloaded Libraries #
+# Third-Party Packages #
 
-# Local Libraries #
+# Local Packages #
 from ..timeseriesframe import TimeSeriesFrame
 
 
@@ -96,6 +96,7 @@ class DirectoryTimeFrame(TimeSeriesFrame):
                     self.frames.append(self.frame_type(path, open_=open_, **kwargs))
                     self.frame_names.add(path)
         self.frames.sort(key=lambda frame: frame.start)
+        self.clear_caches()
 
     # Frames
     def frame_creation_condition(self, path):

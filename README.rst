@@ -1,107 +1,102 @@
-========
-Overview
-========
+Frame Structure
+===============
 
-.. start-badges
+|PyPI| |Status| |Python Version| |License|
 
-.. list-table::
-    :stub-columns: 1
+|Read the Docs| |Tests| |Codecov|
 
-    * - docs
-      - |docs|
-    * - tests
-      - | |travis| |appveyor| |requires|
-        | |codecov|
-    * - package
-      - | |version| |wheel| |supported-versions| |supported-implementations|
-        | |commits-since|
-.. |docs| image:: https://readthedocs.org/projects/python-framestructure/badge/?style=flat
-    :target: https://python-framestructure.readthedocs.io/
-    :alt: Documentation Status
+|pre-commit| |Black|
 
-.. |travis| image:: https://api.travis-ci.com/fonganthonym/python-framestructure.svg?branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.com/github/fonganthonym/python-framestructure
-
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/fonganthonym/python-framestructure?branch=master&svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/fonganthonym/python-framestructure
-
-.. |requires| image:: https://requires.io/github/fonganthonym/python-framestructure/requirements.svg?branch=master
-    :alt: Requirements Status
-    :target: https://requires.io/github/fonganthonym/python-framestructure/requirements/?branch=master
-
-.. |codecov| image:: https://codecov.io/gh/fonganthonym/python-framestructure/branch/master/graphs/badge.svg?branch=master
-    :alt: Coverage Status
-    :target: https://codecov.io/github/fonganthonym/python-framestructure
-
-.. |version| image:: https://img.shields.io/pypi/v/framestructure.svg
-    :alt: PyPI Package latest release
-    :target: https://pypi.org/project/framestructure
-
-.. |wheel| image:: https://img.shields.io/pypi/wheel/framestructure.svg
-    :alt: PyPI Wheel
-    :target: https://pypi.org/project/framestructure
-
-.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/framestructure.svg
-    :alt: Supported versions
-    :target: https://pypi.org/project/framestructure
-
-.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/framestructure.svg
-    :alt: Supported implementations
-    :target: https://pypi.org/project/framestructure
-
-.. |commits-since| image:: https://img.shields.io/github/commits-since/fonganthonym/python-framestructure/v0.1.0.svg
-    :alt: Commits since latest release
-    :target: https://github.com/fonganthonym/python-framestructure/compare/v0.1.0...master
+.. |PyPI| image:: https://img.shields.io/pypi/v/framestructure.svg
+   :target: https://pypi.org/project/framestructure/
+   :alt: PyPI
+.. |Status| image:: https://img.shields.io/pypi/status/framestructure.svg
+   :target: https://pypi.org/project/framestructure/
+   :alt: Status
+.. |Python Version| image:: https://img.shields.io/pypi/pyversions/framestructure
+   :target: https://pypi.org/project/framestructure
+   :alt: Python Version
+.. |License| image:: https://img.shields.io/pypi/l/python-framestructure
+   :target: https://opensource.org/licenses/MIT
+   :alt: License
+.. |Read the Docs| image:: https://img.shields.io/readthedocs/python-framestructure/latest.svg?label=Read%20the%20Docs
+   :target: https://python-framestructure.readthedocs.io/
+   :alt: Read the documentation at https://python-framestructure.readthedocs.io/
+.. |Tests| image:: https://github.com/FongAnthonyM/python-framestructure/workflows/Tests/badge.svg
+   :target: https://github.com/FongAnthonyM/python-framestructure/actions?workflow=Tests
+   :alt: Tests
+.. |Codecov| image:: https://codecov.io/gh/FongAnthonyM/python-framestructure/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/FongAnthonyM/python-framestructure
+   :alt: Codecov
+.. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
+   :target: https://github.com/pre-commit/pre-commit
+   :alt: pre-commit
+.. |Black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+   :alt: Black
 
 
+Features
+--------
 
-.. end-badges
+* TODO
 
-Objects for organizing data in frame structures.
 
-* Free software: BSD 2-Clause License
+Requirements
+------------
+
+* TODO
+
 
 Installation
-============
+------------
 
-::
+You can install *Frame Structure* via pip_ from PyPI_:
 
-    pip install framestructure
+.. code:: console
 
-You can also install the in-development version with::
-
-    pip install https://github.com/fonganthonym/python-framestructure/archive/master.zip
+   $ pip install python-framestructure
 
 
-Documentation
-=============
+Usage
+-----
+
+Please see the `Command-line Reference <Usage_>`_ for details.
 
 
-https://python-framestructure.readthedocs.io/
+Contributing
+------------
+
+Contributions are very welcome.
+To learn more, see the `Contributor Guide`_.
 
 
-Development
-===========
+License
+-------
 
-To run all the tests run::
+Distributed under the terms of the `MIT license`_,
+*Frame Structure* is free and open source software.
 
-    tox
 
-Note, to combine the coverage data from all the tox environments run:
+Issues
+------
 
-.. list-table::
-    :widths: 10 90
-    :stub-columns: 1
+If you encounter any problems,
+please `file an issue`_ along with a detailed description.
 
-    - - Windows
-      - ::
 
-            set PYTEST_ADDOPTS=--cov-append
-            tox
+Credits
+-------
 
-    - - Other
-      - ::
+This project was generated from `@cjolowicz`_'s `Hypermodern Python Cookiecutter`_ template.
 
-            PYTEST_ADDOPTS=--cov-append tox
+.. _@cjolowicz: https://github.com/cjolowicz
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _MIT license: https://opensource.org/licenses/MIT
+.. _PyPI: https://pypi.org/
+.. _Hypermodern Python Cookiecutter: https://github.com/cjolowicz/cookiecutter-hypermodern-python
+.. _file an issue: https://github.com/FongAnthonyM/python-framestructure/issues
+.. _pip: https://pip.pypa.io/
+.. github-only
+.. _Contributor Guide: CONTRIBUTING.rst
+.. _Usage: https://python-framestructure.readthedocs.io/en/latest/usage.html

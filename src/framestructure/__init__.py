@@ -13,7 +13,7 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 # Imports #
-# Local Libraries #
+# Local Packages #
 from .dataframeinterface import DataFrameInterface
 from .blankdataframe import BlankDataFrame
 from .dataframe import DataFrame

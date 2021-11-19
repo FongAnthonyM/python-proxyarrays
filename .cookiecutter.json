@@ -1,0 +1,12 @@
+{
+  "_template": "gh:cjolowicz/cookiecutter-hypermodern-python",
+  "author": "Anthony Fong",
+  "development_status": "Development Status :: 3 - Alpha",
+  "email": "FongAnthonyM@gmail.com",
+  "friendly_name": "Frame Structure",
+  "github_user": "FongAnthonyM",
+  "license": "MIT",
+  "package_name": "framestructure",
+  "project_name": "python-framestructure",
+  "version": "0.0.0"
+}

@@ -14,13 +14,13 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from abc import abstractmethod
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import CachingObject
 
-# Local Libraries #
+# Local Packages #
 
 
 # Definitions #

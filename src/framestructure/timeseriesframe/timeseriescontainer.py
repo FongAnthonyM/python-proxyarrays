@@ -14,17 +14,17 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 import datetime
 import math
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 from scipy import interpolate
 from dspobjects import Resample
 
-# Local Libraries #
+# Local Packages #
 from ..datacontainer import DataContainer
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 
@@ -327,7 +327,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
             if aprox or timestamp == self.time_axis[index]:
                 return index, datetime.datetime.fromtimestamp(self.time_axis[index])
 
-        return -1, datetime.datetime.fromtimestamp(timestamp)
+        return None, datetime.datetime.fromtimestamp(timestamp)
 
     def find_time_sample(self, timestamp, aprox=False, tails=False):
         return self.find_time_index(timestamp=timestamp, aprox=aprox, tails=tails)

@@ -14,14 +14,14 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from abc import abstractmethod
 import pathlib
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 
-# Local Libraries #
+# Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
 from ..directorytimeframe import DirectoryTimeFrameInterface
 
@@ -82,7 +82,10 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def shape(self):
-        return self.data.shape
+        try:
+            return self.get_shape.caching_call()
+        except AttributeError:
+            return self.get_shape()
 
     @property
     def start(self):
@@ -158,6 +161,10 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         pass
 
     # Getters
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_shape(self):
+        return self.data.shape
+
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_start(self):
         return self.file.start

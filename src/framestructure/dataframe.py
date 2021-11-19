@@ -14,14 +14,17 @@ __email__ = __email__
 
 
 # Imports #
-# Default Libraries #
+# Standard Libraries #
 from contextlib import contextmanager
+from bisect import bisect_right
+import math
+from warnings import warn
 
-# Downloaded Libraries #
+# Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
-# Local Libraries #
+# Local Packages #
 from .dataframeinterface import DataFrameInterface
 from .datacontainer import DataContainer
 
@@ -90,6 +93,20 @@ class DataFrame(DataFrameInterface):
         except AttributeError:
             return self.get_length()
 
+    @property
+    def frame_start_indices(self):
+        try:
+            return self.get_frame_start_indices.caching_call()
+        except AttributeError:
+            return self.get_frame_start_indices()
+
+    @property
+    def frame_end_indices(self):
+        try:
+            return self.get_frame_end_indices.caching_call()
+        except AttributeError:
+            return self.get_frame_end_indices()
+
     # Arithmetic
     def __add__(self, other):
         if isinstance(other, DataFrame):
@@ -128,10 +145,11 @@ class DataFrame(DataFrameInterface):
     # Getters
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_shapes(self):
+        self.get_lengths.clear_cache()
         return tuple(frame.shape for frame in self.frames)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_shape(self):
+    def get_min_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
@@ -153,25 +171,69 @@ class DataFrame(DataFrameInterface):
         return tuple(shape)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_lengths(self):
+    def get_max_shape(self):
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
         for index, frame in enumerate(self.frames):
-            shapes[index] = frame.shape
-            n_dims[index] = len(shapes[index])
+            shapes[index] = shape = frame.shape
+            n_dims[index] = len(shape)
 
         max_dims = max(n_dims)
-        shape_array = np.zeros((n_frames, max_dims))
+        shape_array = np.zeros((n_frames, max_dims), dtype='i')
         for index, s in enumerate(shapes):
             shape_array[index, :n_dims[index]] = s
 
+        shape = [None] * max_dims
+        for ax in range(max_dims):
+            if ax == self.axis:
+                shape[ax] = sum(shape_array[:, ax])
+            else:
+                shape[ax] = max(shape_array[:, ax])
+        return tuple(shape)
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_shape(self):
+        if not self.validate_shape():
+            warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape." )
+        try:
+            return self.get_min_shape.caching_call()
+        except AttributeError:
+            return self.get_min_shape()
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_lengths(self):
+        shapes = self.shapes
+        lengths = [0] * len(shapes)
+        for index, shape in enumerate(shapes):
+            lengths[index] = shape[self.axis]
+
         self.get_length.clear_cache()
-        return tuple(shape_array[:, self.axis])
+        return tuple(lengths)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
     def get_length(self):
         return int(sum(self.lengths))
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_frame_start_indices(self):
+        lengths = self.lengths
+        starts = [None] * len(lengths)
+        previous = 0
+        for index, frame_length in enumerate(self.lengths):
+            starts[index] = int(previous)
+            previous += frame_length
+        return tuple(starts)
+
+    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_frame_end_indices(self):
+        lengths = self.lengths
+        ends = [None] * len(lengths)
+        previous = -1
+        for index, frame_length in enumerate(self.lengths):
+            previous += frame_length
+            ends[index] = int(previous)
+        return tuple(ends)
 
     def get_item(self, item):
         if isinstance(item, slice):
@@ -230,6 +292,7 @@ class DataFrame(DataFrameInterface):
         self.frames.append(item)
 
     # General
+    # Todo: change how numpy appending works for a speed boost.
     def smart_append(self, a, b, axis=None):
         if axis is None:
             axis = self.axis
@@ -240,56 +303,60 @@ class DataFrame(DataFrameInterface):
             return a + b
 
     # Find within Frames
-    def find_frame_index(self, super_index):
+    def find_inner_frame_index(self, index):
+        length = self.length
+        frame_start_indices = self.frame_start_indices
+
         # Check if index is in range.
-        if super_index >= self.length or (super_index + self.length) < 0:
+        if index >= length or (index + length) < 0:
             raise IndexError("index is out of range")
 
         # Change negative indexing into positive.
-        if super_index < 0:
-            super_index = self.length - super_index
+        if index < 0:
+            index = length - index
 
         # Find
-        previous = 0
-        for frame_index, frame_length in enumerate(self.lengths):
-            end = previous + frame_length
-            if super_index < end:
-                return frame_index, int(super_index - previous), int(previous)
-            else:
-                previous = end
+        frame_index = bisect_right(frame_start_indices, index) - 1
+        frame_start_index = frame_start_indices[frame_index]
+        return frame_index, int(index - frame_start_index), frame_start_index
 
-    def find_frame_indices(self, super_indices):
-        super_indices = list(super_indices)
-        for index, super_index in enumerate(super_indices):
+    def find_inner_frame_indices(self, indices):
+        length = self.length
+        frame_start_indices = self.frame_start_indices
+        indices = list(indices)
+        inner_indices = [None] * len(indices)
+
+        for i, index in enumerate(indices):
             # Check if index is in range.
-            if super_index >= self.length or (super_index + self.length) < 0:
+            if index >= length or (index + length) < 0:
                 raise IndexError("index is out of range")
 
             # Change negative indexing into positive.
-            if super_index < 0:
-                super_indices[index] = self.length + super_index
+            if index < 0:
+                indices[i] = self.length + index
 
-        # Find
-        indices = [None] * len(super_indices)
-        previous = 0
-        for frame_index, frame_length in enumerate(self.lengths):
-            end = previous + frame_length
-            for index, super_index in enumerate(super_indices):
-                if previous <= super_index < end:
-                    indices[index] = [frame_index, int(super_index - previous), int(previous)]
-            previous = end
+        if len(indices) <= 32:
+            for i, index in enumerate(indices):
+                frame_index = bisect_right(frame_start_indices, index) - 1
+                frame_start_index = frame_start_indices[frame_index]
+                inner_indices[i] = [frame_index, int(index - frame_start_index), frame_start_index]
+        else:
+            frame_indices = list(np.searchsorted(frame_start_indices, indices, side='right') - 1)
+            for i, frame_index in enumerate(frame_indices):
+                frame_start_index = frame_start_indices[frame_index]
+                inner_indices[i] = [frame_index, int(indices[i] - frame_start_index), frame_start_index]
 
-        return indices
+        return inner_indices
 
     # Get a Range of Frames
     def get_range(self, start=None, stop=None, step=None, frame=None):
         if start is not None and stop is not None:
-            start_index, stop_index = self.find_frame_indices([start, stop])
+            start_index, stop_index = self.find_inner_frame_indices([start, stop])
         elif start is not None:
-            start_index = self.find_frame_index(start)
+            start_index = self.find_inner_frame_index(start)
             stop_index = [len(self.frames) - 1, None, None]
         elif stop is not None:
-            stop_index = self.find_frame_index(stop)
+            stop_index = self.find_inner_frame_index(stop)
             start_index = [0, None, None]
         else:
             start_index = [0, None, None]
@@ -303,24 +370,67 @@ class DataFrame(DataFrameInterface):
     def get_range_frame(self, frame_start=None, frame_stop=None, inner_start=None, inner_stop=None, step=None,
                         frame=None):
         if (frame is None and self.returns_frame) or frame:
-            data = self.return_frame_type(frames=[self.frames[frame_start:frame_stop]])
+            return self.return_frame_type(frames=[self.frames[frame_start:frame_stop]])
         else:
-            if frame_start is None:
-                frame_start = 0
-            elif frame_start < 0:
-                frame_start = len(self.frames) + frame_start
-            if frame_stop is None:
-                frame_stop = len(self.frames) - 1
-            elif frame_stop < 0:
-                frame_stop = len(self.frames) + frame_stop
+            return self.get_range_frame_array(frame_start, frame_stop, inner_start, inner_stop, step)
 
-            if frame_start == frame_stop:
-                data = self.frames[frame_start][inner_start:inner_stop:step]
-            else:
-                data = self.frames[frame_start][inner_start::step]
-                for fi in range(frame_start + 1, frame_stop):
-                    data = self.smart_append(data, self.frames[fi][::step])
-                data = self.smart_append(data, self.frames[frame_stop][:inner_stop:step])
+    def get_range_frame_array(self, frame_start=None, frame_stop=None, inner_start=None, inner_stop=None, step=None):
+        frame_start_indices = self.frame_start_indices
+
+        # Parse Arguments
+        if frame_start is None:
+            frame_start = 0
+        elif frame_start < 0:
+            frame_start = len(self.frames) + frame_start
+        if inner_start is None:
+            inner_start = 0
+        if frame_stop is None:
+            frame_stop = len(self.frames) - 1
+        elif frame_stop < 0:
+            frame_stop = len(self.frames) + frame_stop
+        if inner_stop is None:
+            inner_stop = self.lengths[frame_stop]
+
+        # Get Data
+        if frame_start == frame_stop:
+            data = self.frames[frame_start][inner_start:inner_stop:step]
+        else:
+            try:
+                t_shape = list(self.get_max_shape.caching_call())
+            except AttributeError:
+                t_shape = list(self.get_max_shape())
+            samples = frame_start_indices[frame_stop] + inner_stop - frame_start_indices[frame_start] - inner_start
+            if step is not None:
+                samples = math.ceil(samples/step)
+            t_shape[self.axis] = samples
+            data = np.empty(t_shape)
+            data.fill(np.nan)
+
+            previous = 0
+            frist_data = self.frames[frame_start][inner_start::step]
+            f_shape = frist_data.shape
+            new = f_shape[self.axis]
+            slices = [slice(0, length) for length in f_shape]
+            slices[self.axis] = slice(previous, new)
+            data[tuple(slices)] = frist_data
+            previous = new
+
+            for fi in range(frame_start + 1, frame_stop):
+                n_data = self.frames[fi][::step]
+                n_shape = n_data.shape
+                new = previous + n_shape[self.axis]
+                slices = [slice(0, length) for length in f_shape]
+                slices[self.axis] = slice(previous, new)
+                data[tuple(slices)] = n_data
+                previous = new
+
+            last_data = self.frames[frame_stop][:inner_stop:step]
+            l_shape = last_data.shape
+            new = previous + l_shape[self.axis]
+            slices = [slice(0, length) for length in f_shape]
+            slices[self.axis] = slice(previous, new)
+            data[tuple(slices)] = last_data
+
         return data
 
     # Get a Range of Frames with a Slice
@@ -339,12 +449,12 @@ class DataFrame(DataFrameInterface):
         step = slice_.step
 
         if start is not None and stop is not None:
-            start_index, stop_index = self.find_frame_indices([start, stop])
+            start_index, stop_index = self.find_inner_frame_indices([start, stop])
         elif start is not None:
-            start_index = self.find_frame_index(start)
+            start_index = self.find_inner_frame_index(start)
             stop_index = [None, None, None]
         elif stop is not None:
-            stop_index = self.find_frame_index(stop)
+            stop_index = self.find_inner_frame_index(stop)
             start_index = [None, None, None]
         else:
             start_index = [None, None, None]

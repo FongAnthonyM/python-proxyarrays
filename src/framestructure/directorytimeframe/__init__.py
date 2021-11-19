@@ -13,6 +13,6 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 # Imports #
-# Local Libraries #
+# Local Packages #
 from .directorytimeframeinterface import DirectoryTimeFrameInterface
 from .directorytimeframe import DirectoryTimeFrame

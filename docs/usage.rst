@@ -1,7 +1,6 @@
-=====
 Usage
 =====
 
-To use framestructure in a project::
-
-	import framestructure
+.. click:: framestructure.__main__:main
+   :prog: python-framestructure
+   :nested: full

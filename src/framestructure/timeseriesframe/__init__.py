@@ -13,7 +13,7 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 # Imports #
-# Local Libraries #
+# Local Packages #
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 from .timeseriescontainer import TimeSeriesContainer
 from .blanktimeframe import BlankTimeFrame
