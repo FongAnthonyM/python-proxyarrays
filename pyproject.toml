@@ -21,6 +21,9 @@ Changelog = "https://github.com/FongAnthonyM/python-framestructure/releases"
 [tool.poetry.dependencies]
 python = "^3.7"
 baseobjects = "^1.5.1"
+dspobjects = "^0.1.0"
+numpy = "^1.21.1"
+scipy = "^1.6.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
