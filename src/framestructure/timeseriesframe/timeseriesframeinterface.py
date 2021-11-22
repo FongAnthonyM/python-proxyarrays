@@ -84,13 +84,13 @@ class TimeSeriesFrameInterface(DataFrameInterface):
         pass
 
     # Get with Time
-    def get_time_range(self, start=None, stop=None, aprox=False, tails=False):
+    def get_timestamp_range_time(self, start=None, stop=None, aprox=False, tails=False):
         start_sample, true_start = self.find_time_sample(timestamp=start, aprox=aprox, tails=tails)
         end_sample, true_end = self.find_time_sample(timestamp=stop, aprox=aprox, tails=tails)
 
         return self.get_times(start_sample, end_sample), true_start, true_end
 
-    def data_range_time(self, start=None, stop=None, aprox=False, tails=False):
+    def get_data_range_time(self, start=None, stop=None, aprox=False, tails=False):
         start_sample, true_start = self.find_time_sample(timestamp=start, aprox=aprox, tails=tails)
         end_sample, true_end = self.find_time_sample(timestamp=stop, aprox=aprox, tails=tails)
 

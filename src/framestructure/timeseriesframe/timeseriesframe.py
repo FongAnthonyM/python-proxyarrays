@@ -23,12 +23,13 @@ import numpy as np
 
 # Local Packages #
 from ..dataframe import DataFrame
+from .timeseriesframeinterface import TimeSeriesFrameInterface
 from .blanktimeframe import BlankTimeFrame
 
 
 # Definitions #
 # Classes #
-class TimeSeriesFrame(DataFrame):
+class TimeSeriesFrame(DataFrame, TimeSeriesFrameInterface):
     """
 
     Class Attributes:
@@ -308,13 +309,7 @@ class TimeSeriesFrame(DataFrame):
         return samples, true_timestamp
 
     # Get with Time
-    def get_time_range(self, start=None, end=None, aprox=True, tails=False):
-        start_sample, true_start = self.find_time_sample(start, aprox, tails)
-        end_sample, true_end = self.find_time_sample(end, aprox, tails)
-
-        return self.get_times(start_sample, end_sample), true_start, true_end
-
-    def data_range_time(self, start=None, end=None, aprox=True, tails=False):
+    def get_data_range_time(self, start=None, end=None, aprox=True, tails=False):
         start_sample, true_start = self.find_time_sample(start, aprox, tails)
         if start_sample is None:
             raise IndexError("could not start in this frame")

@@ -58,10 +58,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def data(self):
-        try:
-            return self.load_data.caching_call()
-        except AttributeError:
-            return self.load_data()
+        return self.get_data()
 
     @data.setter
     def data(self, value):
@@ -70,10 +67,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def time_axis(self):
-        try:
-            return self.get_time_axis.caching_call()
-        except AttributeError:
-            return self.get_time_axis()
+        return self.get_time_axis()
 
     @time_axis.setter
     def time_axis(self, value):
@@ -82,31 +76,19 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def shape(self):
-        try:
-            return self.get_shape.caching_call()
-        except AttributeError:
-            return self.get_shape()
+        return self.get_shape()
 
     @property
     def start(self):
-        try:
-            return self.get_start.caching_call()
-        except AttributeError:
-            return self.get_start()
+        return self.get_start()
 
     @property
     def end(self):
-        try:
-            return self.get_end.caching_call()
-        except AttributeError:
-            return self.get_end()
+        return self.get_end()
 
     @property
     def sample_rate(self):
-        try:
-            return self.get_sample_rate.caching_call()
-        except AttributeError:
-            return self.get_sample_rate()
+        return self.get_sample_rate()
 
     @sample_rate.setter
     def sample_rate(self, value):
@@ -115,10 +97,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     @property
     def is_continuous(self):
-        try:
-            return self.get_is_continuous.caching_call()
-        except AttributeError:
-            return self.get_is_continuous()
+        return self.get_is_continuous()
 
     # Instance Methods
     # Constructors/Destructors
@@ -161,20 +140,19 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         pass
 
     # Getters
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    @abstractmethod
     def get_shape(self):
-        return self.data.shape
-
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_start(self):
-        return self.file.start
-
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_end(self):
-        return self.file.end
+        pass
 
     @abstractmethod
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    def get_start(self):
+        pass
+
+    @abstractmethod
+    def get_end(self):
+        pass
+
+    @abstractmethod
     def get_time_axis(self):
         pass
 
