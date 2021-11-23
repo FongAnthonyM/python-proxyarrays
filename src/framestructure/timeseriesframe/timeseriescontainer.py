@@ -72,7 +72,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
         self.interpolate_fill_value = "extrapolate"
 
         # Object Assignment #
-        self.resampler = None
+        self._resampler = None
 
         # Method Assignment #
         self.blank_generator = self.create_nan_array
@@ -111,6 +111,16 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
         except AttributeError:
             return self.get_sample_period()
 
+    @property
+    def resampler(self):
+        if self._resampler is None:
+            self.construct_resampler()
+        return self._resampler
+
+    @resampler.setter
+    def resampler(self, value):
+        self._resampler = value
+
     # Instance Methods #
     # Constructors/Destructors
     def construct(self, frames=None, data=None, time_axis=None, shape=None, sample_rate=None, **kwargs):
@@ -122,6 +132,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
 
         super().construct(frames=frames, data=data, shape=shape, **kwargs)
 
+    def construct_resampler(self):
         self.resampler = Resample(old_fs=self.sample_rate, axis=self.axis)
 
     # Getters
