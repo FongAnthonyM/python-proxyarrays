@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "framestructure"
-version = "0.2.1"
+version = "0.3.0"
 description = "Objects for organizing data in frame structures."
 authors = ["Anthony Fong <FongAnthonyM@gmail.com>"]
 license = "MIT"
