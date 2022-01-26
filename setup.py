@@ -83,7 +83,7 @@ setup(
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     install_requires=[
         'baseobjects>=1.5.0', 'dspobjects', 'numpy', 'scipy'
     ],
