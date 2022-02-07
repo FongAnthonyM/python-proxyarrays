@@ -4,7 +4,7 @@
 Description:
 """
 # Package Header #
-from .__header__ import *
+from .header import *
 
 # Header #
 __author__ = __author__
@@ -26,7 +26,7 @@ import numpy as np
 
 # Local Packages #
 from .dataframeinterface import DataFrameInterface
-from .datacontainer import DataContainer
+from ..datacontainer.datacontainer import DataContainer
 
 
 # Definitions #
@@ -247,15 +247,15 @@ class DataFrame(DataFrameInterface):
             if is_slices:
                 return self.get_ranges(item)
             else:
-                return self.get_index(item)
+                return self.get_from_index(item)
         elif isinstance(item, int):
             return self.get_frame(item)
         elif item is Ellipsis:
             return self.get_all_data()
 
     # Setters
-    def set_editable_method(self, obj):
-        self.editable_method = obj
+    def set_editable_method(self, method):
+        self.editable_method = method
 
     # Shape
     def validate_shape(self):
@@ -514,7 +514,7 @@ class DataFrame(DataFrameInterface):
             return data
 
     # Get Frame within by Index
-    def get_index(self, indices, reverse=False, frame=True):
+    def get_from_index(self, indices, reverse=False, frame=True):
         if len(indices) == 1:
             item = indices[0]
             if isinstance(item, int):

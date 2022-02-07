@@ -4,7 +4,7 @@
 Description:
 """
 # Package Header #
-from .__header__ import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -22,7 +22,7 @@ from baseobjects import StaticWrapper
 import numpy as np
 
 # Local Packages #
-from .dataframeinterface import DataFrameInterface
+from ..dataframe.dataframeinterface import DataFrameInterface
 
 
 # Definitions #
@@ -179,7 +179,7 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
     def validate_shape(self):
         return True
 
-    def change_size(self, shape=None, dtype=None, **kwargs):
+    def reshape(self, shape=None, dtype=None, **kwargs):
         if self.mode == 'r':
             raise IOError("not writable")
 
@@ -202,7 +202,7 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
         self.data = new_ndarray
 
     # Get Index
-    def get_index(self, indices, reverse=False, frame=True):
+    def get_from_index(self, indices, reverse=False, frame=True):
         if isinstance(indices, int):
             start = indices
         elif len(indices) == 1:

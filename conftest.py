@@ -4,7 +4,7 @@
 Used for pytest directory-specific hook implementations and directory inclusion for imports.
 """
 # Package Header #
-from src.framestructure.__header__ import *
+from src.framestructure.header import *
 
 # Header #
 __author__ = __author__
