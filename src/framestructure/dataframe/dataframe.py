@@ -4,7 +4,7 @@
 Description:
 """
 # Package Header #
-from .header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -15,12 +15,14 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from collections import Iterable
 from contextlib import contextmanager
 from bisect import bisect_right
 import math
 from warnings import warn
 
 # Third-Party Packages #
+from baseobjects import singlekwargdispatchmethod
 from baseobjects.cachingtools import timed_keyless_cache_method
 import numpy as np
 
@@ -32,93 +34,119 @@ from ..datacontainer.datacontainer import DataContainer
 # Definitions #
 # Classes #
 class DataFrame(DataFrameInterface):
+    """A frame for hold different data types which are similar to a numpy array.
+
+    Attributes:
+        _cache:
+        is_updating:
+        is_combine:
+        returns_frame: Determines if methods will return frames or numpy arrays.
+        mode:
+        target_shape:
+        axis: The axis of the data which this frame extends for the contained data frames.
+        combine_type:
+        return_frame_type:
+        frames:
+    """
+    # TODO: Consider making the frame work multidimensional. (Only single-dimensional right now.)
     default_return_frame_type = None
     default_combine_type = DataContainer
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, frames=None, mode='a', update=True, init=True):
+    def __init__(
+        self,
+        frames: Iterable | None = None,
+        mode: str = 'a',
+        update: bool = True,
+        init: bool = True
+    ) -> None:
         # Parent Attributes #
         super().__init__(init=False)
 
         # New Attributes #
         # Descriptors #
         # System
-        self._cache = False
-        self.is_updating = True
-        self.is_combine = False
-        self.returns_frame = False
-        self.mode = 'a'
+        self._cache: bool = False
+        self.is_updating: bool = True
+        self.is_combine: bool = False
+        self.returns_frame: bool = False
+        self.mode: str = 'a'
 
         # Shape
         self.target_shape = None
-        self.axis = 0
+        self.axis: int = 0
 
         # Assign Classes #
         self.combine_type = self.default_combine_type
         self.return_frame_type = self.default_return_frame_type
 
         # Containers #
-        self.frames = []
+        self.frames: list = []
 
         # Object Construction #
         if init:
             self.construct(frames=frames, mode=mode, update=update)
 
     @property
-    def shapes(self):
+    def shapes(self) -> tuple[tuple[int]]:
+        """Returns the shapes of all contained frames and uses cached value if available."""
         try:
             return self.get_shapes.caching_call()
         except AttributeError:
             return self.get_shapes()
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int]:
+        """Returns the shape of this frame if all contained shapes are the same and uses cached value if available."""
         try:
             return self.get_shape.caching_call()
         except AttributeError:
-            return self.get_shape
+            return self.get_shape()
 
     @property
-    def lengths(self):
+    def lengths(self) -> tuple[int]:
+        """Returns the lengths of each contained frames as a tuple and uses cached value if available."""
         try:
             return self.get_lengths.caching_call()
         except AttributeError:
             return self.get_lengths()
 
     @property
-    def length(self):
+    def length(self) -> int:
+        """Returns the sum of all lengths of contained frames and uses cached value if available."""
         try:
             return self.get_length.caching_call()
         except AttributeError:
             return self.get_length()
 
     @property
-    def frame_start_indices(self):
+    def frame_start_indices(self) -> tuple[int]:
+        """Returns the start index of the contained frames and uses cached value if available."""
         try:
             return self.get_frame_start_indices.caching_call()
         except AttributeError:
             return self.get_frame_start_indices()
 
     @property
-    def frame_end_indices(self):
+    def frame_end_indices(self) -> tuple[int]:
+        """Returns the end index of the contained frames and uses cached value if available."""
         try:
             return self.get_frame_end_indices.caching_call()
         except AttributeError:
             return self.get_frame_end_indices()
 
     # Arithmetic
-    def __add__(self, other):
-        if isinstance(other, DataFrame):
-            return type(self)(self.frames + other.frames, self.is_updating)
-        else:
-            return type(self)(self.frames + other, self.is_updating)
+    def __add__(self, other: "DataFrame" | list):
+        """When the add operator is called it concatenates this frame with other frames or a list."""
+        return self.concatenate(other=other)
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, frames=None, mode=None, update=None):
+    def construct(self, frames: Iterable = None, mode: str = None, update: bool = None) -> None:
         if frames is not None:
-            self.frames = frames
+            self.frames.clear()
+            self.frames.extend(frames)
 
         if mode is not None:
             self.mode = mode
@@ -127,29 +155,44 @@ class DataFrame(DataFrameInterface):
             self.is_updating = update
 
     # Editable Copy Methods
-    def default_editable_method(self):
+    def default_editable_method(self) -> DataFrameInterface:
         return self.combine_frames()
 
     # Cache and Memory
-    def refresh(self):
+    def refresh(self) -> None:
+        """Resets this frame's caches and fills them with updated vaules"""
         self.get_shapes()
         self.get_shape()
         self.get_lengths()
         self.get_length()
 
-    def clear_all_caches(self):
+    def clear_all_caches(self) -> None:
+        """Clears this frame's caches and all the contained frame's caches."""
         self.clear_caches()
         for frame in self.frames:
-            frame.clear_all_caches()
+            try:
+                frame.clear_all_caches()
+            except AttributeError:
+                continue
 
     # Getters
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_shapes(self):
+    def get_shapes(self) -> tuple[tuple[int]]:
+        """Get the shapes from the contained frames/objects.
+
+        Returns:
+            The shapes of the contained frames/objects.
+        """
         self.get_lengths.clear_cache()
         return tuple(frame.shape for frame in self.frames)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_min_shape(self):
+    def get_min_shape(self) -> tuple[tuple[int]]:
+        """Get the minimum shapes from the contained frames/objects if they are different across axes.
+
+        Returns:
+            The minimum shapes of the contained frames/objects.
+        """
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
@@ -171,7 +214,7 @@ class DataFrame(DataFrameInterface):
         return tuple(shape)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_max_shape(self):
+    def get_max_shape(self) -> tuple[tuple[int]]:
         n_frames = len(self.frames)
         n_dims = [None] * n_frames
         shapes = [None] * n_frames
@@ -193,9 +236,9 @@ class DataFrame(DataFrameInterface):
         return tuple(shape)
 
     @timed_keyless_cache_method(call_method="clearing_call", collective=False)
-    def get_shape(self):
+    def get_shape(self) -> tuple[tuple[int]]:
         if not self.validate_shape():
-            warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape." )
+            warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape.")
         try:
             return self.get_min_shape.caching_call()
         except AttributeError:
@@ -288,6 +331,18 @@ class DataFrame(DataFrameInterface):
         self.frames.sort(key=key, reverse=reverse)
 
     # Container
+    @singlekwargdispatchmethod("other")
+    def concatenate(self, other: "DataFrame" | list):
+        raise NotImplementedError(f"A {type(other)} cannot be used to concatenate a {type(self)}.")
+
+    @concatenate.register
+    def _(self, other: "DataFrame"):
+        return type(self)(frames=self.frames + other.frames, update=self.is_updating)
+
+    @concatenate.register
+    def _(self, other: list):
+        return type(self)(frames=self.frames + other, update=self.is_updating)
+
     def append(self, item):
         self.frames.append(item)
 

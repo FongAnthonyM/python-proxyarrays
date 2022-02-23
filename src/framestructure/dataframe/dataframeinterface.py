@@ -4,7 +4,7 @@
 Description:
 """
 # Package Header #
-from .header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -17,10 +17,10 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator
-from functools import singledispatchmethod
 from typing import Any
 
 # Third-Party Packages #
+from baseobjects import singlekwargdispatchmethod
 from baseobjects.types_ import AnyCallable
 from baseobjects.cachingtools import CachingObject
 
@@ -31,10 +31,10 @@ from baseobjects.cachingtools import CachingObject
 # Classes #
 # Todo: Create a cache base object and a file/edit mode base object to inherit from
 class DataFrameInterface(CachingObject):
-    """A interface which outlines the basis for a data frame.
+    """An interface which outlines the basis for a data frame.
 
     Attributes:
-        _spawn_editable: The method to create an editble version of this data frame.
+        _spawn_editable: The method to create an editable version of this data frame.
 
     Args:
         init: Determines if this object will construct.
@@ -124,7 +124,7 @@ class DataFrameInterface(CachingObject):
         raise NotImplemented
 
     # Setters
-    @singledispatchmethod
+    @singlekwargdispatchmethod("method")
     def set_spawn_editable(self, method: AnyCallable | str) -> None:
         """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
 
