@@ -162,7 +162,7 @@ class DataFrameInterface(CachingObject):
         pass
 
     @abstractmethod
-    def reshape(self, shape: tuple[int] | None = None, **kwargs: Any) -> None:
+    def reshape(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
         """Changes the shape of the data frame without changing its data."""
         pass
 

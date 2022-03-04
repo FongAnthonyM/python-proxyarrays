@@ -19,7 +19,7 @@ from abc import abstractmethod
 import pathlib
 
 # Third-Party Packages #
-from baseobjects.cachingtools import timed_keyless_cache_method
+from baseobjects.cachingtools import timed_keyless_cache
 
 # Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
@@ -156,12 +156,12 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     def get_time_axis(self):
         pass
 
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
     def get_sample_rate(self):
         self.get_sample_period.clear_cache()
         return self.file.sample_rate
 
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
     def get_is_continuous(self):
         return self.validate_continuous()
 

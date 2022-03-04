@@ -19,7 +19,7 @@ import datetime
 import math
 
 # Third-Party Packages #
-from baseobjects.cachingtools import timed_keyless_cache_method
+from baseobjects.cachingtools import timed_keyless_cache
 import numpy as np
 from scipy import interpolate
 from dspobjects import Resample
@@ -139,7 +139,7 @@ class TimeSeriesContainer(DataContainer, TimeSeriesFrameInterface):
     def get_time_axis(self):
         return self.time_axis
 
-    @timed_keyless_cache_method(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
     def get_sample_period(self):
         return 1 / self.sample_rate
 
