@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" blankdataframe.py
+
+""" blankarrayframe.py
 Description:
 """
 # Package Header #
-from .header import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -20,12 +19,12 @@ __email__ = __email__
 import numpy as np
 
 # Local Packages #
-from .dataframeinterface import DataFrameInterface
+from .arrayframeinterface import ArrayFrameInterface
 
 
 # Definitions #
 # Classes #
-class BlankDataFrame(DataFrameInterface):
+class BlankArrayFrame(ArrayFrameInterface):
     # Static Methods #
     @staticmethod
     def create_nan_array(shape=None, **kwargs):

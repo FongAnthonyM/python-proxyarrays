@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 """ __init__.py
 Description: framestructure provides several classes for creating structures of dataframes.
 """
@@ -14,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .dataframe import *
+from .arrayframe import *
 from .datacontainer import *
 from .timeseriesframe import *
 from .directorytimeframe import *

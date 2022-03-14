@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 """ datacontainer.py
 Description:
 """
@@ -22,12 +21,12 @@ from baseobjects import StaticWrapper
 import numpy as np
 
 # Local Packages #
-from ..dataframe.dataframeinterface import DataFrameInterface
+from ..arrayframe.arrayframeinterface import ArrayFrameInterface
 
 
 # Definitions #
 # Classes #
-class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
+class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
     default_editable_type = None
 
     # Magic Methods #
@@ -217,4 +216,4 @@ class DataContainer(DataFrameInterface):  # Todo: Make this a StaticWrapper (Sta
 
 
 # Assign Cyclic Definitions
-DataContainer.default_editable_type = DataContainer
+ArrayContainer.default_editable_type = ArrayContainer

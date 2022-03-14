@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 """ timeseriesframe.py
 Description:
 """
@@ -22,7 +21,7 @@ from baseobjects.cachingtools import timed_keyless_cache
 import numpy as np
 
 # Local Packages #
-from ..dataframe import DataFrame
+from ..arrayframe import DataFrame
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 from .blanktimeframe import BlankTimeFrame
 

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 """ conftest.py
 Used for pytest directory-specific hook implementations and directory inclusion for imports.
 """

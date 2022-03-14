@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" dataframe.py
+""" arrayframe.py
 Description:
 """
 # Package Header #
@@ -28,8 +26,8 @@ from baseobjects.cachingtools import timed_keyless_cache
 import numpy as np
 
 # Local Packages #
-from .dataframeinterface import DataFrameInterface
-from ..datacontainer.datacontainer import DataContainer
+from .arrayframeinterface import ArrayFrameInterface
+from ..datacontainer.datacontainer import ArrayContainer
 
 
 # Definitions #
@@ -45,7 +43,7 @@ class RangeIndices(NamedTuple):
     stop: FrameIndex | int | None
 
 
-class DataFrame(DataFrameInterface):
+class ArrayFrame(ArrayFrameInterface):
     """A frame for holding different data types which are similar to a numpy array.
 
     This object acts as an abstraction of several contained numpy like objects, to appear as combined numpy array.
@@ -56,16 +54,20 @@ class DataFrame(DataFrameInterface):
         is_updating:
         is_combine:
         returns_frame: Determines if methods will return frames or numpy arrays.
-        mode:
-        target_shape:
+        mode: Determines if this frame is editable or read only.
+        target_shape: The shape that frame should be and if resized the shape it will default to.
         axis: The axis of the data which this frame extends for the contained data frames.
-        combine_type:
-        return_frame_type:
+        combine_type: The object type to return when combining frames.
+        return_frame_type: The frame type to return when returning frames from this object.
+        frames: The list of frames/objects in this frame.
+
+    Args:
         frames:
+        mode:
     """
     # TODO: Consider making the frame work multidimensional. (Only single-dimensional right now.)
-    default_return_frame_type: DataFrameInterface = DataFrameInterface
-    default_combine_type: DataFrameInterface | None = DataContainer
+    default_return_frame_type: ArrayFrameInterface = ArrayFrameInterface
+    default_combine_type: ArrayFrameInterface | None = ArrayContainer
 
     # Magic Methods
     # Construction/Destruction
@@ -166,13 +168,15 @@ class DataFrame(DataFrameInterface):
             return self.get_frame_end_indices()
 
     # Arithmetic
-    def __add__(self, other: "DataFrame" | list):
+    def __add__(self, other: "ArrayFrame" | list):
         """When the add operator is called it concatenates this frame with other frames or a list."""
         return self.concatenate(other=other)
 
     # Instance Methods
     # Constructors/Destructors
     def construct(self, frames: Iterable = None, mode: str = None, update: bool = None) -> None:
+        self.disable_updating()
+
         if frames is not None:
             self.frames.clear()
             self.frames.extend(frames)
@@ -184,7 +188,7 @@ class DataFrame(DataFrameInterface):
             self.is_updating = update
 
     # Editable Copy Methods
-    def default_editable_method(self) -> DataFrameInterface:
+    def default_editable_method(self) -> ArrayFrameInterface:
         return self.combine_frames()
 
     # Cache and Memory
@@ -204,8 +208,41 @@ class DataFrame(DataFrameInterface):
             except AttributeError:
                 continue
 
+    # Updating
+    def enable_updating(self, get_caches: bool = False) -> None:
+        """Enables updating for this frame and all contained frames/objects.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
+        self.timed_caching(get_caches=get_caches)
+        for frame in self.frames:
+            frame.enable_updating(get_caches=get_caches)
+
+    def enable_last_updating(self, get_caches: bool = False) -> None:
+        """Enables updating for this frame and the last contained frame/object.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
+        self.timed_caching(get_caches=get_caches)
+        try:
+            self.frames[-1].enable_updating(get_caches=get_caches)
+        except IndexError as e:
+            pass  # Maybe raise warning.
+
+    def disable_updating(self, get_caches: bool = False) -> None:
+        """Disables updating for this frame and all contained frames/objects.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
+        self.timeless_caching(get_caches=get_caches)
+        for frame in self.frames:
+            frame.disable_updating(get_caches=get_caches)
+
     # Getters
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_shapes(self) -> tuple[tuple[int]]:
         """Get the shapes from the contained frames/objects.
 
@@ -215,7 +252,7 @@ class DataFrame(DataFrameInterface):
         self.get_lengths.clear_cache()
         return tuple(frame.shape for frame in self.frames)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_min_shape(self) -> tuple[tuple[int]]:
         """Get the minimum shapes from the contained frames/objects if they are different across axes.
 
@@ -242,7 +279,7 @@ class DataFrame(DataFrameInterface):
                 shape[ax] = min(shape_array[:, ax])
         return tuple(shape)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_max_shape(self) -> tuple[tuple[int]]:
         """Get the maximum shapes from the contained frames/objects if they are different across axes.
 
@@ -269,7 +306,7 @@ class DataFrame(DataFrameInterface):
                 shape[ax] = max(shape_array[:, ax])
         return tuple(shape)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_shape(self) -> tuple[tuple[int]]:
         """Get the shape of this frame from the contained frames/objects.
 
@@ -281,13 +318,13 @@ class DataFrame(DataFrameInterface):
         """
 
         if not self.validate_shape():
-            warn(f"The dataframe '{self}' does not have a valid shape, returning minimum shape.")
+            warn(f"The arrayframe '{self}' does not have a valid shape, returning minimum shape.")
         try:
             return self.get_min_shape.caching_call()
         except AttributeError:
             return self.get_min_shape()
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_lengths(self) -> tuple[int]:
         """Get the lengths of the contained frames/objects.
 
@@ -303,7 +340,7 @@ class DataFrame(DataFrameInterface):
 
         return tuple(lengths)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_length(self) -> int:
         """Get the length of this frame as the sum of the contained frames/objects length.
 
@@ -312,7 +349,7 @@ class DataFrame(DataFrameInterface):
         """
         return int(sum(self.lengths))
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_frame_start_indices(self) -> tuple[int]:
         """Get the start indices of the contained files based on the lengths of the contained frames/objects.
 
@@ -327,7 +364,7 @@ class DataFrame(DataFrameInterface):
             previous += frame_length
         return tuple(starts)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_frame_end_indices(self) -> tuple[int]:
         """Get the end indices of the contained files based on the lengths of the contained frames/objects.
 
@@ -351,7 +388,7 @@ class DataFrame(DataFrameInterface):
             item: An object to get an item from this frame.
 
         Returns:
-            An object from this dataframe
+            An object from this arrayframe
         """
         if item is Ellipsis:
             return self.get_all_data()
@@ -387,12 +424,12 @@ class DataFrame(DataFrameInterface):
                 break
 
         if is_slices:
-            return self.get_ranges(item)
+            return self.get_slices(item)
         else:
             return self.get_from_index(item)
 
     @get_item.register
-    def _(self, item: int) -> DataFrameInterface:
+    def _(self, item: int) -> ArrayFrameInterface:
         """Get an item from this frame based on an int and return a frame.
 
         Args:
@@ -457,7 +494,7 @@ class DataFrame(DataFrameInterface):
 
     # Container
     @singlekwargdispatchmethod("other")
-    def concatenate(self, other: "DataFrame" | list) -> DataFrameInterface:
+    def concatenate(self, other: "ArrayFrame" | list) -> ArrayFrameInterface:
         """Concatenates this frame object with another frame or a list.
 
         Args:
@@ -469,7 +506,7 @@ class DataFrame(DataFrameInterface):
         raise TypeError(f"A {type(other)} cannot be used to concatenate a {type(self)}.")
 
     @concatenate.register
-    def _(self, other: "DataFrame") -> DataFrameInterface:
+    def _(self, other: "ArrayFrame") -> ArrayFrameInterface:
         """Concatenates this frame object with another frame.
 
         Args:
@@ -481,7 +518,7 @@ class DataFrame(DataFrameInterface):
         return type(self)(frames=self.frames + other.frames, update=self.is_updating)
 
     @concatenate.register
-    def _(self, other: list) -> DataFrameInterface:
+    def _(self, other: list) -> ArrayFrameInterface:
         """Concatenates this frame object with another list.
 
         Args:
@@ -499,17 +536,6 @@ class DataFrame(DataFrameInterface):
             item: The object to add to this frame.
         """
         self.frames.append(item)
-
-    # General
-    # Todo: change how numpy appending works for a speed boost.
-    def smart_append(self, a, b, axis=None):
-        if axis is None:
-            axis = self.axis
-
-        if isinstance(a, np.ndarray):
-            return np.append(a, b, axis)
-        else:
-            return a + b
 
     # Find Inner Indices within Frames
     def find_inner_frame_index(self, super_index: int) -> FrameIndex:
@@ -603,252 +629,52 @@ class DataFrame(DataFrameInterface):
 
         return RangeIndices(start_index, stop_index)
 
-    # Main Axis Get Range
-    def get_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        frame: bool | None = None,
-    ) -> DataFrameInterface | np.ndarray:
-        """Gets a range of data along the main axis.
+    # Get Ranges of Data with Slices
+    def get_slices(self, slices: Iterable[slice], frame: bool | None = None) -> ArrayFrameInterface | np.ndarray:
+        """Get data from within using slices to determine the ranges.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
+            slices: The slices along the axes to get data from
             frame: Determines if returned object is a Frame or an array, default is this object's setting.
 
         Returns:
             The requested range.
         """
         if (frame is None and self.returns_frame) or frame:
-            return self.get_range_frame(start=start, stop=stop, step=step)
+            return self.get_slices_frame(slices=slices)
         else:
-            return self.get_range_array(start=start, stop=stop, step=step)
+            return self.get_slices_array(slices=slices)
 
-    def get_range_slice(self, item: slice, frame: bool | None = None) -> Any:
-        """Gets a range of data along the main axis using a slice.
-
-        Args:
-            item: The slice which is the range to get the data from.
-            frame: Determines if returned object is a Frame or an array, default is this object's setting.
-
-        Returns:
-            The requested range.
-        """
-        return self.get_range(item.start, item.stop, item.step, frame)
-
-    def get_range_frame(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-    ) -> DataFrameInterface:
-        """Gets a range of data along the main axis as a new frame.
+    def get_slices_frame(self, slices: Iterable[slice] | None = None) -> ArrayFrameInterface:
+        """Gets a range of data as a new frame.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
+            slices: The ranges to get the data from.
 
         Returns:
             The requested range as a frame.
         """
-        range_frame_indices = self.parse_range_super_indices(start=start, stop=stop)
+        slices = list(slices)
+        axis_slice = slices[self.axis]
+        range_frame_indices = self.parse_range_super_indices(start=axis_slice.start, stop=axis_slice.stop)
+
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
 
-        # TODO: Restructure this to return a frame which changes representation without copying the data.
         return self.return_frame_type(frames=[self.frames[start_frame:stop_frame]])
 
-    def get_range_array(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-    ) -> np.ndarray:
-        """Gets a range of data along the main axis as an array.
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+        """Gets a range of data as an array.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
+            slices: The ranges to get the data from.
 
         Returns:
             The requested range as an array.
         """
-        frame_start_indices = self.frame_start_indices
-        range_frame_indices = self.parse_range_super_indices(start=start, stop=stop)
+        if slices is None:
+            slices = [slice(None)] * len(self.max_shape)
 
-        start_frame = range_frame_indices.start.index
-        stop_frame = range_frame_indices.stop.index
-        inner_start = range_frame_indices.start.inner_index
-        inner_stop = range_frame_indices.stop.inner_index
-            
-        # Create nan numpy array
-        t_shape = list(self.max_shape)
-        samples = frame_start_indices[stop_frame] + inner_stop - frame_start_indices[start_frame] - inner_start
-        if step is not None:
-            samples = math.ceil(samples / step)
-        t_shape[self.axis] = samples
-        data = np.empty(shape=t_shape)
-        data.fill(np.nan)
-
-        # Get range via filling the array with values
-        return self.fill_range_array(data_array=data, start=start, stop=stop, step=step)
-
-    def fill_range_array(
-        self,
-        data_array: np.ndarray,
-        array_start: Iterable[int] | None = None,
-        array_stop: Iterable[int] | None = None,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with values from the contained frames/objects.
-
-        Args:
-            data_array: The array to fill.
-            array_start: The start location within the array.
-            array_stop: The end location within the array.
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
-
-        Returns:
-            The original array but filled.
-        """
-        # Get indices range
-        da_shape = data_array.shape
-        range_frame_indices = self.parse_range_super_indices(start=start, stop=stop)
-
-        start_frame = range_frame_indices.start.index
-        stop_frame = range_frame_indices.stop.index
-        inner_start = range_frame_indices.start.inner_index
-        inner_stop = range_frame_indices.stop.inner_index
-
-        # Get start and stop array locations
-        if array_start is None:
-            array_start = np.array([0] * len(da_shape))
-        elif not isinstance(array_start, np.ndarray):
-            array_start = np.array(array_start)
-
-        if array_stop is None:
-            array_stop = np.array(da_shape)
-        elif not isinstance(array_stop, np.ndarray):
-            array_stop = np.array(array_stop)
-
-        # Contained frame/object fill kwargs
-        fill_kwargs = {
-            "data_array": data_array,
-            "array_start": array_start.copy(),
-            "array_stop": array_stop.copy(),
-            "start": inner_start,
-            "stop": inner_stop,
-            "step": step,
-        }
-
-        # Get Data
-        if start_frame == stop_frame:  # All Data is in one frame
-            self.frames[start_frame].fill_range_array(**fill_kwargs)
-        else:
-            # First Frame
-            frame = self.frames[start_frame]
-            f_shape = frame.max_shape
-            d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-            fill_kwargs["array_stop"] = fill_kwargs["array_start"] + d_size
-            fill_kwargs["stop"] = None
-            frame.fill_range_frame(**fill_kwargs)
-
-            # Middle Frames
-            fill_kwargs["start"] = None
-            for frame in self.frames[start_frame + 1:stop_frame]:
-                fill_kwargs["array_start"] = fill_kwargs["array_stop"]
-                fill_kwargs["array_start"][self.axis] += 1
-                f_shape = frame.max_shape
-                d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-                fill_kwargs["array_stop"] = fill_kwargs["array_start"] + d_size
-                frame.fill_range_frame(**fill_kwargs)
-
-            # Last Frame
-            fill_kwargs["array_start"] = fill_kwargs["array_stop"]
-            fill_kwargs["array_start"][self.axis] += 1
-            fill_kwargs["array_stop"] = array_stop
-            fill_kwargs["stop"] = inner_stop
-            frame.fill_range_frame(**fill_kwargs)
-
-        return data_array
-
-    # Get a Range of Frames with Slices
-    def get_ranges(self, slices: Iterable[slice], axis: int | None = None, frame: bool | None = None) -> Any:
-        if axis is None:
-            axis = self.axis
-
-        slices = list(slices)
-        slice_ = slices[axis]
-        start = slice_.start
-        stop = slice_.stop
-        step = slice_.step
-
-        if start is not None and stop is not None:
-            start_index, stop_index = self.find_inner_frame_indices([start, stop])
-        elif start is not None:
-            start_index = self.find_inner_frame_index(start)
-            stop_index = [None, None, None]
-        elif stop is not None:
-            stop_index = self.find_inner_frame_index(stop)
-            start_index = [None, None, None]
-        else:
-            start_index = [None, None, None]
-            stop_index = [None, None, None]
-
-        start_frame, start_inner, _ = start_index
-        stop_frame, stop_inner, _ = stop_index
-
-        slices[axis] = slice(start_inner, stop_inner, step)
-
-        return self.get_ranges_frame(start_frame, stop_frame, slices, axis, frame)
-
-    def get_ranges_frame(
-        self,
-        frame_start: int | None = None,
-        frame_stop: int | None = None,
-        slices: Iterable[slice] | None = None,
-        axis: int | None = None,
-        frame: bool | None = None,
-    ) -> Any:
-        if (frame is None and self.returns_frame) or frame:
-            data = self.return_frame_type(frames=[self.frames[frame_start:frame_stop]])
-        else:
-            if axis is None:
-                axis = self.axis
-            if frame_start is None:
-                frame_start = 0
-            if frame_stop is None:
-                frame_stop = -1
-
-            if frame_start == frame_stop:
-                data = self.frames[frame_start][slices]
-            else:
-                slice_ = slices[axis]
-
-                first = list(slices)
-                inner = list(slices)
-                last = list(slices)
-
-                first[axis] = slice(slice_.start, None, slice_.step)
-                inner[axis] = slice(None, None, slice_.step)
-                last[axis] = slice(None, slice_.stop, slice_.step)
-
-                data = self.frames[frame_start][tuple(first)]
-                for fi in range(frame_start + 1, frame_stop):
-                    data = self.smart_append(data, self.frames[fi][tuple(inner)])
-                data = self.smart_append(data, self.frames[frame_stop][tuple(last)])
-        return data
-
-    def get_ranges_array(self, slices: Iterable[slice | int | None]) -> np.ndarray:
         # Create nan numpy array
         max_shape = self.max_shape
         slices = list(slices)
@@ -866,41 +692,49 @@ class DataFrame(DataFrameInterface):
         data.fill(np.nan)
 
         # Get range via filling the array with values
-        return self.fill_ranges_array(data_array=data, slices=full_slices)
+        return self.fill_slices_array(data_array=data, slices=full_slices)
 
-    def fill_ranges_array(
+    def fill_slices_array(
         self,
         data_array: np.ndarray,
-        array_start: Iterable[int] | None = None,
-        array_stop: Iterable[int] | None = None,
-        slices: Iterable[slice] | None = None,
+        array_slices: Iterable[slice] | None = None,
+        slices: Iterable[slice | int | None] | None = None,
     ) -> np.ndarray:
+        """Fills a given array with values from the contained frames/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slices: The slices to fill within the data_array.
+            slices: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        slices = list(slices)
         # Get indices range
         da_shape = data_array.shape
-        slice_ = slices[self.axis]
-        range_frame_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
+        axis_slice = slices[self.axis]
+        range_frame_indices = self.parse_range_super_indices(start=axis_slice.start, stop=axis_slice.stop)
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
-        slice_.start = range_frame_indices.start.inner_index
-        slice_.stop = range_frame_indices.stop.inner_index
+        axis_slice.start = range_frame_indices.start.inner_index
+        axis_slice.stop = inner_stop = range_frame_indices.stop.inner_index
 
         # Get start and stop array locations
-        if array_start is None:
-            array_start = np.array([0] * len(da_shape))
-        elif not isinstance(array_start, np.ndarray):
-            array_start = np.array(array_start)
+        if array_slices is None:
+            array_slices = [slice(None)] * len(da_shape)
+        else:
+            array_slices = list(array_slices)
 
-        if array_stop is None:
-            array_stop = np.array(da_shape)
-        elif not isinstance(array_stop, np.ndarray):
-            array_stop = np.array(array_stop)
+        da_axis_slice = array_slices[self.axis]
+        array_start = 0 if da_axis_slice.start is None else da_axis_slice.start
+        array_stop = da_shape[self.axis] if da_axis_slice.stop is None else da_axis_slice.stop
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
-            "array_start": array_start.copy(),
-            "array_stop": array_stop.copy(),
+            "array_start": array_slices,
             "slices": slices
         }
 
@@ -912,59 +746,101 @@ class DataFrame(DataFrameInterface):
             frame = self.frames[start_frame]
             f_shape = frame.max_shape
             d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-            fill_kwargs["array_stop"] = fill_kwargs["array_start"] + d_size
-            fill_kwargs["slices"][self.axis].stop = None
+            da_axis_slice.stop = array_start + d_size
+            axis_slice.stop = None
             frame.fill_range_frame(**fill_kwargs)
 
             # Middle Frames
-            fill_kwargs["start"] = None
+            axis_slice.stop = None
             for frame in self.frames[start_frame + 1:stop_frame]:
-                fill_kwargs["array_start"] = fill_kwargs["array_stop"]
-                fill_kwargs["array_start"][self.axis] += 1
+                da_axis_slice.start = da_axis_slice.stop
+                da_axis_slice.start += 1
                 f_shape = frame.max_shape
                 d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-                fill_kwargs["array_stop"] = fill_kwargs["array_start"] + d_size
+                da_axis_slice.stop = da_axis_slice.start + d_size
                 frame.fill_range_frame(**fill_kwargs)
 
             # Last Frame
-            fill_kwargs["array_start"] = fill_kwargs["array_stop"]
-            fill_kwargs["array_start"][self.axis] += 1
-            fill_kwargs["array_stop"] = array_stop
+            da_axis_slice.start = da_axis_slice.stop
+            da_axis_slice.start += 1
+            da_axis_slice.stop = array_stop
             fill_kwargs["stop"] = inner_stop
             frame.fill_range_frame(**fill_kwargs)
 
-            slice_ = slices[axis]
-
-            first = list(slices)
-            inner = list(slices)
-            last = list(slices)
-
-            first[axis] = slice(slice_.start, None, slice_.step)
-            inner[axis] = slice(None, None, slice_.step)
-            last[axis] = slice(None, slice_.stop, slice_.step)
-
-            data = self.frames[frame_start][tuple(first)]
-            for fi in range(frame_start + 1, frame_stop):
-                data = self.smart_append(data, self.frames[fi][tuple(inner)])
-            data = self.smart_append(data, self.frames[frame_stop][tuple(last)])
-
         return data_array
 
+    # Main Axis Get Range
+    def get_main_axis_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        frame: bool | None = None,
+    ) -> ArrayFrameInterface | np.ndarray:
+        """Gets a range of data along the main axis.
+
+        Args:
+            start: The first super index of the range to get.
+            stop: The length of the range to get.
+            step: The interval to get the data of the range.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested range.
+        """
+        slices = [slice(None)] * len(self.max_shape)
+        slices[self.axis] = slice(start=start, stop=stop, step=step)
+        if (frame is None and self.returns_frame) or frame:
+            return self.get_slices_frame(slices=slices)
+        else:
+            return self.get_slices_array(slices=slices)
+
+    def get_main_axis_slice(self, item: slice, frame: bool | None = None) -> ArrayFrameInterface | np.ndarray:
+        """Gets a range of data along the main axis using a slice.
+
+        Args:
+            item: The slice which is the range to get the data from.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested range.
+        """
+        slices = [slice(None)] * len(self.max_shape)
+        slices[self.axis] = item
+        if (frame is None and self.returns_frame) or frame:
+            return self.get_slices_frame(slices=slices)
+        else:
+            return self.get_slices_array(slices=slices)
+
     # Get Frame based on Index
-    def get_frame(self, index: int, frame: bool | None = None) -> Any:
+    def get_frame(self, index: int, frame: bool | None = None) -> ArrayFrameInterface | np.ndarray:
+        """Get a contained frame/object or data from a contained frame/object.
+
+        Args:
+            index: The frame index to get the data from.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested frame or data.
+        """
         if (frame is None and self.returns_frame) or frame:
             return self.frames[index]
         else:
-            return self.frames[index][...]
+            return self.frames[index].get_slices_array()
 
     def get_all_data(self, frame: bool | None = None) -> Any:
+        """Get all the contained frames/objects as another frame or data from the contained frames/objects.
+
+        Args:
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The new frame or all the data as an array
+        """
         if (frame is None and self.returns_frame) or frame:
             return self
         else:
-            data = self.frames[0][...]
-            for index in range(1, len(self.frames)):
-                data = self.smart_append(data, self.frames[index][...])
-            return data
+            return self.get_slices_array()
 
     # Get Frame within by Index
     @singlekwargdispatchmethod("indices")
@@ -974,10 +850,35 @@ class DataFrame(DataFrameInterface):
         reverse: bool = False,
         frame: bool | None = True,
     ) -> Any:
+        """Gets data from this object if given an index which can be in serval formats.
+
+        Args:
+            indices: The indices to find the data from.
+            reverse:  Determines, when using a Sized of indices, if it will be read in reverse order.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested frame or data.
+        """
         raise TypeError(f"A {type(indices)} be used to get from super_index for a {type(self)}.")
 
     @get_from_index.register(Sized)
-    def _(self, indices: Sized[int | slice | Iterable], reverse: bool = False, frame: bool | None = True) -> Any:
+    def _(
+        self,
+        indices: Sized[int | slice | Iterable[slice | int | None]],
+        reverse: bool = False,
+        frame: bool | None = True,
+    ) -> ArrayFrameInterface | np.ndarray:
+        """Gets a nested frame or data from within this frame.
+
+        Args:
+            indices: A series of indices of the nested frames to get from, can end with slices to get ranges of data.
+            reverse: Determines if the indices series will be read in reverse order.
+            frame:  Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested frame or data.
+        """
         indices = list(indices)
         if not reverse:
             index = indices.pop(0)
@@ -987,92 +888,44 @@ class DataFrame(DataFrameInterface):
         if indices:
             return self.frames[index].get_from_index(indices=indices, reverse=reverse, frame=frame)
         elif isinstance(index, Iterable):
-            return self.get_ranges(slices=index, frame=frame)
-        else:
+            return self.get_slices(slices=index, frame=frame)
+        elif isinstance(index, int):
             return self.get_from_index(indices=index, frame=frame)
+        else:
+            return self.get_main_axis_slice(item=indices, frame=frame)
 
     @get_from_index.register
     def _(self, indices: int, frame: bool | None = True) -> Any:
+        """Get a contained frame/object or data from a contained frame/object.
+
+        Args:
+            indices: The frame index to get the data from.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested frame or data.
+        """
         return self.get_frame(index=indices, frame=frame)
 
-    @get_from_index.register
-    def _(self, indices: slice, frame: bool | None = True) -> Any:
-        return self.get_range_slice(item=indices, frame=frame)
-
-    def get_range_indices(
+    # Combine
+    def combine_frames(
         self,
         start: int | None = None,
         stop: int | None = None,
-        step: int | None = None,
-        reverse: bool = False,
-        frame: bool | None = None
-    ) -> Any:
-        if frame is None:
-            frame = self.returns_frame
+        step: int | None = None
+    ) -> ArrayFrameInterface:
+        """Combines a range of frames into a single frame.
 
-        if start is None and stop is None:
-            if frame:
-                return self
-            else:
-                return self[::step]
+        Args:
+            start: The start frame.
+            stop: The stop frame.
+            step: The step between frames to combine.
 
-        frame_start = None
-        frame_stop = None
-        if start is not None and len(start) > 1:
-            start = list(start)
-            if not reverse:
-                frame_start = start.pop(0)
-            else:
-                frame_start = start.pop()
-
-        if stop is not None and len(stop) > 1:
-            stop = list(stop)
-            if not reverse:
-                frame_stop = stop.pop(0)
-            else:
-                frame_stop = stop.pop()
-
-        if frame_start and frame_start and (frame_start + 1) == frame_stop:
-            return self[frame_start].get_range_indices(start, stop, step, reverse, frame)
-
-        if start is None:
-            if frame:
-                start_data = self.return_frame_type(frames=[self.frames[frame_start:]])
-            else:
-                start_data = self.frames[0][::step]
-                for fi in range(1, frame_stop):
-                    start_data = self.smart_append(start_data, self.frames[fi][::step])
-        elif len(start) == 1:
-            start_data = self.get_frame_within(start, reverse, frame)
-        else:
-            start_data = self.frames[frame_start].get_range_indices(start, None, step, reverse, frame)
-
-        if stop is None:
-            if frame:
-                stop_data = self.return_frame_type(frames=[self.frames[:frame_stop]])
-            else:
-                stop_data = self.smart_append(start_data, self.frames[frame_start + 1][::step])
-                for fi in range(frame_start + 2, len(self.frames)):
-                    stop_data = self.smart_append(stop_data, self.frames[fi][::step])
-        elif len(stop) == 1:
-            stop_data = self.get_frame_within(stop, reverse, frame)
-        else:
-            stop_data = self.frames[frame_stop].get_range_indices(None, stop, step, reverse, frame)
-
-        if start is not None and stop is not None:
-            if frame:
-                data = self.return_frame_type(frames=[self.frames[frame_start:frame_stop]])
-                self.smart_append(start_data, data)
-            else:
-                for fi in range(frame_start + 2, frame_stop):
-                    start_data = self.smart_append(start_data, self.frames[fi][::step])
-
-        return self.smart_append(start_data, stop_data)
-
-    # Combine
-    def combine_frames(self, start: int | None = None, stop: int | None = None, step: int | None = None):
+        Returns:
+            A single combined frame.
+        """
         return self.combine_type(frames=self.frames[start:stop:step])
 
 
 # Assign Cyclic Definitions
-DataFrame.default_return_frame_type = DataFrame
+ArrayFrame.default_return_frame_type = ArrayFrame

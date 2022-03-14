@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" dataframeinterface.py
-Description:
+""" arrayframeinterface.py
+An interface which outlines the basis for an array frame.
 """
 # Package Header #
 from ..header import *
@@ -30,11 +28,11 @@ from baseobjects.cachingtools import CachingObject
 # Definitions #
 # Classes #
 # Todo: Create a cache base object and a file/edit mode base object to inherit from
-class DataFrameInterface(CachingObject):
-    """An interface which outlines the basis for a data frame.
+class ArrayFrameInterface(CachingObject):
+    """An interface which outlines the basis for an array frame.
 
     Attributes:
-        _spawn_editable: The method to create an editable version of this data frame.
+        _spawn_editable: The method to create an editable version of this frame.
 
     Args:
         init: Determines if this object will construct.
@@ -46,7 +44,9 @@ class DataFrameInterface(CachingObject):
         # Parent Attributes #
         super().__init__()
 
-        # Attributes #
+        # New  Attributes #
+        self._is_updating: bool = False
+
         self._spawn_editable: AnyCallable = self._default_spawn_editable()
 
         # Object Construction #
@@ -66,24 +66,24 @@ class DataFrameInterface(CachingObject):
             return self.get_length()
 
     def __getitem__(self, item: Any) -> Any:
-        """Gets an item of this data frame based on the input item.
+        """Gets an item of this frame based on the input item.
 
         Args:
-            item: The object to be used to get a specific item within this data frame.
+            item: The object to be used to get a specific item within this frame.
 
         Returns:
-            An item within this data frame.
+            An item within this frame.
         """
         return self.get_item(item)
 
     # Instance Methods #
     # Constructors/Destructors
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
-        """Creates an editable copy of this data frame.
+        """Creates an editable copy of this frame.
 
         Args:
-            *args:
-            **kwargs:
+            *args: The arguments for creating a new editable copy.
+            **kwargs: The keyword arguments for creating a new editable copy.
 
         Returns:
             A editable copy of this object.
@@ -93,34 +93,62 @@ class DataFrameInterface(CachingObject):
     # Caching
     @abstractmethod
     def clear_all_caches(self) -> None:
-        """Clears the caches within this data frame and any contained data frames."""
+        """Clears the caches within this frame and any contained frames."""
+        pass
+
+    # Updating
+    @abstractmethod
+    def enable_updating(self, get_caches: bool = False) -> None:
+        """Enables updating for this frame and all contained frames/objects.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
+        pass
+
+    @abstractmethod
+    def enable_last_updating(self, get_caches: bool = False) -> None:
+        """Enables updating for this frame and the last contained frame/object.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
+        pass
+
+    @abstractmethod
+    def disable_updating(self, get_caches: bool = False) -> None:
+        """disables updating for this frame and all contained frames/objects.
+
+        Args:
+            get_caches: Determines if get_caches will run before setting the caches.
+        """
         pass
 
     # Getters
     @abstractmethod
     def get_length(self) -> int:
-        """Gets the length of this data frame.
+        """Gets the length of this frame.
 
         Returns:
-            The length of this data frame.
+            The length of this frame.
         """
         pass
 
     @abstractmethod
     def get_item(self, item: Any) -> Any:
-        """Gets an item from within this data frame based on an input item.
+        """Gets an item from within this frame based on an input item.
 
         Args:
-            item: The object to be used to get a specific item within this data frame.
+            item: The object to be used to get a specific item within this frame.
 
         Returns:
-            An item within this data frame.
+            An item within this frame.
         """
         pass
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> Any:
-        """The default method for creating a new editable version of this data frame."""
+        """The default method for creating a new editable version of this frame."""
         raise NotImplemented
 
     # Setters
@@ -154,16 +182,16 @@ class DataFrameInterface(CachingObject):
     # Shape
     @abstractmethod
     def validate_shape(self) -> bool:
-        """Checks if this data frame has a valid/continuous shape.
+        """Checks if this frame has a valid/continuous shape.
 
         Returns:
-            If this data frame has a valid/continuous shape.
+            If this frame has a valid/continuous shape.
         """
         pass
 
     @abstractmethod
     def reshape(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
-        """Changes the shape of the data frame without changing its data."""
+        """Changes the shape of the frame without changing its data."""
         pass
 
     # Get Frame within by Index
@@ -180,4 +208,3 @@ class DataFrameInterface(CachingObject):
             The item recursively from within this frame.
         """
         pass
-

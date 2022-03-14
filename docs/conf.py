@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 """Sphinx configuration."""
 # Package Header #
 from src.framestructure.header import *
