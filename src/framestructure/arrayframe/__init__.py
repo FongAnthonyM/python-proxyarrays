@@ -1,6 +1,5 @@
-
 """ __init__.py
-Description: Base data frames
+Base Array frames.
 """
 # Package Header #
 from ..header import *
@@ -14,3 +13,7 @@ __email__ = __email__
 
 # Imports
 # Local Packages #
+from arrayframeinterface import ArrayFrameInterface
+from arrayframe import ArrayFrame
+from arraycontainer import ArrayContainer
+from blankarrayframe import BlankArrayFrame

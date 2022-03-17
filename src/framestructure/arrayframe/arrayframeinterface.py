@@ -20,38 +20,35 @@ from typing import Any
 # Third-Party Packages #
 from baseobjects import singlekwargdispatchmethod
 from baseobjects.types_ import AnyCallable
-from baseobjects.cachingtools import CachingObject
+from baseobjects import BaseObject
+import numpy as np
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-# Todo: Create a cache base object and a file/edit mode base object to inherit from
-class ArrayFrameInterface(CachingObject):
+# Todo: Create a file/edit mode base object to inherit from
+class ArrayFrameInterface(BaseObject):
     """An interface which outlines the basis for an array frame.
 
     Attributes:
+        _is_updating: Determines if this frame is updating or not.
         _spawn_editable: The method to create an editable version of this frame.
-
-    Args:
-        init: Determines if this object will construct.
+        returns_frame: Determines if methods will return frames or numpy arrays.
+        mode: Determines if this frame is editable or read only.
     """
-
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, init: bool = True) -> None:
-        # Parent Attributes #
-        super().__init__()
-
+    def __init__(self) -> None:
         # New  Attributes #
         self._is_updating: bool = False
 
         self._spawn_editable: AnyCallable = self._default_spawn_editable()
 
-        # Object Construction #
-        if init:
-            self.construct()
+        self.returns_frame: bool = False
+
+        self.mode: str = 'a'
 
     # Container Methods
     def __len__(self) -> int:
@@ -60,10 +57,7 @@ class ArrayFrameInterface(CachingObject):
         Returns:
             The number of nodes in this object.
         """
-        try:
-            return self.get_length.caching_call()
-        except AttributeError:
-            return self.get_length()
+        return self.get_length()
 
     def __getitem__(self, item: Any) -> Any:
         """Gets an item of this frame based on the input item.
@@ -78,6 +72,7 @@ class ArrayFrameInterface(CachingObject):
 
     # Instance Methods #
     # Constructors/Destructors
+    # Editable Copy Methods
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
         """Creates an editable copy of this frame.
 
@@ -90,41 +85,95 @@ class ArrayFrameInterface(CachingObject):
         """
         return self._spawn_editable(*args, **kwargs)
 
+    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> Any:
+        """The default method for creating an editable version of this frame.
+
+        Args:
+            *args: Arguments to help create the new editable frame.
+            **kwargs: Keyword arguments to help create the new editable frame.
+
+        Returns:
+            An editable version of this frame.
+        """
+        new_frame = self.copy()
+        new_frame.mode = 'a'
+        return new_frame
+
+    @singlekwargdispatchmethod("method")
+    def set_spawn_editable(self, method: AnyCallable | str) -> None:
+        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
+
+        Args:
+            method: The function or method name to set the _spawn_editable method to.
+        """
+        raise ValueError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
+
+    @set_spawn_editable.register(Callable)
+    def _(self, method: AnyCallable) -> None:
+        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
+
+        Args:
+            method: The function to set the _spawn_editable method to.
+        """
+        self._spawn_editable = method
+
+    @set_spawn_editable.register
+    def _(self, method: str) -> None:
+        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
+
+        Args:
+            method: The method name to set the _spawn_editable method to.
+        """
+        self._spawn_editable = getattr(self, method)
+
     # Caching
-    @abstractmethod
     def clear_all_caches(self) -> None:
         """Clears the caches within this frame and any contained frames."""
         pass
 
     # Updating
-    @abstractmethod
     def enable_updating(self, get_caches: bool = False) -> None:
         """Enables updating for this frame and all contained frames/objects.
 
         Args:
             get_caches: Determines if get_caches will run before setting the caches.
         """
-        pass
+        self._is_updating = True
 
-    @abstractmethod
     def enable_last_updating(self, get_caches: bool = False) -> None:
         """Enables updating for this frame and the last contained frame/object.
 
         Args:
             get_caches: Determines if get_caches will run before setting the caches.
         """
-        pass
+        self._is_updating = True
 
-    @abstractmethod
     def disable_updating(self, get_caches: bool = False) -> None:
-        """disables updating for this frame and all contained frames/objects.
+        """Disables updating for this frame and all contained frames/objects.
 
         Args:
             get_caches: Determines if get_caches will run before setting the caches.
         """
-        pass
+        self._is_updating = False
 
     # Getters
+    def get_any_updating(self) -> bool:
+        """Checks if any contained frames/objects are updating.
+
+        Returns:
+            If any contained frames/objects are updating.
+        """
+        return self._is_updating
+
+    @abstractmethod
+    def get_shape(self) -> tuple[int]:
+        """Get the shape of this frame from the contained frames/objects.
+
+        Returns:
+            The shape of this frame.
+        """
+        pass
+
     @abstractmethod
     def get_length(self) -> int:
         """Gets the length of this frame.
@@ -145,39 +194,6 @@ class ArrayFrameInterface(CachingObject):
             An item within this frame.
         """
         pass
-
-    # Editable Copy Methods
-    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> Any:
-        """The default method for creating a new editable version of this frame."""
-        raise NotImplemented
-
-    # Setters
-    @singlekwargdispatchmethod("method")
-    def set_spawn_editable(self, method: AnyCallable | str) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The function or method name to set the _spawn_editable method to.
-        """
-        raise NotImplementedError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
-
-    @set_spawn_editable.register(Callable)
-    def _(self, method: AnyCallable) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The function to set the _spawn_editable method to.
-        """
-        self._spawn_editable = method
-
-    @set_spawn_editable.register
-    def _(self, method: str) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The method name to set the _spawn_editable method to.
-        """
-        self._spawn_editable = getattr(self, method)
 
     # Shape
     @abstractmethod
@@ -206,5 +222,60 @@ class ArrayFrameInterface(CachingObject):
 
         Returns:
             The item recursively from within this frame.
+        """
+        pass
+
+    # Get Ranges of Data with Slices
+    @abstractmethod
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+        """Gets a range of data as an array.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested range as an array.
+        """
+        pass
+
+    @abstractmethod
+    def fill_slices_array(
+        self,
+        data_array: np.ndarray,
+        array_slices: Iterable[slice] | None = None,
+        slices: Iterable[slice | int | None] | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with values from the contained frames/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slices: The slices to fill within the data_array.
+            slices: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        pass
+
+    @abstractmethod
+    def get_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        axis: int | None = None,
+        frame: bool | None = None,
+    ) -> "ArrayFrameInterface" | np.ndarray:
+        """Gets a range of data along an axis.
+
+        Args:
+            start: The first super index of the range to get.
+            stop: The length of the range to get.
+            step: The interval to get the data of the range.
+            axis: The axis to get the data along.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested range.
         """
         pass

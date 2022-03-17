@@ -1,6 +1,5 @@
-
 """ filetimeframe.py
-Description:
+A time series frame that wraps file object which contains time series.
 """
 # Package Header #
 from ..header import *
@@ -16,9 +15,11 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 import pathlib
+from typing import Any
 
 # Third-Party Packages #
-from baseobjects.cachingtools import timed_keyless_cache
+from baseobjects import singlekwargdispatchmethod
+import numpy as np
 
 # Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
@@ -28,13 +29,34 @@ from ..directorytimeframe import DirectoryTimeFrameInterface
 # Definitions #
 # Classes #
 class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
-    file_type = None
-    default_editable_type = TimeSeriesContainer
+    """A time series frame that wraps file object which contains time series.
+
+    Class Attributes:
+        file_type: The file type that this file time frame will wrap.
+
+    Attributes:
+        file: The file object to wrap.
+
+    Args:
+        file: The file object to wrap or a path to the file.
+        mode: The mode this frame and file will be in.
+        init: Determines if this object will construct.
+        **kwargs: The keyword arguments for constructing the file object.
+    """
+    file_type: Any = None
 
     # Class Methods #
     @classmethod
     @abstractmethod
-    def validate_path(cls, path):
+    def validate_path(cls, path: str | pathlib.Path) -> bool:
+        """Validates if the path can be used as Directory Time Frame.
+
+        Args:
+            path: The path to directory/file object that this frame will wrap.
+
+        Returns:
+            If the path is usable.
+        """
         if not isinstance(path, pathlib.Path):
             path = pathlib.Path(path)
 
@@ -42,135 +64,216 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, file=None, frames=None, init=True):
+    def __init__(self, file: Any = None, mode: str | None = None, init: bool = True, **kwargs: Any) -> None:
         # Parent Attributes #
         super().__init__(init=False)
-        self.is_updating = False
 
         # New Attributes #
         # Containers #
-        self.file = None
+        self.file: Any = None
 
         # Object Construction #
         if init:
-            self.construct(file=file, frames=frames)
+            self.construct(file=file, mode=mode, **kwargs)
 
     @property
-    def data(self):
+    def data(self) -> Any:
+        """The numpy data of this file."""
         return self.get_data()
 
     @data.setter
-    def data(self, value):
+    def data(self, value) -> None:
         if value is not None:
             self.set_data(value)
 
     @property
-    def time_axis(self):
+    def time_axis(self) -> Any:
+        """The timestamp axis of this file."""
         return self.get_time_axis()
 
     @time_axis.setter
-    def time_axis(self, value):
+    def time_axis(self, value: Any) -> None:
         if value is not None:
             self.set_time_axis(value)
 
     @property
-    def shape(self):
-        return self.get_shape()
-
-    @property
-    def start(self):
-        return self.get_start()
-
-    @property
-    def end(self):
-        return self.get_end()
-
-    @property
-    def sample_rate(self):
+    def sample_rate(self) -> float:
+        """The sample rate of this file."""
         return self.get_sample_rate()
 
     @sample_rate.setter
-    def sample_rate(self, value):
+    def sample_rate(self, value: float) -> None:
         if value is not None:
-            raise AttributeError("can't set attribute")
-
-    @property
-    def is_continuous(self):
-        return self.get_is_continuous()
+            self.set_sample_rate(value)
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, file=None, frames=None, **kwargs):
+    def construct(self, file: Any = None, mode: str | None = None, **kwargs: Any) -> None:
+        """Constructs this object.
+
+        Args:
+            file: The file object to wrap or a path to the file.
+            mode: The mode this frame and file will be in.
+            **kwargs: The keyword arguments for constructing the file object.
+        """
         # New Assignment
         if file is not None:
-            self.set_file(file)
+            self.set_file(file, mode=mode, **kwargs)
 
         # Parent Construction
-        super().construct(frames=frames, **kwargs)
+        super().construct(mode=mode)
 
     # Cache and Memory
-    def refresh(self):
-        self.load_data()
-        self.get_start()
-        self.get_end()
-        self.get_time_axis()
-        self.get_sample_rate()
-        self.get_sample_period()
-        self.get_is_continuous()
+    def refresh(self) -> None:
+        """Refreshes this frame."""
+        # Refreshes
+        self.load()
 
     # File
-    def set_file(self, file):
+    @singlekwargdispatchmethod("file")
+    def set_file(self, file: Any, **kwargs: Any) -> None:
+        """Sets the file for this frame to wrap.
+
+        Args:
+            file: The file object for this frame to wrap.
+            **kwargs: The keyword arguments for constructing the file.
+        """
         if isinstance(file, self.file_type):
             self.file = file
         else:
             raise ValueError("file must be a path or str")
 
-    def open(self, mode=None, **kwargs):
+    @set_file.register(pathlib.Path)
+    @set_file.register(str)
+    def _(self, file: pathlib.Path | str, **kwargs: Any) -> None:
+        """Sets the file for this frame to wrap.
+
+        Args:
+            file: The path to create the file.
+            **kwargs: The keyword arguments for constructing the file.
+        """
+        self.file = self.file_type(file, **kwargs)
+
+    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
+        """Opens this directory frame which opens all the contained frames.
+
+        Args:
+            mode: The mode to open all the frames in.
+            **kwargs: The keyword arguments to open all the frames with.
+
+        Returns:
+            This object.
+        """
         if mode is None:
             mode = self.mode
         self.file.open(mode, **kwargs)
         return self
 
-    def close(self):
+    def close(self) -> None:
+        """Closes this frame."""
         self.file.close()
 
     @abstractmethod
-    def load_data(self):
+    def require(self) -> None:
+        """Create this directory and all the contained frames if they do not exist."""
+        pass
+
+    @abstractmethod
+    def load(self) -> None:
+        """Loads the file's information into memory.'"""
         pass
 
     # Getters
     @abstractmethod
-    def get_shape(self):
+    def get_data(self) -> Any:
+        """Gets the data.
+
+        Returns:
+            The data object.
+        """
         pass
 
     @abstractmethod
-    def get_start(self):
+    def set_data(self, value: Any) -> None:
+        """Sets the data.
+
+        Args:
+            value: A data object.
+        """
+        if self.mode == 'r':
+            raise IOError("not writable")
+
+    @abstractmethod
+    def get_time_axis(self) -> Any:
+        """Gets the time axis.
+
+        Returns:
+            The time axis object.
+        """
         pass
 
     @abstractmethod
-    def get_end(self):
+    def set_time_axis(self, value: Any) -> None:
+        """Sets the time axis
+
+        Args:
+            value: A time axis object.
+        """
+        if self.mode == 'r':
+            raise IOError("not writable")
+
+    @abstractmethod
+    def get_shape(self) -> tuple[int]:
+        """Get the shape of this frame from the contained frames/objects.
+
+        Returns:
+            The shape of this frame.
+        """
         pass
 
     @abstractmethod
-    def get_time_axis(self):
+    def get_start_timestamp(self) -> float | None:
+        """Gets the start_timestamp timestamp of this frame.
+
+        Returns:
+            The start_timestamp timestamp of this frame.
+        """
         pass
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
-    def get_sample_rate(self):
-        self.get_sample_period.clear_cache()
-        return self.file.sample_rate
+    @abstractmethod
+    def get_end_timestamp(self) -> float | None:
+        """Gets the end_timestamp timestamp of this frame.
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
-    def get_is_continuous(self):
-        return self.validate_continuous()
+        Returns:
+            The end_timestamp timestamp of this frame.
+        """
+        pass
+
+    @abstractmethod
+    def get_sample_rate(self) -> float:
+        """Gets the sample rate of this file.
+
+        Returns:
+            The sample rate of this file.
+        """
+        pass
+
+    @abstractmethod
+    def set_sample_rate(self, value: float) -> None:
+        """Sets the sample rate.
+
+        Args:
+            value: The sample rate to set the file to.
+        """
+        if self.mode == 'r':
+            raise IOError("not writable")
 
     # Setters
     @abstractmethod
-    def set_data(self, value):
-        if self.mode == 'r':
-            raise IOError("not writable")
+    def get_timestamps(self) -> np.ndarray:
+        """Gets all the timestamps of this frame.
 
-    @abstractmethod
-    def set_time_axis(self, value):
-        if self.mode == 'r':
-            raise IOError("not writable")
+        Returns:
+            A numpy array of the timestamps of this frame.
+        """
+        pass

@@ -1,6 +1,5 @@
-
 """ blankarrayframe.py
-Description:
+A frame for holding blank data such as NaNs, zeros, or a single number.
 """
 # Package Header #
 from ..header import *
@@ -14,6 +13,8 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from collections.abc import Iterable, Sized
+from typing import Any, Callable
 
 # Third-Party Packages #
 import numpy as np
@@ -25,6 +26,21 @@ from .arrayframeinterface import ArrayFrameInterface
 # Definitions #
 # Classes #
 class BlankArrayFrame(ArrayFrameInterface):
+    """A frame for holding blank data such as NaNs, zeros, or a single number.
+
+    This frame does not store a blank array, rather it generates an array whenever data would be accessed.
+
+    Attributes:
+        _shape: The assigned shape that this frame will be.
+        axis: The main axis of this frame.
+        dtype: The data type of that the data will be.
+        generate_data: The method for generating data.
+
+    Args:
+        shape: The assigned shape that this frame will be.
+        dtype: The data type of the generated data.
+        init: Determines if this object will construct.
+    """
     # Static Methods #
     @staticmethod
     def create_nan_array(shape=None, **kwargs):
@@ -34,163 +50,275 @@ class BlankArrayFrame(ArrayFrameInterface):
 
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, shape=None, dtype=None, init=True):
+    def __init__(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None, init: bool = True) -> None:
         # Parent Attributes #
         super().__init__()
 
         # New Attributes #
-        # Descriptors #
-        # System
-        self.is_cache = True
-        self.mode = 'a'
-
         # Shape
-        self._shape = None
-        self.axis = 0
+        self._shape: tuple[int] | None = None
+        self.axis: int = 0
 
         # Data Type
-        self.dtype = "f4"
+        self.dtype: np.dtype | str = "f4"
 
         # Assign Methods #
-        self.generate_data = self.create_nan_array
+        self.generate_data: Callable[[tuple[int], Any], np.ndarray] = self.create_nan_array
 
         # Construct Object #
         if init:
             self.construct(shape=shape, dtype=dtype)
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int]:
+        """The assigned shape that this frame will be."""
         return self._shape
 
     @shape.setter
-    def shape(self, value):
+    def shape(self, value: tuple[int]) -> None:
         self._shape = value
 
     # Instance Methods #
     # Constructors/Destructors
-    def construct(self, shape=None, dtype=None):
+    def construct(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None) -> None:
+        """Constructs this object.
+
+        Args:
+            shape: The assigned shape that this frame will be.
+            dtype: The data type of the generated data.
+        """
         if shape is not None:
             self._shape = shape
 
         if dtype is not None:
             self.dtype = dtype
 
-    # Editable Copy Methods
-    def default_editable_method(self, **kwargs):
-        return self.copy
-
     # Getters
-    def get_length(self):
+    def get_shape(self) -> tuple[int]:
+        """Get the shape of this frame from the contained frames/objects.
+
+        Returns:
+            The shape of this frame.
+        """
+        return self.shape
+
+    def get_length(self) -> int:
+        """Gets the length of this frame.
+
+        Returns:
+            The length of this frame.
+        """
         return self.shape[self.axis]
 
-    def get_item(self, item):
+    def get_item(self, item: Any) -> Any:
+        """Gets an item from within this frame based on an input item.
+
+        Args:
+            item: The object to be used to get a specific item within this frame.
+
+        Returns:
+            An item within this frame.
+        """
         if isinstance(item, slice):
             return self.create_data_slice(item)
         elif isinstance(item, (tuple, list)):
             return self.create_data_slice(item)
         elif isinstance(item, ...):
-            return self.create_data()
+            return self.create_data_range()
 
     # Setters
-    def set_data_generator(self, obj):
-        if isinstance(obj, str):
-            obj = obj.lower()
-            if obj == "nan":
+    def set_data_generator(self, generator: str | Callable[[tuple[int], Any], np.ndarray]) -> None:
+        """Sets this frame's data generator to either numpy array creator or a function that will create data.
+
+        Args:
+            generator: Either the string of the type of data to generate or a function to generate data.
+        """
+        if isinstance(generator, str):
+            generator = generator.lower()
+            if generator == "nan":
                 self.generate_data = self.create_nan_array
-            elif obj == "empty":
+            elif generator == "empty":
                 self.generate_data = np.empty
-            elif obj == "zeros":
+            elif generator == "zeros":
                 self.generate_data = np.zeros
-            elif obj == "ones":
+            elif generator == "ones":
                 self.generate_data = np.ones
-            elif obj == "full":
+            elif generator == "full":
                 self.generate_data = np.full
         else:
-            self.generate_data = obj
+            self.generate_data = generator
 
-    # Data
-    def create_data(self, start=None, stop=None, step=None, dtype=None, **kwargs):
-        size = self.get_length()
+    # Shape
+    def validate_shape(self) -> bool:
+        """Checks if this frame has a valid/continuous shape.
+
+        Returns:
+            If this frame has a valid/continuous shape.
+        """
+        return True
+
+    def reshape(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
+        """Changes the shape of the frame without changing its data.
+
+        Args:
+            shape: The shape to change this frame to.
+            **kwargs: Any other kwargs for reshaping.
+        """
+        if self.mode == 'r':
+            raise IOError("not writable")
+        self.shape = shape
+
+    # Create Data
+    def create_data_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        dtype: np.dtype | str | None = None,
+        frame: bool | None = None,
+        **kwargs: Any,
+    ) -> np.ndarray:
+        """Creates the data from range style input.
+
+        Args:
+            start: The start index to get the data from.
+            stop: The stop index to get the data from.
+            step: The interval between data to get.
+            dtype: The data type to generate.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+            **kwargs: Keyword arguments for generating data.
+
+        Returns:
+            The data requested.
+        """
         shape = self.shape
+        size = shape[self.axis]
 
         if dtype is None:
             dtype = self.dtype
-
-        if start is None:
-            start = 0
-
-        if stop is None:
-            stop = size
-        elif stop < 0:
-            stop = size + stop
-
-        if start >= size or stop < 0:
-            raise IndexError("index is out of range")
-
-        size = stop - start
-        shape[self.axis] = size
-        if step is not None:
-            slices = [slice(None)] * len(shape)
-            slices[self.axis] = slice(None, None, step)
-
-            return self.generate_data(shape=self.shape, dtype=dtype, **kwargs)[tuple(slices)]
-        else:
-            return self.generate_data(shape=self.shape, dtype=dtype, **kwargs)
-
-    def create_data_slice(self, slices, dtype=None, **kwargs):
-        size = self.get_length()
-        shape = self.shape
-
-        if slices is None:
-            start = None
-            stop = None
-            step = None
-            slices = [slice(None)] * len(shape)
-        elif isinstance(slices, slice):
-            start = slices.start
-            stop = slices.stop
-            step = slices.step
-            slices = [slice(None)] * len(shape)
-        else:
-            start = slices[self.axis].start
-            stop = slices[self.axis].stop
-            step = slices[self.axis].step
-
-        if dtype is None:
-            dtype = self.dtype
-
-        if start is None:
-            start = 0
-
-        if stop is None:
-            stop = size
-        elif stop < 0:
-            stop = size + stop
 
         if step is None:
             step = 1
 
-        if start >= size or stop < 0:
+        if start is None:
+            start = 0
+        elif start < 0:
+            start = size + start
+
+        if stop is None:
+            stop = size
+        elif stop < 0:
+            stop = size + stop
+
+        if start < 0 or start >= size or stop < 0 or stop > size:
             raise IndexError("index is out of range")
 
         size = stop - start
-        shape[self.axis] = size
-        slices[self.axis] = slice(None, None, step)
+        if size < 0:
+            raise IndexError("start index is greater than stop")
+        shape[self.axis] = size // step
 
-        return self.generate_data(shape=self.shape, dtype=dtype, **kwargs)[tuple(slices)]
+        if (frame is None and self.returns_frame) or frame:
+            new_blank = self.copy()
+            new_blank._shape = shape
+            return new_blank
+        else:
+            return self.generate_data(shape=shape, dtype=dtype, **kwargs)
 
-    def get_range(self, start=None, stop=None, step=None):
-        return self.create_data(start=start, stop=stop, step=step)
+    def create_data_slice(self, slice_: slice, dtype: np.dtype | str | None = None, **kwargs: Any) -> np.ndarray:
+        """Creates data from a slice.
 
-    # Shape
-    def validate_shape(self):
-        return True
+        Args:
+            slice_: The data range to create.
+            dtype: The data type to generate.
+            **kwargs: Keyword arguments for generating data.
 
-    def change_size(self, shape=None, **kwargs):
-        self.shape = shape
+        Returns:
+            The requested data.
+        """
+        return self.create_data_range(slice_.start, slice_.stop, slice_.step, dtype, **kwargs)
+
+    def create_slices_data(
+        self,
+        slices: Iterable[slice | int | None] | None = None,
+        dtype: np.dtype | str | None = None,
+        **kwargs: Any,
+    ) -> np.ndarray:
+        """Creates data from slices.
+
+        Args:
+            slices: The slices to generate the data from.
+            dtype: The data type of the generated data.
+            **kwargs: Keyword arguments for creating data.
+
+        Returns:
+            The requested data.
+        """
+        if dtype is None:
+            dtype = self.dtype
+
+        if slices is None:
+            shape = self.shape
+        else:
+            shape = []
+            for index, slice_ in enumerate(slices):
+                if isinstance(slice_, int):
+                    shape.append(1)
+                else:
+                    start = slice_.start
+                    stop = slice_.stop
+                    step = 1 if slice_.step is None else slice_.step
+
+                    if start < 0:
+                        start = self.shape[index] + start
+
+                    if stop < 0:
+                        stop = self.shape[index] + stop
+
+                    if start < 0 or start >= self.shape[index] or stop < 0 or stop > self.shape[index]:
+                        raise IndexError("index is out of range")
+
+                    size = stop - start
+                    if size < 0:
+                        raise IndexError("start index is greater than stop")
+                    shape.append(size // step)
+
+        return self.generate_data(shape, dtype=dtype, **kwargs)
+
+    def get_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        axis: int | None = None,
+        frame: bool | None = None,
+    ) -> ArrayFrameInterface | np.ndarray:
+        """Gets a range of data along an axis.
+
+        Args:
+            start: The first super index of the range to get.
+            stop: The length of the range to get.
+            step: The interval to get the data of the range.
+            axis: The axis to get the data along.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+
+        Returns:
+            The requested range.
+        """
+        return self.create_data_range(start=start, stop=stop, step=step, frame=frame)
 
     # Get Index
-    def get_index(self, indices, reverse=False, frame=True):
+    def get_from_index(self, indices: Sized | int, reverse: bool = False, frame: bool = True) -> Any:
+        """Get an item recursively from within this frame using indices.
+
+        Args:
+            indices: The indices used to get an item within this frame.
+            reverse: Determines if the indices should be used in the reverse order.
+            frame: Determines if the
+
+        Returns:
+            The item recursively from within this frame.
+        """
         if isinstance(indices, int):
             start = indices
         elif len(indices) == 1:
@@ -199,6 +327,39 @@ class BlankArrayFrame(ArrayFrameInterface):
             raise IndexError("index out of range")
 
         if frame:
-            return self
+            new_blank = self.copy()
+            new_blank._shape[self.axis] = 1
+            return new_blank
         else:
-            return self.create_data(start=start, stop=start + 1)
+            return self.create_data_range(start=start, stop=start + 1)
+
+    # Get Ranges of Data with Slices
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+        """Gets a range of data as an array.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested range as an array.
+        """
+        return self.create_slices_data(slices=slices)
+
+    def fill_slices_array(
+        self,
+        data_array: np.ndarray,
+        array_slices: Iterable[slice] | None = None,
+        slices: Iterable[slice | int | None] | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with blank data.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slices: The slices to fill within the data_array.
+            slices: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        data_array[array_slices] = self.create_slices_data(slices=slices)
+        return data_array
