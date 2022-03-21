@@ -206,7 +206,7 @@ class ArrayFrameInterface(BaseObject):
         pass
 
     @abstractmethod
-    def reshape(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
+    def resize(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
         """Changes the shape of the frame without changing its data."""
         pass
 

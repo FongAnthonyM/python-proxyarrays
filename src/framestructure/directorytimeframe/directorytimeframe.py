@@ -202,15 +202,23 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         if not self.path.is_dir():
             self.path.mkdir()
 
-    def require_frames(self) -> None:
-        """Creates the contained frames if they do not exist."""
+    def require_frames(self, **kwargs: Any) -> None:
+        """Creates the contained frames if they do not exist.
+
+        Args:
+            **kwargs: Keyword arguments for creating the files.
+        """
         for frame in self.frames:
             try:
-                frame.require()
+                frame.require(**kwargs)
             except AttributeError:
                 continue
 
-    def require(self) -> None:
-        """Create this directory and all the contained frames if they do not exist."""
+    def require(self, **kwargs: Any) -> None:
+        """Create this directory and all the contained frames if they do not exist.
+
+        Args:
+            **kwargs: Keyword arguments for requiring the directory.
+        """
         self.require_path()
-        self.require_frames()
+        self.require_frames(**kwargs)

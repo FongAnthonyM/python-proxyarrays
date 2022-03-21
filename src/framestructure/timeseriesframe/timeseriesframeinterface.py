@@ -312,7 +312,7 @@ class TimeSeriesFrameInterface(ArrayFrameInterface):
         """
         pass
 
-    # Get with Time
+    # Find Data
     def find_timestamp_range(
         self,
         start: datetime.datetime | float | None = None,
@@ -333,6 +333,9 @@ class TimeSeriesFrameInterface(ArrayFrameInterface):
         Returns:
             The timestamp range on the axis and the start_timestamp and stop indices.
         """
+        if isinstance(step, datetime.timedelta):
+            step = step.total_seconds()
+
         if start is None:
             start_index = 0
         else:
@@ -369,4 +372,7 @@ class TimeSeriesFrameInterface(ArrayFrameInterface):
 
         data = self.get_range(start=start_index, stop=stop_index, step=step, frame=False)
 
-        return FoundData(data, axis, axis[0], axis[-1], start_index, stop_index)
+        if axis is None:
+            return FoundData(None, None, None, None, None, None)
+        else:
+            return FoundData(data, axis, axis[0], axis[-1], start_index, stop_index)

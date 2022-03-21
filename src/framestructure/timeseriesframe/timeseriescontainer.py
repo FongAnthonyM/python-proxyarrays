@@ -1,5 +1,5 @@
 """ timeseriescontainer.py
-
+A time series frame container that wraps an array like object to give it time series frame functionality.
 """
 # Package Header #
 from ..header import *
@@ -855,7 +855,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             if tails:
                 return IndexDateTime(samples, datetime.datetime.fromtimestamp(self.end_timestamp), self.end_timestamp)
         else:
-            index = np.searchsorted(self.time_axis, timestamp, side="right") - 1
+            index = int(np.searchsorted(self.time_axis, timestamp, side="right") - 1)
             true_timestamp = self.time_axis[index]
             if approx or timestamp == true_timestamp:
                 return IndexDateTime(index, datetime.datetime.fromtimestamp(true_timestamp), true_timestamp)

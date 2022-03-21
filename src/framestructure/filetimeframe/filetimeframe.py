@@ -141,7 +141,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         if isinstance(file, self.file_type):
             self.file = file
         else:
-            raise ValueError("file must be a path or str")
+            raise ValueError(f"{type(self)} cannot set file with {type(file)}")
 
     @set_file.register(pathlib.Path)
     @set_file.register(str)
@@ -174,8 +174,12 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         self.file.close()
 
     @abstractmethod
-    def require(self) -> None:
-        """Create this directory and all the contained frames if they do not exist."""
+    def require(self, **kwargs: Any) -> None:
+        """Create this file if it does not exist.
+
+        Args:
+            **kwargs: Keyword arguments for requiring the directory.
+        """
         pass
 
     @abstractmethod
@@ -267,13 +271,3 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         """
         if self.mode == 'r':
             raise IOError("not writable")
-
-    # Setters
-    @abstractmethod
-    def get_timestamps(self) -> np.ndarray:
-        """Gets all the timestamps of this frame.
-
-        Returns:
-            A numpy array of the timestamps of this frame.
-        """
-        pass

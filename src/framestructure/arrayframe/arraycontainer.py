@@ -153,13 +153,12 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         """
         return True
 
-    def reshape(self, shape: Iterable[int] | None = None, dtype: np.dtype | str | None = None,
-                **kwargs: Any) -> None:
+    def resize(self, shape: Iterable[int] | None = None, dtype: np.dtype | str | None = None, **kwargs: Any) -> None:
         """Changes the shape of the frame without changing its data.
 
         Args:
             shape: The shape to change this frame to.
-            dtype: The data type of the data to reshape to.
+            dtype: The data type of the data to resize to.
             **kwargs: Any other kwargs for reshaping.
         """
         if self.mode == 'r':

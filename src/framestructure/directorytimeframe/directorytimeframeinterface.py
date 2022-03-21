@@ -87,8 +87,12 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         pass
 
     @abstractmethod
-    def require(self) -> None:
-        """Create this directory and all the contained frames if they do not exist."""
+    def require(self, **kwargs: Any) -> None:
+        """Create this directory and all the contained frames if they do not exist.
+
+        Args:
+            **kwargs: Keyword arguments for requiring the directory.
+        """
         pass
 
     # Getters
