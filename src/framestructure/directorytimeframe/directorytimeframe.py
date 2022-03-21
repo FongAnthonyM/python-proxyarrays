@@ -164,12 +164,18 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         self.clear_caches()
 
     # Frames
-    def frame_creation_condition(self, path: str | pathlib.Path, **kwargs: Any) -> bool:
+    def frame_creation_condition(
+        self,
+        path: str | pathlib.Path,
+        frame: DirectoryTimeFrameInterface | None = None,
+        **kwargs: Any,
+    ) -> bool:
         """Determines if a frame will be constructed.
 
         Args:
             path: The path to create a frame from.
-            **kwargs: Addtional keyword arguments for deciding if the frame will be created.
+            frame: A frame to check if it should be created.
+            **kwargs: Additional keyword arguments for deciding if the frame will be created.
 
         Returns:
             If the path can be constructed.
