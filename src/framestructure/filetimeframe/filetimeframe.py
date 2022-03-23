@@ -141,7 +141,7 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
         if isinstance(file, self.file_type):
             self.file = file
         else:
-            raise ValueError(f"{type(self)} cannot set file with {type(file)}")
+            raise TypeError(f"{type(self)} cannot set file with {type(file)}")
 
     @set_file.register(pathlib.Path)
     @set_file.register(str)

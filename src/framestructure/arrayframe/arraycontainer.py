@@ -13,8 +13,8 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable, Sized
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, Union
 
 # Third-Party Packages #
 import numpy as np
@@ -268,7 +268,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         step: int | None = None,
         axis: int | None = None,
         frame: bool | None = None,
-    ) -> "ArrayContainer" | np.ndarray:
+    ) -> Union["ArrayContainer", np.ndarray]:
         """Gets a range of data along the main axis.
 
         Args:
@@ -331,7 +331,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
     # Get Index
     def get_from_index(
         self,
-        indices: Sized[int | slice | Iterable] | int | slice,
+        indices: Iterable[int | slice | Iterable] | int | slice,
         reverse: bool = False,
         frame: bool | None = True,
     ) -> Any:
@@ -339,7 +339,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
 
         Args:
             indices: The indices to find the data from.
-            reverse:  Determines, when using a Sized of indices, if it will be read in reverse order.
+            reverse:  Determines, when using a Iterable of indices, if it will be read in reverse order.
             frame: Determines if returned object is a Frame or an array, default is this object's setting.
 
         Returns:
@@ -381,7 +381,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         Returns:
             The original array but filled.
         """
-        data_array[array_slices] = self.data[slices]
+        data_array[tuple(array_slices)] = self.data[tuple(slices)]
         return data_array
 
 

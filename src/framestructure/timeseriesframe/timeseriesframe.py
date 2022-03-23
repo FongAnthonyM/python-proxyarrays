@@ -143,22 +143,7 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
             return self.get_sample_period()
 
     # Instance Methods
-    # Constructors/Destructors
-    def construct(
-        self, 
-        frames: Iterable[TimeSeriesFrameInterface] | None = None,
-        mode: str = None,
-        update: bool | None = None,
-    ) -> None:
-        """Constructs this object.
-
-        Args:
-            frames: An iterable holding frames/objects to store in this frame.
-            mode: Determines if the contents of this frame are editable or not.
-            update: Determines if this frame will start_timestamp updating or not.
-        """
-        super().construct(frames=frames, mode=mode, update=update)
-
+    # Shorting
     def frame_sort_key(self, frame: Any) -> Any:
         """The key to be used in sorting with the frame as the sort basis.
 
@@ -476,15 +461,15 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
         length = (stop - start) // step
 
         timestamps = np.empty(length)
-        timestamps.fill(np.nan)
+        # timestamps.fill(np.nan)
 
-        return self.fill_timestamps_array(data_array=timestamps)
+        return self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
     
     def fill_timestamps_array(
         self,
         data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
+        array_slice: slice = slice(None),
+        slice_: slice = slice(None),
     ) -> np.ndarray:
         """Fills a given array with timestamps from the contained frames/objects.
 
@@ -502,23 +487,19 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
-        slice_.start = range_frame_indices.start.inner_index
-        slice_.stop = inner_stop = range_frame_indices.stop.inner_index
+        inner_start = range_frame_indices.start.inner_index
+        inner_stop = range_frame_indices.stop.inner_index
+        slice_ = slice(inner_start, inner_stop, slice_.step)
         
         # Get start_timestamp and stop array locations
-        if array_slice is None:
-            array_slice = slice(None)
-        else:
-            array_slice = list(array_slice)
-
         array_start = 0 if array_slice.start is None else array_slice.start
         array_stop = da_shape[self.axis] if array_slice.stop is None else array_slice.stop
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
-            "array_start": array_slice,
-            "slices": slice_
+            "array_slice": array_slice,
+            "slice_": slice_
         }
 
         # Get Data
@@ -527,28 +508,26 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
         else:
             # First Frame
             frame = self.frames[start_frame]
-            f_shape = frame.max_shape
-            d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-            array_slice.stop = array_start + d_size
-            slice_.stop = None
-            frame.fill_timestamps_frame(**fill_kwargs)
+            d_size = len(frame) - inner_start
+            a_stop = array_start + d_size
+            fill_kwargs["array_slice"] = slice(array_start, a_stop, array_slice.step)
+            fill_kwargs["slice_"] = slice(inner_start, None, slice_.step)
+            frame.fill_timestamps_array(**fill_kwargs)
 
             # Middle Frames
-            slice_.stop = None
+            fill_kwargs["slice_"] = slice(None, None, slice_.step)
             for frame in self.frames[start_frame + 1:stop_frame]:
-                array_slice.start = array_slice.stop
-                array_slice.start += 1
-                f_shape = frame.max_shape
-                d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-                array_slice.stop = array_slice.start + d_size
-                frame.fill_timestamp_frame(**fill_kwargs)
+                d_size = len(frame)
+                a_start = a_stop
+                a_stop = a_start + d_size
+                fill_kwargs["array_slice"] = slice(a_start, a_stop, array_slice.step)
+                frame.fill_timestamps_array(**fill_kwargs)
 
             # Last Frame
-            array_slice.start = array_slice.stop
-            array_slice.start += 1
-            array_slice.stop = array_stop
-            fill_kwargs["stop"] = inner_stop
-            frame.fill_timestamp_frame(**fill_kwargs)
+            a_start = a_stop
+            fill_kwargs["array_slice"] = slice(a_start, array_stop, array_slice.step)
+            fill_kwargs["slice_"] = slice(None, inner_stop, slice_.step)
+            self.frames[stop_frame].fill_timestamps_array(**fill_kwargs)
 
         return data_array
 
@@ -615,10 +594,13 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
         true_datetime = None
         true_timestamp = None
 
-        if index:
-            if timestamp <= frame.end_timestamp:
-                location, true_datetime, true_timestamp = frame.find_time_index(timestamp=timestamp, approx=approx)
-                super_index = self.frame_start_indices[index] + location
+        if index is not None:
+            location, true_datetime, true_timestamp = frame.find_time_index(
+                timestamp=timestamp,
+                approx=approx,
+                tails=tails,
+            )
+            super_index = self.frame_start_indices[index] + location
                 
         return IndexDateTime(super_index, true_datetime, true_timestamp)
 

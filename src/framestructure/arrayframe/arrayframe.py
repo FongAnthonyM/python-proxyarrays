@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable, Sized
+from collections.abc import Iterable
 from bisect import bisect_right
 from typing import Any, NamedTuple
 from warnings import warn
@@ -163,8 +163,20 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         except AttributeError:
             return self.get_frame_end_indices()
 
+    # Container Methods
+    def __len__(self) -> int:
+        """Gets this object's length.
+
+        Returns:
+            The number of nodes in this object.
+        """
+        try:
+            return self.get_length.caching_call()
+        except AttributeError:
+            return self.get_length()
+
     # Arithmetic
-    def __add__(self, other: "ArrayFrame" | list):
+    def __add__(self, other: ArrayFrameInterface | list):
         """When the add operator is called it concatenates this frame with other frames or a list."""
         return self.concatenate(other=other)
 
@@ -509,7 +521,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         self.frames.sort(key=key, reverse=reverse)
 
     @singlekwargdispatchmethod("other")
-    def concatenate(self, other: "ArrayFrame" | list[ArrayFrameInterface]) -> ArrayFrameInterface:
+    def concatenate(self, other: ArrayFrameInterface | list[ArrayFrameInterface]) -> ArrayFrameInterface:
         """Concatenates this frame object with another frame or a list.
 
         Args:
@@ -521,7 +533,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         raise TypeError(f"A {type(other)} cannot be used to concatenate a {type(self)}.")
 
     @concatenate.register
-    def _(self, other: "ArrayFrame") -> ArrayFrameInterface:
+    def _(self, other: ArrayFrameInterface) -> ArrayFrameInterface:
         """Concatenates this frame object with another frame.
 
         Args:
@@ -532,7 +544,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         """
         return type(self)(frames=self.frames + other.frames, update=self.is_updating)
 
-    @concatenate.register
+    @concatenate.register(list)
     def _(self, other: list[ArrayFrameInterface]) -> ArrayFrameInterface:
         """Concatenates this frame object with another list.
 
@@ -574,7 +586,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
     @singlekwargdispatchmethod("indices")
     def get_from_index(
         self,
-        indices: Sized[int | slice | Iterable] | int | slice,
+        indices: Iterable[int | slice | Iterable] | int | slice,
         reverse: bool = False,
         frame: bool | None = True,
     ) -> Any:
@@ -582,7 +594,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
 
         Args:
             indices: The indices to find the data from.
-            reverse:  Determines, when using a Sized of indices, if it will be read in reverse order.
+            reverse:  Determines, when using a Iterable of indices, if it will be read in reverse order.
             frame: Determines if returned object is a Frame or an array, default is this object's setting.
 
         Returns:
@@ -590,10 +602,10 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         """
         raise TypeError(f"A {type(indices)} be used to get from super_index for a {type(self)}.")
 
-    @get_from_index.register(Sized)
+    @get_from_index.register(Iterable)
     def _(
         self,
-        indices: Sized[int | slice | Iterable[slice | int | None]],
+        indices: Iterable[int | slice | Iterable[slice | int | None]],
         reverse: bool = False,
         frame: bool | None = True,
     ) -> ArrayFrameInterface | np.ndarray:
@@ -791,7 +803,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
             else:
                 t_shape[i] = 1
         data = np.empty(shape=t_shape)
-        data.fill(np.nan)
+        # data.fill(np.nan)
 
         # Get range via filling the array with values
         return self.fill_slices_array(data_array=data, slices=full_slices)
@@ -820,8 +832,9 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
-        axis_slice.start = range_frame_indices.start.inner_index
-        axis_slice.stop = inner_stop = range_frame_indices.stop.inner_index
+        inner_start = range_frame_indices.start.inner_index
+        inner_stop = range_frame_indices.stop.inner_index
+        slices[self.axis] = slice(inner_start, inner_stop, axis_slice.step)
 
         # Get start and stop data array locations
         if array_slices is None:
@@ -836,38 +849,36 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
-            "array_start": array_slices,
+            "array_slices": array_slices,
             "slices": slices
         }
 
         # Get Data
         if start_frame == stop_frame:
-            self.frames[start_frame].fill_ranges_array(**fill_kwargs)
+            self.frames[start_frame].fill_slices_array(**fill_kwargs)
         else:
             # First Frame
             frame = self.frames[start_frame]
-            f_shape = frame.max_shape
-            d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-            da_axis_slice.stop = array_start + d_size
-            axis_slice.stop = None
-            frame.fill_range_frame(**fill_kwargs)
+            d_size = len(frame) - inner_start
+            a_stop = array_start + d_size
+            array_slices[self.axis] = slice(array_start, a_stop, da_axis_slice.step)
+            slices[self.axis] = slice(inner_start, None, axis_slice.step)
+            frame.fill_slices_array(**fill_kwargs)
 
             # Middle Frames
-            axis_slice.stop = None
+            slices[self.axis] = slice(None, None, axis_slice.step)
             for frame in self.frames[start_frame + 1:stop_frame]:
-                da_axis_slice.start = da_axis_slice.stop
-                da_axis_slice.start += 1
-                f_shape = frame.max_shape
-                d_size = np.array(f_shape + (0,) * (len(da_shape) - len(f_shape)))
-                da_axis_slice.stop = da_axis_slice.start + d_size
-                frame.fill_range_frame(**fill_kwargs)
+                d_size = len(frame)
+                a_start = a_stop
+                a_stop = a_start + d_size
+                array_slices[self.axis] = slice(a_start, a_stop, da_axis_slice.step)
+                frame.fill_slices_array(**fill_kwargs)
 
             # Last Frame
-            da_axis_slice.start = da_axis_slice.stop
-            da_axis_slice.start += 1
-            da_axis_slice.stop = array_stop
-            fill_kwargs["stop"] = inner_stop
-            frame.fill_range_frame(**fill_kwargs)
+            a_start = a_stop
+            array_slices[self.axis]= slice(a_start, array_stop, da_axis_slice.step)
+            slices[self.axis] = slice(None, inner_stop, axis_slice.step)
+            self.frames[stop_frame].fill_slices_array(**fill_kwargs)
 
         return data_array
 
@@ -896,7 +907,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
             axis = self.axis
 
         slices = [slice(None)] * len(self.max_shape)
-        slices[axis] = slice(start=start, stop=stop, step=step)
+        slices[axis] = slice(start, stop, step)
         if (frame is None and self.returns_frame) or frame:
             return self.get_slices_frame(slices=slices)
         else:

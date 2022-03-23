@@ -45,6 +45,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: Determines if the contents of this frame are editable or not.
         update: Determines if this frame will start_timestamp updating or not.
         open_: Determines if the frames will remain open after construction.
+        load: Determines if the frames will be constructed.
         **kwargs: The keyword arguments to create contained frames.
         init: Determines if this object will construct.
     """
@@ -76,6 +77,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: str = 'a',
         update: bool = False,
         open_: bool = False,
+        load: bool = True,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -128,6 +130,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: str = 'a',
         update: bool = False,
         open_: bool = False,
+        load: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -138,6 +141,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
             mode: Determines if the contents of this frame are editable or not.
             update: Determines if this frame will start_timestamp updating or not.
             open_: Determines if the frames will remain open after construction.
+            load: Determines if the frames will be constructed.
             **kwargs: The keyword arguments to create contained frames.
         """
         super().construct(frames=frames, mode=mode, update=update)
@@ -145,7 +149,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         if path is not None:
             self.path = path
 
-        if path is not None:
+        if load:
             self.construct_frames(open_=open_, mode=self.mode, **kwargs)
 
     def construct_frames(self, open_=False, **kwargs) -> None:

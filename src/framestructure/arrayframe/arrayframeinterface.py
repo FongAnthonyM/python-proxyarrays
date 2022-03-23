@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator
-from typing import Any
+from typing import Any, Union
 
 # Third-Party Packages #
 from baseobjects import singlekwargdispatchmethod
@@ -44,7 +44,7 @@ class ArrayFrameInterface(BaseObject):
         # New  Attributes #
         self._is_updating: bool = False
 
-        self._spawn_editable: AnyCallable = self._default_spawn_editable()
+        self._spawn_editable: AnyCallable = self._default_spawn_editable
 
         self.returns_frame: bool = False
 
@@ -106,7 +106,7 @@ class ArrayFrameInterface(BaseObject):
         Args:
             method: The function or method name to set the _spawn_editable method to.
         """
-        raise ValueError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
+        raise TypeError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
 
     @set_spawn_editable.register(Callable)
     def _(self, method: AnyCallable) -> None:
@@ -265,7 +265,7 @@ class ArrayFrameInterface(BaseObject):
         step: int | None = None,
         axis: int | None = None,
         frame: bool | None = None,
-    ) -> "ArrayFrameInterface" | np.ndarray:
+    ) -> Union["ArrayFrameInterface", np.ndarray]:
         """Gets a range of data along an axis.
 
         Args:
