@@ -20,7 +20,7 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from dspobjects.dataclasses import IndexDateTime, FoundTimeRange, FoundData
+from dspobjects.dataclasses import IndexDateTime, FoundTimeRange, FoundData, FoundDataRange
 import numpy as np
 
 # Local Packages #
@@ -390,7 +390,7 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         step: int | float | datetime.timedelta | None = None,
         approx: bool = False,
         tails: bool = False,
-    ) -> FoundData:
+    ) -> FoundDataRange:
         """Finds the data range on the axis inbetween two times, can give approximate values.
 
         Args:
@@ -407,4 +407,4 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
 
         data = self.get_range(start=start_index, stop=stop_index, step=step, frame=False)
 
-        return FoundData(data, axis, axis[0], axis[-1], start_index, stop_index)
+        return FoundDataRange(data, axis, axis[0], axis[-1], start_index, stop_index)
