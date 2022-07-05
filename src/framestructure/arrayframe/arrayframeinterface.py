@@ -19,7 +19,7 @@ from typing import Any, Union
 
 # Third-Party Packages #
 from baseobjects import singlekwargdispatchmethod
-from baseobjects.typing_ import AnyCallable
+from baseobjects.typing import AnyCallable
 from baseobjects import BaseObject
 import numpy as np
 
