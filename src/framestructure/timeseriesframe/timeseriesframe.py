@@ -569,7 +569,12 @@ class TimeSeriesFrame(ArrayFrame, TimeSeriesFrameInterface):
         else:
             index = np.searchsorted(times, timestamp, side="right") - 1
 
-        return IndexValue(index, None if index is None else self.frames[index]) 
+        if index is None:
+            raise IndexError("Frame not found. Timestamp out of range")
+
+        frame = self.frames[index]
+
+        return IndexValue(index, frame)
 
     def find_time_index(
         self,
