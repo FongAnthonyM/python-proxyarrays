@@ -267,7 +267,12 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         self.timeless_caching(get_caches=get_caches)
         for frame in self.frames:
             frame.disable_updating(get_caches=get_caches)
-
+    
+    def clear(self) -> None:
+        """Clears this object."""
+        self.frames.clear()
+        self.clear_caches()
+    
     # Getters
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
     def get_any_updating(self) -> bool:
@@ -437,7 +442,7 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         Returns:
             The data of interest from within this frame.
         """
-        return self.get_range_slice(item)
+        return self.get_slice(item)
 
     @get_item.register
     def _(self, item: Iterable) -> Any:

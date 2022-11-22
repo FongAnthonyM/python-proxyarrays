@@ -30,7 +30,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
 
     Attributes:
         target_shape: The shape that frame should be and if resized the shape it will default to.
-        is_truncate:
+        is_truncate: Determines if the other frame's data will be truncated to fit this frame's shape.
         axis: The axis of the data which this frame extends for the contained data frames.
         data: The array to wrap.
 

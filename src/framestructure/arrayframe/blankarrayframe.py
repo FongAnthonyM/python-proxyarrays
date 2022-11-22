@@ -361,5 +361,5 @@ class BlankArrayFrame(ArrayFrameInterface):
         Returns:
             The original array but filled.
         """
-        data_array[array_slices] = self.create_slices_data(slices=slices)
+        data_array[tuple(array_slices)] = self.create_slices_data(slices=slices)
         return data_array

@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from collections.abc import Iterable
 import datetime
+import decimal
 import math
 from typing import Any
 
@@ -35,10 +36,13 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
     This frame does not store a blank array, rather it generates an array whenever data would be accessed.
 
     Attributes:
-        _start: The start timestamp of this frame.
+        _true_start: The true start timestamp of this frame.
+        _assigned_start: The assigned start timestamp of this frame.
         _true_end: The true end timestamp of this frame.
         _assigned_end: The assigned end timestamp of this frame.
         _sample_rate: The sample rate of this frame.
+        _assigned_length: The assigned lenght of this frame.
+        is_infinite: Determines if this blank frame is infinite.
 
     Args:
         start: The start time of this frame.
@@ -47,6 +51,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         sample_period: The sample period of this frame.
         shape: The assigned shape that this frame will be.
         dtype: The data type of the generated data.
+        is_infinite: Determines if this blank frame is infinite.
         init: Determines if this object will construct.
     """
     # Magic Methods
@@ -59,15 +64,19 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         sample_period: float | None = None,
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
+        is_infinite: bool | None = None,
         init: bool = True,
     ) -> None:
         # Parent Attributes #
         super().__init__(init=False)
 
         # New Attributes #
-        self._start: float | None = None
-        self._true_end: float | None = None
+        self._true_start: decimal.Decimal | None = None
+        self._assigned_start: float | None = None
+        self._true_end: decimal.Decimal | None = None
         self._assigned_end: float | None = None
+        self._assigned_length: int | None = None
+        self.is_infinite: bool = False
 
         self._sample_rate: float | None = None
 
@@ -80,6 +89,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
                 sample_period=sample_period,
                 shape=shape,
                 dtype=dtype,
+                is_infinite=is_infinite,
             )
 
     @property
@@ -93,29 +103,50 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         self.refresh()
 
     @property
+    def true_start_timestamp(self) -> float:
+        """The true start_timestamp timestamp of this frame."""
+        return float(self._true_start)
+
+    @true_start_timestamp.setter
+    def true_start_timestamp(self, value: datetime.datetime | float) -> None:
+        if isinstance(value, datetime.datetime):
+            self._true_start = decimal.Decimal(str(value.timestamp()))
+        else:
+            self._true_start = decimal.Decimal(str(value))
+
+    @property
+    def assigned_start_timestamp(self) -> float:
+        """The assigned start_timestamp for this frame."""
+        return self._assigned_start
+
+    @assigned_start_timestamp.setter
+    def assigned_start_timestamp(self, value: datetime.datetime | float) -> None:
+        if isinstance(value, datetime.datetime):
+            self._assigned_start = value.timestamp()
+        else:
+            self._assigned_start = value
+        self.refresh()
+    
+    @property
     def start_timestamp(self) -> float:
         """The start timestamp of this frame."""
-        return self._start
+        return self.true_start_timestamp
 
     @start_timestamp.setter
     def start_timestamp(self, value: datetime.datetime | float) -> None:
-        if isinstance(value, datetime.datetime):
-            self._start = value.timestamp()
-        else:
-            self._start = value
-        self.refresh()
+        self.assigned_start_timestamp = value
 
     @property
     def true_end_timestamp(self) -> float:
         """The true end_timestamp timestamp of this frame."""
-        return self._true_end
+        return float(self._true_end)
 
     @true_end_timestamp.setter
-    def true_end_timestamp(self, value: datetime.datetime | float):
+    def true_end_timestamp(self, value: datetime.datetime | float) -> None:
         if isinstance(value, datetime.datetime):
-            self._true_end = value.timestamp()
+            self._true_end = decimal.Decimal(str(value.timestamp()))
         else:
-            self._true_end = value
+            self._true_end = decimal.Decimal(str(value))
 
     @property
     def assigned_end_timestamp(self) -> float:
@@ -123,20 +154,20 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         return self._assigned_end
 
     @assigned_end_timestamp.setter
-    def assigned_end_timestamp(self, value: datetime.datetime | float):
+    def assigned_end_timestamp(self, value: datetime.datetime | float) -> None:
         if isinstance(value, datetime.datetime):
-            self._assigned_end = value
+            self._assigned_end = value.timestamp()
         else:
-            self._assigned_end = datetime.datetime.fromtimestamp(value)
+            self._assigned_end = value
         self.refresh()
 
     @property
-    def end_timestamp(self):
+    def end_timestamp(self) -> float:
         """The end timestamp for this object which is calculated based on the sample rate and start timestamp."""
         return self.true_end_timestamp
 
     @end_timestamp.setter
-    def end_timestamp(self, value):
+    def end_timestamp(self, value) -> None:
         self.assigned_end_timestamp = value
 
     @property
@@ -179,10 +210,10 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
     @property
     def sample_period(self) -> float:
         """The sample period of this frame."""
-        return 1 / self.sample_rate
+        return round(1 / self.sample_rate, 9)
 
     @sample_period.setter
-    def sample_period(self, value):
+    def sample_period(self, value) -> None:
         self.sample_rate = 1 / value
 
     # Instance Methods
@@ -195,6 +226,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         sample_period: float | None = None,
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
+        is_infinite: bool | None = False,
     ) -> None:
         """Construct this object
 
@@ -205,12 +237,13 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
             sample_period: The sample period of this frame.
             shape: The assigned shape that this frame will be.
             dtype: The data type of the generated data.
+            is_infinite: Determines if this blank frame is infinite.
         """
         if start is not None:
             if isinstance(start, datetime.datetime):
-                self._start = start.timestamp()
+                self._assigned_start = start.timestamp()
             else:
-                self._start = start
+                self._assigned_start = start
 
         if end is not None:
             if isinstance(end, datetime.datetime):
@@ -218,11 +251,17 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
             else:
                 self._assigned_end = end
 
+        if shape is not None:
+            self._assigned_length = shape[self.axis]
+
         if sample_period is not None:
-            self._sample_rate = 1 / sample_period
+            self._sample_rate = round(1 / sample_period, 9)
 
         if sample_rate is not None:
             self._sample_rate = sample_rate
+
+        if is_infinite is not None:
+            self.is_infinite = is_infinite
 
         super().construct(shape=shape, dtype=dtype)
 
@@ -236,25 +275,45 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         except AttributeError:
             pass
 
-    # Getters
+    # Getters and Setters
     def get_length(self) -> int:
         """Gets the length of the data of this frame.
 
-        Sets the true end to the closest whole sample base on the start timestamp.
+        Sets the true start and end to the closest whole sample base on the set attributes.
 
         Returns:
             The length of this frame.
         """
-        start = self.start_timestamp
+        start = self.assigned_start_timestamp
         end = self.assigned_end_timestamp
+        length = self._assigned_length
 
-        size = math.floor((end - start) * self.sample_rate)
-        r = math.remainder((end - start), self.sample_period)
-        remain = r if r >= 0 else self.sample_period + r
-        self.true_end_timestamp = end - remain
-        self.shape[self.axis] = size
+        if self.is_infinite:
+            self._true_start = None if start is None else decimal.Decimal(str(start))
+            self._true_end = None if end is None else decimal.Decimal(str(end))
+            return 0
 
-        return size
+        if length is None:
+            length = int((end - start) * self.sample_rate)
+        elif self.sample_rate is None:
+            self._sample_rate = round(length / (end - start), 9)
+
+        if start is not None:
+            start = decimal.Decimal(str(start))
+            end = (start * 10 ** 9 + length * decimal.Decimal(str(self.sample_period)) * 10 ** 9) / 10 ** 9
+        if end is not None:
+            end = decimal.Decimal(str(end))
+            start = (end * 10 ** 9 - length * decimal.Decimal(str(self.sample_period)) * 10 ** 9) / 10 ** 9
+        else:
+            raise ValueError("Either start or end must be assigned.")
+
+        self._true_start = start
+        self._true_end = end
+
+        new_shape = list(self._shape)
+        new_shape[self.axis] = length
+        self._shape = tuple(new_shape)
+        return length
 
     def get_start_timestamp(self) -> float | None:
         """Gets the start_timestamp timestamp of this frame.
@@ -263,6 +322,19 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
             The start_timestamp timestamp of this frame.
         """
         return self.start_timestamp
+    
+    def set_start(self, value: datetime.datetime | float) -> None:
+        """Sets the assigned start time.
+
+        Args:
+            value: The time to set.
+        """
+        if isinstance(value, datetime.datetime):
+            self._assigned_start = value.timestamp()
+        else:
+            self._assigned_start = value
+
+        self.refresh()
 
     def get_end_timestamp(self) -> float | None:
         """Gets the end_timestamp timestamp of this frame.
@@ -271,7 +343,19 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
             The end_timestamp timestamp of this frame.
         """
         return self.true_end_timestamp
-
+    
+    def set_end(self, value: datetime.datetime | float) -> None:
+        """Sets the assigned end time.
+        
+        Args:
+            value: The time to set.
+        """
+        if isinstance(value, datetime.datetime):
+            self._assigned_end = value.timestamp()
+        else:
+            self._assigned_end = value
+        self.refresh()
+        
     def get_sample_rate(self) -> float:
         """Get the sample rate of this frame from the contained frames/objects.
 
@@ -369,8 +453,8 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         self,
         start: int | None = None,
         stop: int | None = None,
-        step: int | None = None,
-        dtype: np.dtype | str | None = None,
+        step: int = 1,
+        dtype: np.dtype | str = "f8",
     ) -> np.ndarray:
         """Creates an array of timestamps from range style input.
 
@@ -383,31 +467,45 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         Returns:
             The requested timestamps.
         """
-        samples = self.get_length()
-        frame_start = self.start_timestamp
+        if not self.is_infinite:
+            samples = self.get_length()
 
-        if dtype is None:
-            dtype = "f8"
+        period_ns = decimal.Decimal(str(self.sample_period)) * 10 ** 9 * step
+        if self.assigned_start_timestamp is not None:
+            ns = self._true_start * 10 ** 9
 
-        if start is None:
-            start = 0
+            if start is None:
+                start = 0
+            elif start < 0:
+                start = samples + start
 
-        if stop is None:
-            stop = samples
-        elif stop < 0:
-            stop = samples + stop
+            if stop is None:
+                stop = samples
+            elif stop < 0:
+                stop = samples + stop
 
-        if step is None:
-            step = 1
+            if start < 0 or stop < 0:
+                raise IndexError("index is out of range")
+        else:
+            ns = self._true_end * 10 ** 9
 
-        if start >= samples or stop < 0:
-            raise IndexError("index is out of range")
+            if start is None:
+                start = -samples
+            elif start > 0:
+                start = start - samples
 
-        start_timestamp = frame_start + self.sample_rate * start
-        stop_timestamp = frame_start + self.sample_rate * stop
-        period = self.sample_period * step
+            if stop is None:
+                stop = 0
+            elif stop > 0:
+                stop = stop - samples
 
-        return np.arange(start_timestamp, stop_timestamp, period, dtype=dtype)
+            if start > 0 or stop > 0:
+                raise IndexError("index is out of range")
+
+        start_adjusted = int(ns + start * period_ns)
+        stop_adjusted = int(ns + stop * period_ns)
+
+        return np.arange(start_adjusted, stop_adjusted, float(period_ns), dtype=dtype) / 10 ** 9
 
     def create_timestamp_slice(self, slice_: slice, dtype: np.dtype | str | None = None) -> np.ndarray:
         """Creates a range of timestamps from a slice.
@@ -444,7 +542,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
         self,
         start: int | None = None,
         stop: int | None = None,
-        step: int | None = None,
+        step: int = 1,
     ) -> np.ndarray:
         """Gets a range of timestamps along an axis.
 
@@ -484,6 +582,70 @@ class BlankTimeFrame(BlankArrayFrame, TimeSeriesFrameInterface):
             All the times as a tuple of datetimes.
         """
         return tuple(datetime.datetime.fromtimestamp(ts) for ts in self.create_timestamp_range())
+
+    # Create Data
+    def create_data_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        dtype: np.dtype | str | None = None,
+        frame: bool | None = None,
+        **kwargs: Any,
+    ) -> np.ndarray:
+        """Creates the data from range style input.
+
+        Args:
+            start: The start index to get the data from.
+            stop: The stop index to get the data from.
+            step: The interval between data to get.
+            dtype: The data type to generate.
+            frame: Determines if returned object is a Frame or an array, default is this object's setting.
+            **kwargs: Keyword arguments for generating data.
+
+        Returns:
+            The data requested.
+        """
+        if (frame is None and self.returns_frame) or frame:
+            new_blank = self.copy()
+            new_blank._shape = shape
+            return new_blank
+        else:
+            return self.create_timestamp_range(start=start, stop=stop, step=step, dtype=dtype)
+
+    def create_slices_data(
+        self,
+        slices: Iterable[slice | int | None] | None = None,
+        dtype: np.dtype | str | None = None,
+        **kwargs: Any,
+    ) -> np.ndarray:
+        """Creates data from slices.
+
+        Args:
+            slices: The slices to generate the data from.
+            dtype: The data type of the generated data.
+            **kwargs: Keyword arguments for creating data.
+
+        Returns:
+            The requested data.
+        """
+        if slices is None:
+            start = None
+            stop = None
+            step = 1
+
+            shape = slice(None),
+        else:
+            shape = list(slices)
+
+            slice_ = shape[self.axis]
+            start = slice_.start
+            stop = slice_.stop
+            step = 1 if slice_.step is None else slice_.step
+
+            shape[self.axis] = slice(None)
+
+        return self.create_timestamp_range(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]
 
     # Find
     def find_time_index(
