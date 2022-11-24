@@ -20,6 +20,7 @@ from typing import Any
 
 # Third-Party Packages #
 from dspobjects.dataclasses import IndexDateTime, FoundTimeRange, FoundData
+from dspobjects.time import Timestamp
 import numpy as np
 
 # Local Packages #
@@ -229,7 +230,7 @@ class TimeSeriesFrameInterface(ArrayFrameInterface):
         pass
 
     @abstractmethod
-    def get_datetimes(self) -> tuple[datetime.datetime]:
+    def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
 
         Returns:
