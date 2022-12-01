@@ -70,6 +70,23 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         """The shape of this frame, which is the wrapped data."""
         return self.get_shape()
 
+    # Numpy ndarray Methods
+    def __array__(self, dtype: Any = None) -> np.ndarray:
+        """Returns an ndarray representation of this object with an option to cast it to a dtype.
+
+        Allows this object to be used as ndarray in numpy functions.
+
+        Args:
+            dtype: The dtype to cast the array to.
+
+        Returns:
+            The ndarray representation of this object.
+        """
+        if dtype is None:
+            return self.data
+        else:
+            return self.data.as_type(dtype)
+
     # Instance Methods
     # Constructors/Destructors
     def construct(

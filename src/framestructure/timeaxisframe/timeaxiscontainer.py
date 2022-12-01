@@ -1,5 +1,5 @@
-""" timeseriescontainer.py
-A time series frame container that wraps an array like object to give it time series frame functionality.
+""" timeaxiscontainer.py
+A time axis frame container that wraps an array like object to give it time axis frame functionality.
 """
 # Package Header #
 from ..header import *
@@ -20,45 +20,46 @@ import math
 from typing import Any, Callable
 
 # Third-Party Packages #
+from baseobjects.cachingtools import timed_keyless_cache
 from baseobjects.typing import AnyCallable
 from dspobjects import Resample
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array
-from dspobjects.time import Timestamp
+from dspobjects.time import Timestamp, nanostamp
 import numpy as np
-from scipy import interpolate
 
 # Local Packages #
 from ..arrayframe import ArrayContainer
-from ..timeframe import TimeFrameInterface
-from ..timeaxisframe import TimeAxisContainer, TimeAxisFrameInterface
-from .timeseriesframeinterface import TimeSeriesFrameInterface
+from ..timeframe import TimeFrameInterface 
+from .timeaxisframeinterface import TimeAxisFrameInterface
 
 
-# Todo: Make an interpolator object
-# Todo: Make implement data mapping to reduce memory
 # Definitions #
 # Classes #
-class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
-    """A time series frame container that wraps an array like object to give it time series frame functionality.
+class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
+    """A time axis frame container that wraps an array like object to give it time axis frame functionality.
 
     Attributes:
         switch_algorithm_size: Determines at what point to change the continuity checking algorithm.
         target_sample_rate: The sample rate that this frame should be.
         time_tolerance: The allowed deviation a sample can be away from the sample period.
-        fill_type: The type that will fill discontinuous data.
-        interpolate_type: The interpolation type for realigning data for correct times.
-        interpolate_fill_value: The fill type for the missing values.
-        _resampler: The object that will be used for resampling the data.
-        blank_generator: The method for creating blank data.
-        tail_correction: The method for correcting the tails of the data.
-        time_axis: The timestamps of each sample of the data.
+        _precise: Determines if this frame returns nanostamps (True) or timestamps (False).
+        _sample_rate: The sample rate of the data.
+        tzinfo: The time zone of the timestamps.
+        _data_method: The method for getting the correct data.
+        _blank_generator: The method for creating blank data.
+        _tail_correction: The method for correcting the tails of the data.
+        _nanostamps: The nanosecond timestamps of this frame.
+        _timestamps: The timestamps of this frame.
 
     Args:
         data: The numpy array for this frame to wrap.
         time_axis: The time axis of the data.
         shape: The shape that frame should be and if resized the shape it will default to.
         sample_rate: The sample rate of the data.
+        sample_period: The sample period of this frame.
+        precise: Determines if this frame returns nanostamps (True) or timestamps (False).
+        tzinfo: The time zone of the timestamps.
         mode: Determines if the contents of this frame are editable or not.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
@@ -68,7 +69,6 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
     def __init__(
         self,
         data: np.ndarray | None = None,
-        time_axis: TimeAxisFrameInterface | np.ndarray | None = None,
         shape: Iterable[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
@@ -89,26 +89,23 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         # Time
         self.target_sample_rate: float | None = None
         self.time_tolerance: float = 0.000001
-
-        # Interpolate
-        self.interpolate_type: str = "linear"
-        self.interpolate_fill_value: str = "extrapolate"
-
-        # Object Assignment #
-        self._resampler: Resample | None = None
+        self._precise: bool = False
+        self._sample_rate: Decimal | None = None
+        self.tzinfo: datetime.tzinfo | None = None
 
         # Method Assignment #
-        self.blank_generator = nan_array
+        self._data_method: AnyCallable = self._get_timestamps.__func__
+        self._blank_generator = nan_array
         self._tail_correction = self.default_tail_correction.__func__
 
         # Containers #
-        self.time_axis: TimeAxisFrameInterface | None = None
+        self._nanostamps: np.ndarray | None = None
+        self._timestamps: np.ndarray | None = None
 
         # Object Construction #
         if init:
             self.construct(
                 data=data,
-                time_axis=time_axis,
                 shape=shape,
                 sample_rate=sample_rate,
                 sample_period=sample_period,
@@ -121,108 +118,132 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
     @property
     def precise(self) -> bool:
         """Determines if this frame returns nanostamps (True) or timestamps (False)."""
-        return self.time_axis.precise
+        return self._precise
 
     @precise.setter
     def precise(self, value: bool) -> None:
-        self.time_axis.set_precision(nano=value)
+        self.set_precision(nano=value)
 
     @property
     def nanostamps(self) -> np.ndarray | None:
         """The nanosecond timestamps of this frame."""
-        return self.get_nanostamps()
+        try:
+            return self.get_nanostamps.caching_call()
+        except AttributeError:
+            return self.get_nanostamps()
 
     @nanostamps.setter
     def nanostamps(self, value: np.ndarray | None) -> None:
-        self.time_axis.nanostamps = value
+        self._nanostamps = value
+        self.get_nanostamps.clear_cache()
+        self.get_timestamps.clear_cache()
 
     @property
     def timestamps(self) -> np.ndarray | None:
         """The timestamps of this frame."""
-        return self.get_timestamps()
+        try:
+            return self.get_timestamps.caching_call()
+        except AttributeError:
+            return self.get_timestamps()
 
     @timestamps.setter
     def timestamps(self, value: np.ndarray | None) -> None:
-        self.timestamps = value
+        self._timestamps = value
+        self.get_nanostamps.clear_cache()
+        self.get_timestamps.clear_cache()
+
+    @property
+    def data(self) -> np.ndarray:
+        """Returns the time stamp type based on the precision."""
+        return self._data_method.__get__(self, self.__class__)()
+
+    @data.setter
+    def data(self, value: np.ndarray) -> None:
+        if self.precise:
+            self.nanostamps = value
+        else:
+            self.timestamps = value
 
     @property
     def start_datetime(self) -> Timestamp | None:
         """The start datetime of this frame."""
-        return self.time_axis.start_datetime
+        nanostamps = self.nanostamps
+        return Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo) if nanostamps else None
 
     @property
     def start_date(self) -> datetime.date | None:
         """The start date of the data in this frame."""
-        return self.time_axis.start_date
+        start = self.start_datetime
+        return start.date() if start is not None else None
 
     @property
     def start_nanostamp(self) -> float | None:
         """The start timestamp of this frame."""
-        return self.time_axis.start_nanostamp
+        nanostamps = self.nanostamps
+        return nanostamps[0] if nanostamps else None
 
     @property
     def start_timestamp(self) -> float | None:
         """The start timestamp of this frame."""
-        return self.time_axis.start_timestamp
+        timestamps = self.timestamps
+        return timestamps[0] if timestamps else None
 
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this frame."""
-        return self.time_axis.end_datetime
+        nanostamps = self.nanostamps
+        return Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo) if nanostamps else None
 
     @property
     def end_date(self) -> datetime.date | None:
         """The end date of the data in this frame."""
-        return self.time_axis.end_date
+        end = self.end_datetime
+        return end.date() if end is not None else None
 
     @property
     def end_nanostamp(self) -> float | None:
         """The end timestamp of this frame."""
-        return self.time_axis.end_nanostamp
+        nanostamps = self.nanostamps
+        return nanostamps[-1] if nanostamps else None
 
     @property
     def end_timestamp(self) -> float | None:
         """The end timestamp of this frame."""
-        return self.time_axis.end_timestamp
+        timestamps = self.timestamps
+        return timestamps[-1] if timestamps else None
 
     @property
     def sample_rate(self) -> float:
         """The sample rate of this frame."""
-        return self.time_axis.sample_rate
+        return float(self._sample_rate)
 
     @sample_rate.setter
     def sample_rate(self, value: float | str | Decimal) -> None:
-        self.time_axis.sample_rate = value
+        if isinstance(value, Decimal):
+            self._sample_rate = value
+        else:
+            self._sample_rate = Decimal(value)
 
     @property
     def sample_rate_decimal(self) -> Decimal:
         """The sample rate as Decimal object"""
-        return self.time_axis.sample_rate.decimal
+        return self._sample_rate
 
     @property
     def sample_period(self) -> float:
         """The sample period of this frame."""
-        return self.time_axis.sample_period
+        return float(1 / self._sample_rate)
 
     @sample_period.setter
     def sample_period(self, value: float | str | Decimal) -> None:
-        self.time_axis.sample_period = value
+        if not isinstance(value, Decimal):
+            value = Decimal(value)
+        self._sample_rate = 1 / value
 
     @property
     def sample_period_decimal(self) -> Decimal:
         """The sample period as Decimal object"""
-        return self.time_axis.sample_period_decimal
-
-    @property
-    def resampler(self) -> Resample:
-        """The object that can resample the data in this frame container."""
-        if self._resampler is None:
-            self.construct_resampler()
-        return self._resampler
-
-    @resampler.setter
-    def resampler(self, value: Resample) -> None:
-        self._resampler = value
+        return 1 / self._sample_rate
 
     @property
     def tail_correction(self) -> AnyCallable | None:
@@ -234,8 +255,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
     def construct(
         self,
         data: np.ndarray | None = None,
-        time_axis: np.ndarray | None = None,
-        shape: Iterable[int] | None = None,
+        shape: tuple[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
         precise: bool | None = None,
@@ -247,7 +267,6 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
 
         Args:
             data: The numpy array for this frame to wrap.
-            time_axis: The time axis of the data.
             shape: The shape that frame should be and if resized the shape it will default to.
             sample_rate: The sample rate of the data.
             sample_period: The sample period of this frame.
@@ -256,31 +275,20 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             mode: Determines if the contents of this frame are editable or not.
             **kwargs: Keyword arguments for creating a new numpy array.
         """
-        is_axis_type = isinstance(time_axis, TimeAxisFrameInterface)
-        if time_axis is not None and not is_axis_type:
-            self.time_axis = TimeAxisContainer(
-                data=time_axis,
-                sample_rate=sample_rate,
-                sample_period=sample_period,
-                precise=precise,
-                tzinfo=tzinfo,
-                mode=mode,
-            )
-        else:
-            if is_axis_type:
-                self.time_axis = time_axis
+        if precise is not None:
+            self.precise = precise
 
-            if sample_period is not None:
-                self.time_axis.sample_period = sample_period
+        if tzinfo is not None:
+            self.tzinfo = tzinfo
 
-            if sample_rate is not None:
-                self.time_axis.sample_rate = sample_rate
+        if sample_period is not None:
+            self.sample_period = sample_period
 
-            if precise is not None:
-                self.time_axis.set_precision(precise)
+        if sample_rate is not None:
+            self.sample_rate = sample_rate
 
-            if tzinfo is not None:
-                self.time_axis.set_tzinfo(tzinfo)
+        if data is not None and data.dtype == np.uint64:
+            self.set_precision(True)
 
         super().construct(data=data, shape=shape, mode=mode, **kwargs)
 
@@ -300,7 +308,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The sample rate of this frame.
         """
-        return self.time_axis.sample_rate
+        return self.sample_rate
 
     def get_sample_period(self) -> float:
         """Get the sample period of this frame.
@@ -310,7 +318,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The sample period of this frame.
         """
-        return self.time_axis.sample_period
+        return self.sample_period
 
     def set_precision(self, nano: bool) -> None:
         """Sets if this frame returns nanostamps (True) or timestamps (False).
@@ -318,7 +326,11 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Args:
             nano: Determines if this frame returns nanostamps (True) or timestamps (False).
         """
-        self.time_axis.set_precision(nano)
+        if nano:
+            self._data_method = self._get_nanostamps.__func__
+        else:
+            self._data_method = self._get_timestamps.__func__
+        self._precise = nano
 
     def get_correction(self, name) -> Callable | None:
         name.lower()
@@ -335,11 +347,11 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
 
     def set_tail_correction(self, obj):
         if isinstance(obj, str):
-            self._tail_correction = self.get_correction(obj)
+            self._tail_correction = self.get_correction(obj).__func__
         else:
             self._tail_correction = obj
 
-    def set_blank_generator(self, obj):
+    def set_blank_generator(self, obj: AnyCallable) -> None:
         if isinstance(obj, str):
             obj = obj.lower()
             if obj == "nan":
@@ -362,7 +374,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             If this frame has a valid/continuous sampling rate.
         """
-        return self.time_axis.validate_continuous()
+        return self.validate_continuous()
 
     def resample(self, sample_rate: float, **kwargs: Any) -> None:
         """Resamples the data to match the given sample rate.
@@ -377,12 +389,20 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         if not self.validate_sample_rate():
             raise ValueError("the data needs to have a uniform sample rate before resampling")
 
-        # Todo: Make Resample for multiple frames (maybe edit resampler from an outer layer)
-        self.data = self.resampler(data=self.data[...], new_fs=self.sample_rate, **kwargs)
-        self.time_axis.resample(sample_rate=sample_rate)
+        nanostamps = self.nanostamps
+        if nanostamps is not None:
+            period_ns = np.uint64(self.sample_period_decimal * 10 ** 9)
+            self._nanostamps = np.arange(nanostamps[0], nanostamps[-1], period_ns, dtype="u8")
+
+        timestamps = self.timestamps
+        if timestamps is not None:
+            self._timestamps = np.arange(timestamps[0], timestamps[-1], self.sample_period, dtype="f8")
+
+        self.get_nanostamps.clear_cache()
+        self.get_timestamps.clear_cache()
 
     # Continuous Data
-    def where_discontinuous(self, tolerance: float | None = None):
+    def where_discontinuous(self, tolerance: float | None = None) -> list | None:
         """Generates a report on where there are sample discontinuities.
 
         Args:
@@ -391,7 +411,26 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             A report on where there are discontinuities.
         """
-        return self.time_axis.where_discontinuous(tolerance)
+        # Todo: Get discontinuity type and make report
+        if tolerance is None:
+            tolerance = self.time_tolerance
+
+        data = self.nanostamps
+        period_ns = np.uint64(self.sample_period_decimal * 10 ** 9)
+        tolerance = np.uint64(tolerance * 10 ** 9)
+        if data.shape[0] > self.switch_algorithm_size:
+            discontinuous = []
+            for index in range(0, len(data) - 1):
+                interval = data[index] - data[index - 1]
+                if abs(interval - period_ns) >= tolerance:
+                    discontinuous.append(index)
+        else:
+            discontinuous = list(np.where(np.abs(np.ediff1d(data) - period_ns) > tolerance)[0] + 1)
+
+        if discontinuous:
+            return discontinuous
+        else:
+            return None
 
     def validate_continuous(self, tolerance: float | None = None) -> bool:
         """Checks if the time between each sample matches the sample period.
@@ -402,7 +441,21 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             If this frame is continuous.
         """
-        return self.time_axis.validate_continuous(tolerance)
+        if tolerance is None:
+            tolerance = self.time_tolerance
+
+        data = self.nanostamps
+        period_ns = np.uint64(self.sample_period_decimal * 10 ** 9)
+        tolerance = np.uint64(tolerance * 10 ** 9)
+        if data.shape[0] > self.switch_algorithm_size:
+            for index in range(0, len(data) - 1):
+                interval = data[index + 1] - data[index]
+                if abs(interval - period_ns) > tolerance:
+                    return False
+        elif False in np.abs(np.ediff1d(data) - period_ns) <= tolerance:
+            return False
+
+        return True
 
     def make_continuous(self, axis: int | None = None, tolerance: float | None = None) -> None:
         """Adjusts the data to make it continuous.
@@ -411,144 +464,31 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             axis: The axis to apply the time correction.
             tolerance: The allowed deviation a sample can be away from the sample period.
         """
-        self.time_correction_interpolate(axis=axis, tolerance=tolerance)
-        self.fill_time_correction(axis=axis, tolerance=tolerance)
-
-    # Time Correction
-    def time_correction_interpolate(
-        self,
-        axis: int | None = None,
-        interp_type: str | None = None,
-        fill_value: str | None = None,
-        tolerance: float | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """Corrects the data if it is time miss aligned by interpolating the data.
-
-        Args:
-            axis: The axis to apply the time correction.
-            interp_type: The interpolation type for the interpolation.
-            fill_value: The fill type for the missing values on the edge of data.
-            tolerance: The allowed deviation a sample can be away from the sample period.
-            **kwargs: The keyword arguments for the interpolator.
-        """
-        if self.mode == 'r':
-            raise IOError("not writable")
-
-        if axis is None:
-            axis = self.axis
-
-        if interp_type is None:
-            interp_type = self.interpolate_type
-
-        if fill_value is None:
-            fill_value = self.interpolate_fill_value
-
-        discontinuities = self.where_discontinuous(tolerance=tolerance)
-        while discontinuities:
-            discontinuity = discontinuities.pop(0)
-            timestamp = self.time_axis[discontinuity]
-            previous = discontinuity - 1
-            previous_timestamp = self.time_axis[previous]
-
-            if (timestamp - previous_timestamp) < (2 * self.sample_period):
-                consecutive = [previous, discontinuity]
-                start = previous_timestamp + self.sample_period
-            else:
-                consecutive = [discontinuity]
-                nearest = round((timestamp - previous_timestamp) * self.sample_rate)
-                start = previous_timestamp + self.sample_period * nearest
-
-            if discontinuities:
-                for next_d in discontinuities:
-                    if (self.time_axis[next_d] - self.time_axis[next_d - 1]) < (2 * self.sample_period):
-                        consecutive.append(discontinuities.pop(0))
-                    else:
-                        consecutive.append(next_d - 1)
-                        break
-            else:
-                consecutive.append(len(self.time_axis) - 1)
-
-            new_size = consecutive[-1] + 1 - consecutive[0]
-            end = start + self.sample_period * (new_size - 1)
-            new_times = np.arange(start, end, self.sample_period)
-            if new_size > 1:
-                times = self.time_axis[consecutive[0]: consecutive[-1] + 1]
-                data = self.get_range(consecutive[0], consecutive[-1] + 1)
-                interpolator = interpolate.interp1d(times, data, interp_type, axis, fill_value=fill_value, **kwargs)
-                self.set_range(interpolator(new_times), start=discontinuity)
-            else:
-                self.time_axis[discontinuity] = start
-
-    def fill_time_correction(self, axis: int | None = None, tolerance: float | None = None, **kwargs: Any) -> None:
-        """Fill empty sections of the data with blank values.
-
-        Args:
-            axis: The axis to apply the time correction.
-            tolerance: The allowed deviation a sample can be away from the sample period.
-            **kwargs: The keyword arguments for the blank data generator.
-        """
-        if self.mode == 'r':
-            raise IOError("not writable")
-
-        if axis is None:
-            axis = self.axis
-
-        discontinuities = self.where_discontinuous(tolerance=tolerance)
-
-        if discontinuities:
-            offsets = np.empty((0, 2), dtype="i")
-            gap_discontinuities = []
-            previous_discontinuity = 0
-            for discontinuity in discontinuities:
-                timestamp = self.time_axis[discontinuity]
-                previous = discontinuity - 1
-                previous_timestamp = self.time_axis[previous]
-                if (timestamp - previous_timestamp) >= (2 * self.sample_period):
-                    real = discontinuity - previous_discontinuity
-                    blank = round((timestamp - previous_timestamp) * self.sample_rate) - 1
-                    offsets = np.append(offsets, [[real, blank]], axis=0)
-                    gap_discontinuities.append(discontinuities)
-                    previous_discontinuity = discontinuity
-            offsets = np.append(offsets, [[self.time_axis - discontinuities[-1], 0]], axis=0)
-
-            new_size = np.sum(offsets)
-            new_shape = list(self.data.shape)
-            new_shape[axis] = new_size
-            old_data = self.data
-            old_times = self.time_axis
-            self.data = self.blank_generator(shape=new_shape, **kwargs)
-            self.time_axis = np.empty((new_size,), dtype="f8")
-            old_start = 0
-            new_start = 0
-            for discontinuity, offset in zip(gap_discontinuities, offsets):
-                previous = discontinuity - 1
-                new_mid = new_start + offset[0]
-                new_end = new_mid + offset[1]
-                mid_timestamp = old_times[previous] + self.sample_period
-                end_timestamp = offset[1] * self.sample_period
-
-                slice_ = slice(start=old_start, stop=old_start + offset[0])
-                slices = [slice(None, None)] * len(old_data.shape)
-                slices[axis] = slice_
-
-                self.set_range(old_data[tuple(slices)], start=new_start)
-
-                self.time_axis[new_start:new_mid] = old_times[slice_]
-                self.time_axis[new_mid:new_end] = np.arange(mid_timestamp, end_timestamp, self.sample_period)
-
-                old_start = discontinuity
-                new_start += sum(offset)
+        raise NotImplemented
 
     # Get Nanostamps
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
     def get_nanostamps(self) -> np.ndarray | None:
-        """Gets all the nanostamps of this frame.
+        """Gets the nanostamps of this frame.
 
         Returns:
-            A numpy array of the nanostamps of this frame.
+            The nanostamps of this frame.
         """
-        return self.time_axis.get_nanostamps()
+        if self._nanostamps is not None:
+            return self._nanostamps
+        elif self._timestamps is not None:
+            return (self._timestamps * 10 ** 9).astype(np.uint64)
+        else:
+            return None
+    
+    def _get_nanostamps(self) -> np.ndarray | None:
+        """An alias method for getting the nanostamps of this frame.
 
+        Returns:
+            The nanostamps of this frame.
+        """
+        return self.nanostamps
+    
     def get_nanostamp(self, super_index: int) -> float:
         """Get a time from a contained frame with a super index.
 
@@ -558,7 +498,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The nanostamp
         """
-        return self.time_axis.get_nanostamp(super_index)
+        return self.nanostamps[super_index]
 
     def get_nanostamp_range(
         self,
@@ -577,8 +517,18 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
 
         Returns:
             The requested range of nanostamps.
-        """
-        return self.time_axis.get_nanostamp_range(start, stop, step, frame)
+        """            
+        ts = self.nanostamps[slice(start, stop, step)]
+        if frame:
+            return self.__class__(
+                ts,
+                sample_rate=self.sample_rate_decimal,
+                precise=True,
+                tzinfo=self.tzinfo,
+                mode=self.mode,
+            )
+        else:
+            return ts
 
     def fill_nanostamps_array(
         self,
@@ -596,17 +546,32 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The original array but filled.
         """
-        return self.time_axis.fill_nanostamps_array(data_array, array_slice, slice_)
+        data_array[array_slice] = self.nanostamps[slice_]
+        return data_array
 
     # Get Timestamps
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
     def get_timestamps(self) -> np.ndarray | None:
-        """Gets all the timestamps of this frame.
+        """Gets the timestamps of this frame.
 
         Returns:
-            A numpy array of the timestamps of this frame.
+            The timestamps of this frame.
         """
-        return self.time_axis.get_timestamps()
+        if self._timestamps is not None:
+            return self._timestamps
+        elif self._timestamps is not None:
+            return (self._timestamps * 10 ** 9).astype(np.uint64)
+        else:
+            return None
+    
+    def _get_timestamps(self) -> np.ndarray | None:
+        """An alias method for getting the timestamps of this frame.
 
+        Returns:
+            The timestamps of this frame.
+        """
+        return self.timestamps
+    
     def get_timestamp(self, super_index: int) -> float:
         """Get a time from a contained frame with a super index.
 
@@ -616,7 +581,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The timestamp
         """
-        return self.time_axis.get_timestamp(super_index)
+        return self.timestamps[super_index]
 
     def get_timestamp_range(
         self,
@@ -635,8 +600,18 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
 
         Returns:
             The requested range of timestamps.
-        """
-        return self.time_axis.get_timestamp_range(start, stop, step, frame)
+        """            
+        ts = self.timestamps[slice(start, stop, step)]
+        if frame:
+            return self.__class__(
+                ts,
+                sample_rate=self.sample_rate_decimal,
+                precise=True,
+                tzinfo=self.tzinfo,
+                mode=self.mode,
+            )
+        else:
+            return ts
 
     def fill_timestamps_array(
         self,
@@ -654,7 +629,8 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The original array but filled.
         """
-        return self.time_axis.fill_timestamps_array(data_array, array_slice, slice_)
+        data_array[array_slice] = self.timestamps[slice_]
+        return data_array
 
     # Datetimes [Timestamp]
     def get_datetime_index(self, index: int) -> Timestamp:
@@ -666,7 +642,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return self.time_axis.get_datetime_index(index=index)
+        return Timestamp.fromnanostamp(self.nanostamps[index], tz=self.tzinfo)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
@@ -674,77 +650,28 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return self.time_axis.get_datetimes()
+        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps)
 
-    # Other Data Methods
-    def interpolate_shift_other(
-        self,
-        y: np.ndarray,
-        x: np.ndarray,
-        shift: np.ndarray | float | int,
-        interp_type: str | None = None,
-        axis: int = 0,
-        fill_value: str | None = None,
-        **kwargs: Any,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Interpolates given data and returns the data that has shifted along the x axis.
-
-        Args:
-            y: The data to interpolate.
-            x: The x axis of the data to interpolate.
-            shift: The amount to shift the x axis by.
-            interp_type: The interpolation type for the interpolation.
-            axis: The axis to apply the interpolation.
-            fill_value: The fill type for the missing values on the edge of data.
-            **kwargs: The keyword arguments for the interpolator.
-
-        Returns:
-            The interpolated values.
-        """
-        if interp_type is None:
-            interp_type = self.interpolate_type
-
-        if fill_value is None:
-            fill_value = self.interpolate_fill_value
-
-        interpolator = interpolate.interp1d(x, y, interp_type, axis, fill_value=fill_value, **kwargs)
-        new_x = x + shift
-        new_y = interpolator(new_x)
-
-        return new_x, new_y
-
-    def shift_to_nearest_sample_end(
-        self,
-        data: np.ndarray,
-        time_axis: np.ndarray,
-        axis: int | None = None,
-        tolerance: float | None = None,
-        **kwargs: Any,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    # For Other Data
+    def shift_to_nearest_sample_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
         """Shifts data to the nearest valid sample after this frame's data.
 
         Args:
             data: The data to shift.
-            time_axis: The timestamp axis of the data.
-            axis: The axis to apply the time correction.
             tolerance: The allowed deviation a sample can be away from the sample period.
-            **kwargs: The keyword arguments for the interpolator.
 
         Returns:
             The shifted data.
         """
-        if axis is None:
-            axis = self.axis
-
         if tolerance is None:
             tolerance = self.time_tolerance
 
-        if time_axis.dtype == np.uint64:
-            shift = time_axis[0] - self.nanostamps[-1]
+        if data.dtype == np.uint64:
+            shift = data[0] - self.nanostamps[-1]
             period = np.uint64(self.sample_period_decimal * 10 ** 9)
             tolerance = np.uint64(tolerance * 10 ** 9)
         else:
-            shift = time_axis[0] - self.timestamps[-1]
+            shift = data[0] - self.timestamps[-1]
             period = self.sample_period
 
         if shift < 0:
@@ -754,81 +681,57 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
                 remain = shift - period
             else:
                 remain = math.remainder(shift, period)
-            small_shift = -remain
-            data, time_axis = self.interpolate_shift_other(data, time_axis, small_shift, axis=axis, **kwargs)
+            data -= remain
 
-        return data, time_axis
+        return data
 
-    def shift_to_the_end(
-        self,
-        data: np.ndarray,
-        time_axis: np.ndarray,
-        axis: int | None = None,
-        tolerance: float | None = None,
-        **kwargs: Any,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Shifts data to the next valid sample after this frame's data, if its time is beyond a valid sample.
+    def shift_to_the_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
+        """Shifts data to the next valid sample after this frame's data.
 
         Args:
             data: The data to shift.
-            time_axis: The timestamp axis of the data.
-            axis: The axis to apply the time correction.
             tolerance: The allowed deviation a sample can be away from the sample period.
-            **kwargs: The keyword arguments for the interpolator.
 
         Returns:
             The shifted data.
         """
-        if axis is None:
-            axis = self.axis
-
         if tolerance is None:
             tolerance = self.time_tolerance
 
-        if time_axis.dtype == np.uint64:
-            shift = time_axis[0] - self.nanostamps[-1]
+        if data.dtype == np.uint64:
+            shift = data[0] - self.nanostamps[-1]
             period = np.uint64(self.sample_period_decimal * 10 ** 9)
             tolerance = np.uint64(tolerance * 10 ** 9)
         else:
-            shift = time_axis[0] - self.timestamps[-1]
+            shift = data[0] - self.timestamps[-1]
             period = self.sample_period
 
         if abs(shift - period) > tolerance:
-            data, time_axis = self.interpolate_shift_other(data, time_axis, period - shift, axis=axis, **kwargs)
+            data -= shift - period
 
-        return data, time_axis
+        return data
 
-    def default_tail_correction(
-        self,
-        data: np.ndarray,
-        time_axis: np.ndarray,
-        axis: int | None = None,
-        tolerance: float | None = None,
-        **kwargs: Any,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Shifts data to the next valid sample after this frame's data, if its time is beyond a valid sample.
+    def default_tail_correction(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
+        """Shifts data to the nearest valid sample after this frame's data or to the next valid sample after this frame.
 
         Args:
             data: The data to shift.
-            time_axis: The timestamp axis of the data.
-            axis: The axis to apply the time correction.
             tolerance: The allowed deviation a sample can be away from the sample period.
-            **kwargs: The keyword arguments for the interpolator.
 
         Returns:
             The shifted data.
         """
-        if time_axis.dtype == np.uint64:
-            shift = time_axis[0] - self.nanostamps[-1]
+        if data.dtype == np.uint64:
+            shift = data[0] - self.nanostamps[-1]
         else:
-            shift = time_axis[0] - self.timestamps[-1]
+            shift = data[0] - self.timestamps[-1]
 
         if shift >= 0:
-            data, time_axis = self.shift_to_nearest_sample_end(data, time_axis, axis, tolerance, **kwargs)
+            data = self.shift_to_nearest_sample_end(data, tolerance)
         else:
-            data, time_axis = self.shift_to_the_end(data, time_axis, axis, tolerance, **kwargs)
+            data = self.shift_to_the_end(data, tolerance)
 
-        return data, time_axis
+        return data
 
     # Data
     def shift_times(
@@ -849,12 +752,18 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         if self.mode == 'r':
             raise IOError("not writable")
 
-        self.time_axis.shift_times(shift, start, stop, step)
+        if self._nanostamps is not None:
+            self._nanostamps[start:stop:step] += shift
+
+        if self._timestamps is not None:
+            self._timestamps[start:stop:step] += shift
+
+        self.get_nanostamps.clear_cache()
+        self.get_timestamps.clear_cache()
 
     def append(
         self,
         data: np.ndarray,
-        time_axis: np.ndarray | None = None,
         axis: int | None = None,
         tolerance: float | None = None,
         correction: str | bool | None = None,
@@ -885,14 +794,13 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             correction = self.get_correction(correction)
 
         if correction:
-            data, time_axis = correction(data, time_axis, axis=axis, tolerance=tolerance, **kwargs)
+            data, = correction(data, tolerance=tolerance)
 
         self.data = np.append(self.data, data, axis)
-        self.time_axis = self.time_axis.append(time_axis)
 
     def append_frame(
         self,
-        frame: TimeSeriesFrameInterface,
+        frame: TimeAxisFrameInterface,
         axis: int | None = None,
         truncate: bool | None = None,
         correction: str | bool | None = None,
@@ -926,11 +834,11 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
                 slices[axis] = slice(None, None)
                 slices = tuple(slices)
 
-        self.append(frame[slices], frame.time_axis[...], axis, correction=correction)
+        self.append(frame[slices], axis=axis, correction=correction)
 
     def add_frames(
         self,
-        frames: Iterable[TimeSeriesFrameInterface],
+        frames: Iterable[TimeAxisFrameInterface],
         axis: int | None = None,
         truncate: bool | None = None,
     ) -> None:
@@ -967,7 +875,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The intervals between each time in the time axis.
         """
-        return np.ediff1d(self.time_axis[slice(start, stop, step)])
+        return np.ediff1d(self.data[slice(start, stop, step)])
 
     # Find Index
     def find_time_index(
@@ -986,8 +894,19 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The requested closest index and the value at that index.
         """
-        return self.time_axis.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+        nano_ts = nanostamp(timestamp)
 
+        samples = self.get_length()
+        if nano_ts < self.nanostamps[0]:
+            if tails:
+                return IndexDateTime(0, self.start_datetime)
+        elif nano_ts > self.nanostamps[-1]:
+            if tails:
+                return IndexDateTime(samples, self.end_datetime)
+        else:
+            index = int(np.searchsorted(self.nanostamps, nano_ts))
+            true_timestamp = self.nanostamps[index]
+            if approx or nano_ts == true_timestamp:
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp))
 
-# Assign Cyclic Definitions
-TimeSeriesContainer.time_series_type = TimeSeriesContainer
+        return IndexDateTime(None, None)

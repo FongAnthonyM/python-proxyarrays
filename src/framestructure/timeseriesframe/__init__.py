@@ -15,5 +15,5 @@ __email__ = __email__
 # Local Packages #
 from .timeseriesframeinterface import TimeSeriesFrameInterface
 from .timeseriescontainer import TimeSeriesContainer
-from .blanktimeframe import BlankTimeFrame
+from .blanktimeseriesframe import BlankTimeSeriesFrame
 from .timeseriesframe import TimeSeriesFrame

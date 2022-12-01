@@ -1,4 +1,4 @@
-""" filetimeframe.py
+""" filetimecontainerinterface.py
 A time series frame that wraps file object which contains time series.
 """
 # Package Header #
@@ -19,7 +19,6 @@ from typing import Any
 
 # Third-Party Packages #
 from baseobjects import singlekwargdispatchmethod
-import numpy as np
 
 # Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
@@ -28,7 +27,7 @@ from ..directorytimeframe import DirectoryTimeFrameInterface
 
 # Definitions #
 # Classes #
-class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
+class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterface):
     """A time series frame that wraps file object which contains time series.
 
     Class Attributes:
@@ -95,16 +94,6 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
     def time_axis(self, value: Any) -> None:
         if value is not None:
             self.set_time_axis(value)
-
-    @property
-    def sample_rate(self) -> float:
-        """The sample rate of this file."""
-        return self.get_sample_rate()
-
-    @sample_rate.setter
-    def sample_rate(self, value: float) -> None:
-        if value is not None:
-            self.set_sample_rate(value)
 
     # Instance Methods
     # Constructors/Destructors
@@ -234,40 +223,3 @@ class FileTimeFrame(TimeSeriesContainer, DirectoryTimeFrameInterface):
             The shape of this frame.
         """
         pass
-
-    @abstractmethod
-    def get_start_timestamp(self) -> float | None:
-        """Gets the start_timestamp timestamp of this frame.
-
-        Returns:
-            The start_timestamp timestamp of this frame.
-        """
-        pass
-
-    @abstractmethod
-    def get_end_timestamp(self) -> float | None:
-        """Gets the end_timestamp timestamp of this frame.
-
-        Returns:
-            The end_timestamp timestamp of this frame.
-        """
-        pass
-
-    @abstractmethod
-    def get_sample_rate(self) -> float:
-        """Gets the sample rate of this file.
-
-        Returns:
-            The sample rate of this file.
-        """
-        pass
-
-    @abstractmethod
-    def set_sample_rate(self, value: float) -> None:
-        """Sets the sample rate.
-
-        Args:
-            value: The sample rate to set the file to.
-        """
-        if self.mode == 'r':
-            raise IOError("not writable")

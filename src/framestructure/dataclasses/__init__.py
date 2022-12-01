@@ -13,4 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .filetimecontainerinterface import FileTimeContainerInterface
+from ..timeframe.timeframeinterface import FoundTimeRange
+from ..timeseriesframe.timeseriesframeinterface import FoundTimeDataRange

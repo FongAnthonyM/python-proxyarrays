@@ -94,7 +94,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
 
         # Object Construction #
         if init:
-            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, **kwargs)
+            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, load=load, **kwargs)
 
     @property
     def path(self) -> pathlib.Path:

@@ -1,5 +1,5 @@
 """ __init__.py
-A time series frame that wraps file object which contains time series.
+Frames for timestamps and time information.
 """
 # Package Header #
 from ..header import *
@@ -13,4 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .filetimecontainerinterface import FileTimeContainerInterface
+from .timeframeinterface import TimeFrameInterface
+from .blanktimeframe import BlankTimeFrame
+from .timeframe import TimeFrame

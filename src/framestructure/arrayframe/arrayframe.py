@@ -180,6 +180,23 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         """When the add operator is called it concatenates this frame with other frames or a list."""
         return self.concatenate(other=other)
 
+    # Numpy ndarray Methods
+    def __array__(self, dtype: Any = None) -> np.ndarray:
+        """Returns an ndarray representation of this object with an option to cast it to a dtype.
+
+        Allows this object to be used as ndarray in numpy functions.
+
+        Args:
+            dtype: The dtype to cast the array to.
+
+        Returns:
+            The ndarray representation of this object.
+        """
+        if dtype is None:
+            return self[...]
+        else:
+            return self[...].as_type(dtype)
+
     # Instance Methods
     # Constructors/Destructors
     def construct(

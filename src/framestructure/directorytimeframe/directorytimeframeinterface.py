@@ -16,15 +16,18 @@ __email__ = __email__
 from abc import abstractmethod
 from collections.abc import Iterable
 import datetime
+from decimal import Decimal
 import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from dspobjects.dataclasses import IndexDateTime, FoundTimeRange, FoundData, FoundDataRange
+from dspobjects.dataclasses import IndexDateTime
+from dspobjects.time import Timestamp
 import numpy as np
 
 # Local Packages #
 from ..arrayframe import ArrayFrameInterface
+from ..timeframe import TimeFrameInterface
 from ..timeseriesframe import TimeSeriesFrameInterface
 
 
@@ -67,6 +70,22 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
     #     if times is not None:
     #         self.times = times
 
+    # Numpy ndarray Methods
+    @abstractmethod
+    def __array__(self, dtype: Any = None) -> np.ndarray:
+        """Returns an ndarray representation of this object with an option to cast it to a dtype.
+
+        Allows this object to be used as ndarray in numpy functions.
+
+        Args:
+            dtype: The dtype to cast the array to.
+
+        Returns:
+            The ndarray representation of this object.
+        """
+        pass
+
+    # Instance Methods #
     # File
     @abstractmethod
     def open(self, mode: str | None = None, ** kwargs: Any) -> "DirectoryTimeFrameInterface":
@@ -115,29 +134,64 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         pass
 
     @abstractmethod
-    def get_start_timestamp(self) -> float | None:
-        """Gets the start_timestamp timestamp of this frame.
-
-        Returns:
-            The start_timestamp timestamp of this frame.
-        """
-        pass
-
-    @abstractmethod
-    def get_end_timestamp(self) -> float | None:
-        """Gets the end_timestamp timestamp of this frame.
-
-        Returns:
-            The end_timestamp timestamp of this frame.
-        """
-        pass
-
-    @abstractmethod
     def get_sample_rate(self) -> float:
         """Get the sample rate of this frame from the contained frames/objects.
 
+         If the contained frames/object are different this will raise a warning and return the minimum sample rate.
+
         Returns:
-            The sample rate of this frame.
+            The shape of this frame or the minimum sample rate of the contained frames/objects.
+        """
+        pass
+
+    @abstractmethod
+    def get_sample_rate_decimal(self) -> Decimal:
+        """Get the sample rate of this frame from the contained frames/objects.
+
+         If the contained frames/object are different this will raise a warning and return the minimum sample rate.
+
+        Returns:
+            The shape of this frame or the minimum sample rate of the contained frames/objects.
+        """
+        pass
+
+    @abstractmethod
+    def get_sample_period(self) -> float:
+        """Get the sample period of this frame.
+
+        If the contained frames/object are different this will raise a warning and return the maximum period.
+
+        Returns:
+            The sample period of this frame.
+        """
+        pass
+
+    @abstractmethod
+    def get_sample_period_decimal(self) -> Decimal:
+        """Get the sample period of this frame.
+
+        If the contained frames/object are different this will raise a warning and return the maximum period.
+
+        Returns:
+            The sample period of this frame.
+        """
+        pass
+
+    @abstractmethod
+    def set_precision(self, nano: bool) -> None:
+        """Sets if this frame returns nanostamps (True) or timestamps (False).
+
+        Args:
+            nano: Determines if this frame returns nanostamps (True) or timestamps (False).
+        """
+        pass
+
+    @abstractmethod
+    def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
+        """Sets the time zone of the contained frames.
+
+        Args:
+            tzinfo: The time zone to set.
         """
         pass
 
@@ -206,7 +260,81 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         """Adjusts the data to make it continuous."""
         pass
 
+    # Get Nanostamps
+    @abstractmethod
+    def get_nanostamps(self) -> np.ndarray:
+        """Gets all the nanostamps of this frame.
+
+        Returns:
+            A numpy array of the nanostamps of this frame.
+        """
+        pass
+
+    @abstractmethod
+    def get_nanostamp(self, super_index: int) -> float:
+        """Get a time from a contained frame with a super index.
+
+        Args:
+            super_index: The index to get the nanostamp.
+
+        Returns:
+            The nanostamp
+        """
+        pass  # return self.time[super_index]
+
+    @abstractmethod
+    def get_nanostamp_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        frame: bool = True,
+    ) -> np.ndarray | TimeFrameInterface:
+        """Get a range of nanostamps with indices.
+
+        Args:
+            start: The start_nanostamp super index.
+            stop: The stop super index.
+            step: The interval between indices to get nanostamps.
+            frame: Determines if the returned object will be a frame.
+
+        Returns:
+            The requested range of nanostamps.
+        """
+        pass  # return self.times[slice(start_nanostamp, stop, step)]
+
+    @abstractmethod
+    def fill_nanostamps_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with nanostamps from the contained frames/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        pass
+
     # Get Timestamps
+    @abstractmethod
+    def get_datetime_index(self, index: int) -> Timestamp:
+        """A datetime from this frame base on the index.
+
+        Args:
+            index: The index of the datetime to get.
+
+        Returns:
+            All the times as a tuple of datetimes.
+        """
+        pass
+
     @abstractmethod
     def get_timestamps(self) -> np.ndarray:
         """Gets all the timestamps of this frame.
@@ -234,13 +362,15 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         start: int | None = None,
         stop: int | None = None,
         step: int | None = None,
-    ) -> np.ndarray:
+        frame: bool = True,
+    ) -> np.ndarray | TimeFrameInterface:
         """Get a range of timestamps with indices.
 
         Args:
             start: The start_timestamp super index.
             stop: The stop super index.
             step: The interval between indices to get timestamps.
+            frame: Determines if the returned object will be a frame.
 
         Returns:
             The requested range of timestamps.
@@ -266,6 +396,7 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
         """
         pass
 
+    # Datetimes [Timestamp]
     @abstractmethod
     def get_datetimes(self) -> tuple[datetime.datetime]:
         """Gets all the datetimes of this frame.
@@ -309,7 +440,7 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
 
     @abstractmethod
     def get_range(
-            self,
+        self,
         start: int | None = None,
         stop: int | None = None,
         step: int | None = None,
@@ -349,62 +480,3 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
             The requested closest index and the value at that index.
         """
         pass
-
-    # Get with Time
-    def find_timestamp_range(
-        self,
-        start: datetime.datetime | float | None = None,
-        stop: datetime.datetime | float | None = None,
-        step: int | float | datetime.timedelta | None = None,
-        approx: bool = False,
-        tails: bool = False,
-    ) -> FoundTimeRange:
-        """Finds the timestamp range on the axis inbetween two times, can give approximate values.
-
-        Args:
-            start: The first time to find for the range.
-            stop: The last time to find for the range.
-            step: The step between elements in the range.
-            approx: Determines if an approximate indices will be given if the time is not present.
-            tails: Determines if the first or last times will be give the requested item is outside the axis.
-
-        Returns:
-            The timestamp range on the axis and the start_timestamp and stop indices.
-        """
-        if start is None:
-            start_index = 0
-        else:
-            start_index, _, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
-
-        if stop is None:
-            stop_index = self.length
-        else:
-            stop_index, _, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
-
-        return FoundTimeRange(self.get_timestamp_range(start_index, stop_index, step), start_index, stop_index)
-
-    def find_data_range(
-        self,
-        start: datetime.datetime | float | None = None,
-        stop: datetime.datetime | float | None = None,
-        step: int | float | datetime.timedelta | None = None,
-        approx: bool = False,
-        tails: bool = False,
-    ) -> FoundDataRange:
-        """Finds the data range on the axis inbetween two times, can give approximate values.
-
-        Args:
-            start: The first time to find for the range.
-            stop: The last time to find for the range.
-            step: The step between elements in the range.
-            approx: Determines if an approximate indices will be given if the time is not present.
-            tails: Determines if the first or last times will be give the requested item is outside the axis.
-
-        Returns:
-            The data range on the axis and the start_timestamp and stop indices.
-        """
-        axis, start_index, stop_index = self.find_timestamp_range(start, stop, step, approx, tails)
-
-        data = self.get_range(start=start_index, stop=stop_index, step=step, frame=False)
-
-        return FoundDataRange(data, axis, axis[0], axis[-1], start_index, stop_index)

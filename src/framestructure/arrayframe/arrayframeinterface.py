@@ -44,11 +44,16 @@ class ArrayFrameInterface(BaseObject):
         # New  Attributes #
         self._is_updating: bool = False
 
-        self._spawn_editable: AnyCallable = self._default_spawn_editable
+        self._spawn_editable: AnyCallable = self._default_spawn_editable.__func__
 
         self.returns_frame: bool = False
 
         self.mode: str = 'a'
+
+    @property
+    def spawn_editable(self) -> AnyCallable:
+        """The method used to create an editable version of this frame."""
+        return self._spawn_editable.__get__(self, self.__class__)
 
     # Container Methods
     def __len__(self) -> int:
@@ -69,6 +74,21 @@ class ArrayFrameInterface(BaseObject):
             An item within this frame.
         """
         return self.get_item(item)
+
+    # Numpy ndarray Methods
+    @abstractmethod
+    def __array__(self, dtype: Any = None) -> np.ndarray:
+        """Returns an ndarray representation of this object with an option to cast it to a dtype.
+
+        Allows this object to be used as ndarray in numpy functions.
+
+        Args:
+            dtype: The dtype to cast the array to.
+
+        Returns:
+            The ndarray representation of this object.
+        """
+        pass
 
     # Instance Methods #
     # Constructors/Destructors
@@ -124,7 +144,7 @@ class ArrayFrameInterface(BaseObject):
         Args:
             method: The method name to set the _spawn_editable method to.
         """
-        self._spawn_editable = getattr(self, method)
+        self._spawn_editable = getattr(self, method).__func__
 
     # Caching
     def clear_all_caches(self) -> None:

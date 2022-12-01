@@ -17,6 +17,7 @@ from collections.abc import Iterable, Sized
 from typing import Any, Callable
 
 # Third-Party Packages #
+from dspobjects.operations import nan_array
 import numpy as np
 
 # Local Packages #
@@ -41,13 +42,6 @@ class BlankArrayFrame(ArrayFrameInterface):
         dtype: The data type of the generated data.
         init: Determines if this object will construct.
     """
-    # Static Methods #
-    @staticmethod
-    def create_nan_array(shape=None, **kwargs):
-        a = np.empty(shape=shape, **kwargs)
-        a.fill(np.nan)
-        return a
-
     # Magic Methods #
     # Construction/Destruction
     def __init__(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None, init: bool = True) -> None:
@@ -63,7 +57,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         self.dtype: np.dtype | str = "f4"
 
         # Assign Methods #
-        self.generate_data: Callable[[tuple[int], Any], np.ndarray] = self.create_nan_array
+        self.generate_data: Callable[[tuple[int], Any], np.ndarray] = nan_array
 
         # Construct Object #
         if init:
@@ -77,6 +71,20 @@ class BlankArrayFrame(ArrayFrameInterface):
     @shape.setter
     def shape(self, value: tuple[int]) -> None:
         self._shape = value
+
+    # Numpy ndarray Methods
+    def __array__(self, dtype: Any = None) -> np.ndarray:
+        """Returns an ndarray representation of this object with an option to cast it to a dtype.
+
+        Allows this object to be used as ndarray in numpy functions.
+
+        Args:
+            dtype: The dtype to cast the array to.
+
+        Returns:
+            The ndarray representation of this object.
+        """
+        return self.create_data_range(dtype=dtype)
 
     # Instance Methods #
     # Constructors/Destructors
@@ -136,7 +144,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         if isinstance(generator, str):
             generator = generator.lower()
             if generator == "nan":
-                self.generate_data = self.create_nan_array
+                self.generate_data = nan_array
             elif generator == "empty":
                 self.generate_data = np.empty
             elif generator == "zeros":
