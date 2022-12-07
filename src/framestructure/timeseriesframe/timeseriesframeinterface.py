@@ -20,7 +20,7 @@ from decimal import Decimal
 from typing import Any, NamedTuple
 
 # Third-Party Packages #
-from dspobjects.dataclasses import IndexDateTime
+from dspobjects.dataclasses import IndexDateTime, FoundData
 from dspobjects.time import Timestamp
 import numpy as np
 
@@ -37,6 +37,15 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
     time_series_type = None
 
     # Magic Methods #
+    @property
+    def t_axis(self) -> int:
+        """The axis which the time axis is attached."""
+        return self.axis
+
+    @t_axis.setter
+    def t_axis(self, value: int) -> None:
+        self.axis = value
+
     # Numpy ndarray Methods
     @abstractmethod
     def __array__(self, dtype: Any = None) -> np.ndarray:
@@ -325,7 +334,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
 
     # Datetimes [Timestamp]
     @abstractmethod
-    def get_datetime_index(self, index: int) -> Timestamp:
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -405,7 +414,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.
@@ -421,12 +430,29 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         pass
 
     # Find Data
+    def find_data(self, timestamp: datetime.datetime | float, approx: bool = False, tails: bool = False,) -> FoundData:
+        """Find the data at a specific time.
+
+        Args:
+            timestamp: The time to find the data at.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The found data at the timestamp.
+        """
+        index, dt, timestamp = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+        slices = (slice(None),) * self.t_axis + (index,)
+        data = self._dataset[slices]
+
+        return FoundData(data, index, dt)
+
     def find_data_range(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> "FoundTimeDataRange":
         """Finds the data range on the axis inbetween two times, can give approximate values.
@@ -443,13 +469,81 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         """
         axis, start_index, stop_index = self.find_nanostamp_range(start, stop, step, approx, tails)
 
-        data = self.get_range(start=start_index, stop=stop_index, step=step, frame=False)
+        data = self.get_range(start=start_index, stop=stop_index, step=step, axis=self.t_axis, frame=False)
 
         if axis is None:
             return FoundTimeDataRange(None, None, None, None, None, None)
         else:
             t_series = self.time_series_type(data, time_axis=axis)
             return FoundTimeDataRange(t_series, axis, axis.start_datetime, axis.end_datetime, start_index, stop_index)
+
+    def find_data_nanoseconds(
+        self,
+        start: float | int | np.dtype | None = None,
+        stop: float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> "FoundTimeDataRange":
+        """Finds the data range on the axis inbetween two nanosecond offsets, can give approximate values.
+
+        Args:
+            start: The first time to find for the range.
+            stop: The last time to find for the range.
+            step: The step between elements in the range.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The data range on the axis and the start_timestamp and stop indices.
+        """
+        if start is not None:
+            if start >= 0:
+                start = self.start_nanostamp + np.int64(start)
+            else:
+                start = self.end_nanostamp + np.int64(start)
+
+        if stop is not None:
+            if stop >= 0:
+                start = self.start_nanostamp + np.int64(stop)
+            else:
+                start = self.end_nanostamp + np.int64(stop)
+
+        return self.find_data_range(start, stop, step, approx, tails)
+
+    def find_data_seconds(
+        self,
+        start: float | int | np.dtype | None = None,
+        stop: float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> "FoundTimeDataRange":
+        """Finds the data range on the axis inbetween two second offsets, can give approximate values.
+
+        Args:
+            start: The first time to find for the range.
+            stop: The last time to find for the range.
+            step: The step between elements in the range.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The data range on the axis and the start_timestamp and stop indices.
+        """
+        if start is not None:
+            if start >= 0:
+                start = self.start_timestamp + start
+            else:
+                start = self.end_timestamp + start
+
+        if stop is not None:
+            if stop >= 0:
+                start = self.start_timestamp + stop
+            else:
+                start = self.end_timestamp + stop
+
+        return self.find_data_range(start, stop, step, approx, tails)
 
 
 class FoundTimeDataRange(NamedTuple):

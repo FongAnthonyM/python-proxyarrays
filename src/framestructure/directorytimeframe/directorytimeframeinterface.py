@@ -324,7 +324,7 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
 
     # Get Timestamps
     @abstractmethod
-    def get_datetime_index(self, index: int) -> Timestamp:
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -466,7 +466,7 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.

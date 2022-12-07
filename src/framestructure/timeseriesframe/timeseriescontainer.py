@@ -82,7 +82,6 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         super().__init__(init=False)
 
         # New Attributes #
-        # Descriptors #
         # System
         self.switch_algorithm_size = 10000000  # Consider chunking rather than switching
 
@@ -94,14 +93,14 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         self.interpolate_type: str = "linear"
         self.interpolate_fill_value: str = "extrapolate"
 
-        # Object Assignment #
+        # Object Assignment
         self._resampler: Resample | None = None
 
-        # Method Assignment #
+        # Method Assignment
         self.blank_generator = nan_array
         self._tail_correction = self.default_tail_correction.__func__
 
-        # Containers #
+        # Containers
         self.time_axis: TimeAxisFrameInterface | None = None
 
         # Object Construction #
@@ -300,7 +299,15 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The sample rate of this frame.
         """
-        return self.time_axis.sample_rate
+        return self.time_axis.get_sample_rate()
+
+    def get_sample_rate_decimal(self) -> Decimal:
+        """Get the sample rate of this frame from the contained frames/objects.
+
+        Returns:
+            The shape of this frame or the minimum sample rate of the contained frames/objects.
+        """
+        return self.time_axis.get_sample_rate_decimal()
 
     def get_sample_period(self) -> float:
         """Get the sample period of this frame.
@@ -310,7 +317,17 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The sample period of this frame.
         """
-        return self.time_axis.sample_period
+        return self.time_axis.get_sample_period()
+
+    def get_sample_period_decimal(self) -> Decimal:
+        """Get the sample period of this frame.
+
+        If the contained frames/object are different this will raise a warning and return the maximum period.
+
+        Returns:
+            The sample period of this frame.
+        """
+        return self.time_axis.get_sample_period_decimal()
 
     def set_precision(self, nano: bool) -> None:
         """Sets if this frame returns nanostamps (True) or timestamps (False).
@@ -319,6 +336,14 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             nano: Determines if this frame returns nanostamps (True) or timestamps (False).
         """
         self.time_axis.set_precision(nano)
+
+    def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
+        """Sets the time zone of the contained frames.
+
+        Args:
+            tzinfo: The time zone to set.
+        """
+        self.time_axis.set_tzinfo(tzinfo)
 
     def get_correction(self, name) -> Callable | None:
         name.lower()
@@ -354,6 +379,24 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
                 self.blank_generator = np.full
         else:
             self.blank_generator = obj
+
+    def get_time_intervals(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+    ) -> np.ndarray:
+        """Get the intervals between each sample of the axis.
+
+        Args:
+            start: The start index to get the intervals.
+            stop: The last index to get the intervals.
+            step: The step of the indices to the intervals.
+
+        Returns:
+            The intervals between each datum of the axis.
+        """
+        return self.time_axis.get_intervals(start=start, stop=stop, step=step)
 
     # Sample Rate
     def validate_sample_rate(self) -> bool:
@@ -657,7 +700,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         return self.time_axis.fill_timestamps_array(data_array, array_slice, slice_)
 
     # Datetimes [Timestamp]
-    def get_datetime_index(self, index: int) -> Timestamp:
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -666,7 +709,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return self.time_axis.get_datetime_index(index=index)
+        return self.time_axis.get_datetime(index=index)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
@@ -973,7 +1016,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float | int | np.dtype,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.

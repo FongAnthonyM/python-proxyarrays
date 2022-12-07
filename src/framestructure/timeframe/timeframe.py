@@ -16,7 +16,7 @@ __email__ = __email__
 from collections.abc import Iterable
 from decimal import Decimal
 import datetime  
-from typing import Any
+from typing import Any, Union
 from warnings import warn
 
 # Third-Party Packages #
@@ -287,7 +287,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             All the start_nanostamp nanostamps.
         """
-        starts = nan_array(len(self.frames), dtype="f8")
+        starts = nan_array(len(self.frames), dtype="u8")
         for index, frame in enumerate(self.frames):
             start = frame.start_nanostamp
             if start is not None:
@@ -327,9 +327,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             All the end_nanostamp nanostamps.
         """
-        ends = nan_array(len(self.frames), dtype="f8")
+        ends = nan_array(len(self.frames), dtype="u8")
         for index, frame in enumerate(self.frames):
-            end = frame.get_end_nanostamp()
+            end = frame.end_nanostamp
             if end is not None:
                 ends[index] = end
         return ends
@@ -343,7 +343,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         ends = nan_array(len(self.frames), dtype="f8")
         for index, frame in enumerate(self.frames):
-            end = frame.get_end_timestamp()
+            end = frame.end_timestamp
             if end is not None:
                 ends[index] = end
         return ends
@@ -616,6 +616,14 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         return self.fill_nanostamps_array(data_array=nanostamps)
 
+    def _get_nanostamps(self) -> np.ndarray | None:
+        """An alias method for getting the nanostamps of this frame.
+
+        Returns:
+            The nanostamps of this frame.
+        """
+        return self.nanostamps
+
     def get_nanostamp(self, super_index: int) -> float:
         """Get a nanostamp from within this frame with a super index.
 
@@ -634,7 +642,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         stop: int | None = None,
         step: int | None = None,
         frame: bool = True,
-    ) -> np.ndarray | "TimeFrameInterface":
+    ) -> Union["TimeFrameInterface", np.ndarray]:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -748,6 +756,14 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         timestamps = nan_array(self.get_length())
 
         return self.fill_timestamps_array(data_array=timestamps)
+
+    def _get_timestamps(self) -> np.ndarray | None:
+        """An alias method for getting the timestamps of this frame.
+
+        Returns:
+            The timestamps of this frame.
+        """
+        return self.timestamps
 
     def get_timestamp(self, super_index: int) -> float:
         """Get a timestamp from within this frame with a super index.
@@ -866,7 +882,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return data_array
 
     # Datetimes [Timestamp]
-    def get_datetime_index(self, index: int) -> Timestamp:
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -876,7 +892,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             All the times as a tuple of datetimes.
         """
         frame_index, _, inner_index = self.find_inner_frame_index(super_index=index)
-        return self.frames[frame_index].get_datetime_index(super_index=inner_index)
+        return self.frames[frame_index].get_datetime(super_index=inner_index)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
@@ -904,7 +920,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         nano_ts = nanostamp(timestamp)
 
         index = None
-        times = self.get_start_nanostamps()
+        times = self.get_end_nanostamps()
 
         if nano_ts < self.start_nanostamp:
             if tails:
@@ -925,7 +941,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float | int | np.dtype,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.
@@ -938,9 +954,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             The requested closest index and the value at that index.
         """
-        nano_ts = nanostamp(timestamp)
-
-        index, frame = self.find_frame(nano_ts, tails)
+        index, frame = self.find_frame(timestamp, tails)
         super_index = None
         true_datetime = None
 

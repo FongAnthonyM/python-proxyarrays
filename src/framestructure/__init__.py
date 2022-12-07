@@ -13,6 +13,8 @@ __email__ = __email__
 # Imports #
 # Local Packages #
 from .arrayframe import *
+from .timeframe import *
+from .timeaxisframe import *
 from .timeseriesframe import *
 from .directorytimeframe import *
 from .filetimeframe import *

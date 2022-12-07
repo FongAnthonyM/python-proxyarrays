@@ -617,7 +617,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         stop: int | None = None,
         step: int = 1,
         frame: bool = False,
-    ) -> np.ndarray:
+    ) -> np.ndarray | TimeFrameInterface:
         """Gets a range of nanosecond timestamps along an axis.
 
         Args:
@@ -631,10 +631,12 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         """
         ts = self.create_nanostamp_range(start=start, stop=stop, step=step)
         if frame:
-            new = self.copy()
-            new._assign_start(ts[0], nanostamp=True)
-            new.assign_end(ts[-1], nanostamp=True)
-            return new
+            return self.__class__(
+                start=ts[0],
+                end=ts[-1],
+                sample_rate=self._sample_rate,
+                precise=True,
+            )
         else:
             return ts
 
@@ -718,7 +720,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         stop: int | None = None,
         step: int = 1,
         frame: bool = False,
-    ) -> np.ndarray:
+    ) -> np.ndarray | TimeFrameInterface:
         """Gets a range of timestamps along an axis.
 
         Args:
@@ -732,10 +734,12 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         """
         ts = self.create_timestamp_range(start=start, stop=stop, step=step)
         if frame:
-            new = self.copy()
-            new._assign_start(ts[0], nanostamp=True)
-            new.assign_end(ts[-1], nanostamp=True)
-            return new
+            return self.__class__(
+                start=ts[0],
+                end=ts[-1],
+                sample_rate=self._sample_rate,
+                precise=True,
+            )
         else:
             return ts
 
@@ -759,7 +763,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         return data_array
 
     # Datetimes [Timestamp]
-    def get_datetime_index(self, index: int) -> Timestamp:
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -782,7 +786,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float | int | np.dtype,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.

@@ -22,7 +22,6 @@ from typing import Any, Callable
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
 from baseobjects.typing import AnyCallable
-from dspobjects import Resample
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array
 from dspobjects.time import Timestamp, nanostamp
@@ -78,18 +77,19 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
+        # Override Attributes #
+        self._precise: bool = False
+
         # Parent Attributes #
         super().__init__(init=False)
 
         # New Attributes #
-        # Descriptors #
         # System
         self.switch_algorithm_size = 10000000  # Consider chunking rather than switching
 
         # Time
         self.target_sample_rate: float | None = None
         self.time_tolerance: float = 0.000001
-        self._precise: bool = False
         self._sample_rate: Decimal | None = None
         self.tzinfo: datetime.tzinfo | None = None
 
@@ -137,6 +137,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         self._nanostamps = value
         self.get_nanostamps.clear_cache()
         self.get_timestamps.clear_cache()
+        self.get_datetimes.clear_cache()
 
     @property
     def timestamps(self) -> np.ndarray | None:
@@ -151,6 +152,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         self._timestamps = value
         self.get_nanostamps.clear_cache()
         self.get_timestamps.clear_cache()
+        self.get_datetimes.clear_cache()
 
     @property
     def data(self) -> np.ndarray:
@@ -168,7 +170,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def start_datetime(self) -> Timestamp | None:
         """The start datetime of this frame."""
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo) if nanostamps else None
+        return Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo) if nanostamps is not None else None
 
     @property
     def start_date(self) -> datetime.date | None:
@@ -180,19 +182,19 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def start_nanostamp(self) -> float | None:
         """The start timestamp of this frame."""
         nanostamps = self.nanostamps
-        return nanostamps[0] if nanostamps else None
+        return nanostamps[0] if nanostamps is not None else None
 
     @property
     def start_timestamp(self) -> float | None:
         """The start timestamp of this frame."""
         timestamps = self.timestamps
-        return timestamps[0] if timestamps else None
+        return timestamps[0] if timestamps is not None else None
 
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this frame."""
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo) if nanostamps else None
+        return Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo) if nanostamps is not None else None
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -204,18 +206,18 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def end_nanostamp(self) -> float | None:
         """The end timestamp of this frame."""
         nanostamps = self.nanostamps
-        return nanostamps[-1] if nanostamps else None
+        return nanostamps[-1] if nanostamps is not None else None
 
     @property
     def end_timestamp(self) -> float | None:
         """The end timestamp of this frame."""
         timestamps = self.timestamps
-        return timestamps[-1] if timestamps else None
+        return timestamps[-1] if timestamps is not None else None
 
     @property
     def sample_rate(self) -> float:
         """The sample rate of this frame."""
-        return float(self._sample_rate)
+        return self.get_sample_rate()
 
     @sample_rate.setter
     def sample_rate(self, value: float | str | Decimal) -> None:
@@ -227,12 +229,12 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     @property
     def sample_rate_decimal(self) -> Decimal:
         """The sample rate as Decimal object"""
-        return self._sample_rate
+        return self.get_sample_rate_decimal()
 
     @property
     def sample_period(self) -> float:
         """The sample period of this frame."""
-        return float(1 / self._sample_rate)
+        return self.get_sample_period()
 
     @sample_period.setter
     def sample_period(self, value: float | str | Decimal) -> None:
@@ -243,7 +245,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     @property
     def sample_period_decimal(self) -> Decimal:
         """The sample period as Decimal object"""
-        return 1 / self._sample_rate
+        return self.get_sample_period_decimal()
 
     @property
     def tail_correction(self) -> AnyCallable | None:
@@ -292,15 +294,6 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         super().construct(data=data, shape=shape, mode=mode, **kwargs)
 
-    def construct_resampler(self) -> Resample:
-        """Constructs the resampler for this frame.
-
-        Returns:
-            The resampler.
-        """
-        self.resampler = Resample(old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis)
-        return self.resampler
-
     # Getters and Setters
     def get_sample_rate(self) -> float:
         """Get the sample rate of this frame from the contained frames/objects.
@@ -308,7 +301,15 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         Returns:
             The sample rate of this frame.
         """
-        return self.sample_rate
+        return float(self._sample_rate)
+
+    def get_sample_rate_decimal(self) -> Decimal:
+        """Get the sample rate of this frame from the contained frames/objects.
+
+        Returns:
+            The shape of this frame or the minimum sample rate of the contained frames/objects.
+        """
+        return self._sample_rate
 
     def get_sample_period(self) -> float:
         """Get the sample period of this frame.
@@ -318,7 +319,17 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         Returns:
             The sample period of this frame.
         """
-        return self.sample_period
+        return float(1 / self._sample_rate)
+
+    def get_sample_period_decimal(self) -> Decimal:
+        """Get the sample period of this frame.
+
+        If the contained frames/object are different this will raise a warning and return the maximum period.
+
+        Returns:
+            The sample period of this frame.
+        """
+        return 1 / self._sample_rate
 
     def set_precision(self, nano: bool) -> None:
         """Sets if this frame returns nanostamps (True) or timestamps (False).
@@ -331,6 +342,14 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         else:
             self._data_method = self._get_timestamps.__func__
         self._precise = nano
+
+    def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
+        """Sets the time zone of the contained frames.
+
+        Args:
+            tzinfo: The time zone to set.
+        """
+        self.tzinfo = tzinfo
 
     def get_correction(self, name) -> Callable | None:
         name.lower()
@@ -559,8 +578,8 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         """
         if self._timestamps is not None:
             return self._timestamps
-        elif self._timestamps is not None:
-            return (self._timestamps * 10 ** 9).astype(np.uint64)
+        elif self._nanostamps is not None:
+            return self._nanostamps / 10 ** 9
         else:
             return None
     
@@ -633,7 +652,16 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         return data_array
 
     # Datetimes [Timestamp]
-    def get_datetime_index(self, index: int) -> Timestamp:
+    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    def get_datetimes(self) -> tuple[Timestamp]:
+        """Gets all the datetimes of this frame.
+
+        Returns:
+            All the times as a tuple of datetimes.
+        """
+        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps)
+
+    def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
 
         Args:
@@ -644,13 +672,54 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         """
         return Timestamp.fromnanostamp(self.nanostamps[index], tz=self.tzinfo)
 
-    def get_datetimes(self) -> tuple[Timestamp]:
-        """Gets all the datetimes of this frame.
+    def get_datetime_range(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        frame: bool = False,
+    ) -> tuple[Timestamp] | TimeFrameInterface:
+        """Get a range of datetimes with indices.
+
+        Args:
+            start: The start index.
+            stop: The stop index.
+            step: The interval between indices to get datetimes.
+            frame: Determines if the returned object will be a frame.
 
         Returns:
-            All the times as a tuple of datetimes.
+            The requested range of datetimes.
         """
-        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps)
+        ns = self.nanostamps[slice(start, stop, step)]
+        if frame:
+            return self.__class__(
+                ns,
+                sample_rate=self.sample_rate_decimal,
+                precise=True,
+                tzinfo=self.tzinfo,
+                mode=self.mode,
+            )
+        else:
+            return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in ns)
+
+    def fill_datetime_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with nanostamps from the contained frames/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps[slice_])
+        return data_array
 
     # For Other Data
     def shift_to_nearest_sample_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
@@ -881,7 +950,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def find_time_index(
         self,
         timestamp: datetime.datetime | float | int | np.dtype,
-        approx: bool = False,
+        approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
         """Finds the index with given time, can give approximate values.
@@ -909,4 +978,4 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
             if approx or nano_ts == true_timestamp:
                 return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp))
 
-        return IndexDateTime(None, None)
+        raise IndexError("Timestamp out of range.")
