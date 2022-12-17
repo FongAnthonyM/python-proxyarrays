@@ -295,15 +295,16 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         super().construct(data=data, shape=shape, mode=mode, **kwargs)
 
     # Getters and Setters
-    def get_sample_rate(self) -> float:
+    def get_sample_rate(self) -> float | None:
         """Get the sample rate of this frame from the contained frames/objects.
 
         Returns:
             The sample rate of this frame.
         """
-        return float(self._sample_rate)
+        sample_rate = self._sample_rate
+        return float(sample_rate) if sample_rate is not None else None
 
-    def get_sample_rate_decimal(self) -> Decimal:
+    def get_sample_rate_decimal(self) -> Decimal | None:
         """Get the sample rate of this frame from the contained frames/objects.
 
         Returns:

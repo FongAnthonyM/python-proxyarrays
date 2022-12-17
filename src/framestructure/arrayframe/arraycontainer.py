@@ -49,10 +49,11 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         shape: Iterable[int] | None = None,
         mode: str = 'a',
         init: bool = True,
+        *args: Any,
         **kwargs: Any,
     ) -> None:
         # Parent Attributes #
-        super().__init__()
+        super().__init__(*args, int=init, **kwargs)
 
         # Descriptors #
         self.target_shape: tuple[int] | None = None

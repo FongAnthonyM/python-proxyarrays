@@ -44,9 +44,15 @@ class BlankArrayFrame(ArrayFrameInterface):
     """
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None, init: bool = True) -> None:
+    def __init__(
+        self,
+        shape: tuple[int] | None = None,
+        dtype: np.dtype | str | None = None, init: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         # Parent Attributes #
-        super().__init__()
+        super().__init__(*args, int=init, **kwargs)
 
         # New Attributes #
         # Shape

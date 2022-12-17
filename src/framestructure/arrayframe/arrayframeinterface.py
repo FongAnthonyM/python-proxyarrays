@@ -40,7 +40,10 @@ class ArrayFrameInterface(BaseObject):
     """
     # Magic Methods #
     # Construction/Destruction
-    def __init__(self) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Parent Attributes #
+        super().__init__(*args, **kwargs)
+
         # New  Attributes #
         self._is_updating: bool = False
 

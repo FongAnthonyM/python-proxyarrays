@@ -150,7 +150,10 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
             self.path = path
 
         if load:
-            self.construct_frames(open_=open_, mode=self.mode, **kwargs)
+            if self.path.is_dir():
+                self.construct_frames(open_=open_, mode=self.mode, **kwargs)
+            else:
+                raise IOError(f"{self.path.as_posix()} does not exist.")
 
     def construct_frames(self, open_=False, **kwargs) -> None:
         """Constructs the frames for this object.

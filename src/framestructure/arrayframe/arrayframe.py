@@ -77,11 +77,12 @@ class ArrayFrame(ArrayFrameInterface, CachingObject):
         frames: Iterable[ArrayFrameInterface] | None = None,
         mode: str = 'a',
         update: bool = False,
-        init: bool = True
+        init: bool = True,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         # Parent Attributes #
-        CachingObject.__init__(self)
-        ArrayFrameInterface.__init__(self)
+        super().__init__(*args, int=init, **kwargs)
 
         # New Attributes #
         # Shape
