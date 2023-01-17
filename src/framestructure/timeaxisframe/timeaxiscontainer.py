@@ -77,17 +77,12 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # Override Attributes #
-        self._precise: bool = False
-
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
         # System
         self.switch_algorithm_size = 10000000  # Consider chunking rather than switching
 
         # Time
+        self._precise: bool | None = False
         self.target_sample_rate: float | None = None
         self.time_tolerance: float = 0.000001
         self._sample_rate: Decimal | None = None
@@ -101,6 +96,9 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         # Containers #
         self._nanostamps: np.ndarray | None = None
         self._timestamps: np.ndarray | None = None
+
+        # Parent Attributes #
+        super().__init__(init=False)
 
         # Object Construction #
         if init:

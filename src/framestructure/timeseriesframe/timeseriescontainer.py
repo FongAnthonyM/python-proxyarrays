@@ -59,6 +59,9 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         time_axis: The time axis of the data.
         shape: The shape that frame should be and if resized the shape it will default to.
         sample_rate: The sample rate of the data.
+        sample_period: The sample period of this frame.
+        precise: Determines if this frame returns nanostamps (True) or timestamps (False).
+        tzinfo: The time zone of the timestamps.
         mode: Determines if the contents of this frame are editable or not.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.

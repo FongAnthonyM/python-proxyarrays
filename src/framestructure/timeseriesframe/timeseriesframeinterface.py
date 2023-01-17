@@ -443,7 +443,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         """
         index, dt, timestamp = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
         slices = (slice(None),) * self.t_axis + (index,)
-        data = self._dataset[slices]
+        data = self.data[slices]
 
         return FoundData(data, index, dt)
 
