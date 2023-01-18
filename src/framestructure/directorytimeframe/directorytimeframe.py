@@ -45,7 +45,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: Determines if the contents of this frame are editable or not.
         update: Determines if this frame will start_timestamp updating or not.
         open_: Determines if the frames will remain open after construction.
-        load: Determines if the frames will be constructed.
+        build: Determines if the frames will be constructed.
         **kwargs: The keyword arguments to create contained frames.
         init: Determines if this object will construct.
     """
@@ -77,13 +77,10 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: str = 'a',
         update: bool = False,
         open_: bool = False,
-        load: bool = True,
+        build: bool = True,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
         self._path: pathlib.Path | None = None
 
@@ -92,9 +89,12 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         self.frame_type: type = self.default_frame_type
         self.frame_paths: set[pathlib.Path] = set()
 
+        # Parent Attributes #
+        super().__init__(init=False)
+
         # Object Construction #
         if init:
-            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, load=load, **kwargs)
+            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
 
     @property
     def path(self) -> pathlib.Path:
@@ -130,7 +130,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: str = 'a',
         update: bool = False,
         open_: bool = False,
-        load: bool = False,
+        build: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -141,15 +141,15 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
             mode: Determines if the contents of this frame are editable or not.
             update: Determines if this frame will start_timestamp updating or not.
             open_: Determines if the frames will remain open after construction.
-            load: Determines if the frames will be constructed.
+            build: Determines if the frames will be constructed.
             **kwargs: The keyword arguments to create contained frames.
         """
-        super().construct(frames=frames, mode=mode, update=update)
-
         if path is not None:
             self.path = path
 
-        if load:
+        super().construct(frames=frames, mode=mode, update=update)
+
+        if build:
             if self.path.is_dir():
                 self.construct_frames(open_=open_, mode=self.mode, **kwargs)
             else:
