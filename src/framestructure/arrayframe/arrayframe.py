@@ -41,7 +41,7 @@ class RangeIndices(NamedTuple):
     stop: FrameIndex | int | None
 
 
-class ArrayFrame(ArrayFrameInterface, CachingObject):
+class ArrayFrame(ArrayFrameInterface):
     """A frame for holding different data types which are similar to a numpy array.
 
     This object acts as an abstraction of several contained numpy like objects, to appear as combined numpy array.

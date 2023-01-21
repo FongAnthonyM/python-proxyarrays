@@ -21,6 +21,7 @@ from typing import Any, Union
 from baseobjects import singlekwargdispatchmethod
 from baseobjects.typing import AnyCallable
 from baseobjects import BaseObject
+from baseobjects.cachingtools import CachingObject
 import numpy as np
 
 # Local Packages #
@@ -29,7 +30,7 @@ import numpy as np
 # Definitions #
 # Classes #
 # Todo: Create a file/edit mode base object to inherit from
-class ArrayFrameInterface(BaseObject):
+class ArrayFrameInterface(CachingObject):
     """An interface which outlines the basis for an array frame.
 
     Attributes:
@@ -152,7 +153,7 @@ class ArrayFrameInterface(BaseObject):
     # Caching
     def clear_all_caches(self) -> None:
         """Clears the caches within this frame and any contained frames."""
-        pass
+        self.clear_caches()
 
     # Updating
     def enable_updating(self, get_caches: bool = False) -> None:

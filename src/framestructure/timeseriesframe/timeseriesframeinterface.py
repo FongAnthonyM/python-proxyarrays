@@ -441,7 +441,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         Returns:
             The found data at the timestamp.
         """
-        index, dt, timestamp = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+        index, dt = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
         slices = (slice(None),) * self.t_axis + (index,)
         data = self.data[slices]
 

@@ -658,7 +658,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps)
+        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.get_nanostamps())
 
     def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
