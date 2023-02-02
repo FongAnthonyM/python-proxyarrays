@@ -78,9 +78,6 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         is_infinite: bool | None = None,
         init: bool = True,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
         self._assigned_length: int | None = None
 
@@ -98,6 +95,9 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         self.tzinfo: datetime.tzinfo | None = None
 
         self.is_infinite: bool = False
+
+        # Parent Attributes #
+        super().__init__(init=False)
 
         # Construct Object #
         if init:
@@ -145,7 +145,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_start_timestamp(self) -> float | None:
         """The assigned start timstamp for this frame."""
-        return float(self._assigned_start / NANO_SCALE)
+        return float(self._assigned_start / NANO_SCALE) if self._assigned_start is not None else None
 
     @property
     def start_datetime(self) -> Timestamp | None:
@@ -180,7 +180,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_end_timestamp(self) -> float | None:
         """The assigned end timstamp for this frame."""
-        return float(self._assigned_end / NANO_SCALE)
+        return float(self._assigned_end / NANO_SCALE) if self._assigned_end is not None else None
 
     @property
     def end_datetime(self) -> Timestamp | None:
@@ -234,7 +234,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def sample_period_decimal(self) -> Decimal:
         """The sample period as Decimal object"""
-        return self.get_sample_rate_decimal()
+        return self.get_sample_period_decimal()
 
     @property
     def _create_method(self):
@@ -291,7 +291,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             self.sample_period = sample_period
 
         if sample_rate is not None:
-            self.sample_rate = sample_rate
+            self._sample_rate = sample_rate if isinstance(sample_rate, Decimal) else Decimal(sample_rate)
 
         if is_infinite is not None:
             self.is_infinite = is_infinite
@@ -327,7 +327,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             return 0
 
         if length is None:
-            length = int((end - start)  * self._sample_rate / NANO_SCALE)
+            length = int((end - start) * self._sample_rate / NANO_SCALE)
         elif self._sample_rate is None:
             self._sample_rate = Decimal(length * NANO_SCALE / (end - start))
 
@@ -366,7 +366,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             value: The value to assign as the start.
             is_nano: Determines if the input is in nanoseconds. 
         """
-        self._assigned_start(value=value, is_nano=is_nano)
+        self._assign_start(value=value, is_nano=is_nano)
         self.refresh()
 
     def _assign_end(self, value: datetime.datetime | float | int | np.dtype | None, is_nano: bool = False) -> None:
@@ -388,7 +388,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             value: The value to assign as the end.
             is_nano: Determines if the input is in nanoseconds. 
         """
-        self._assigned_end(value=value, is_nano=is_nano)
+        self._assign_end(value=value, is_nano=is_nano)
         self.refresh()
 
     def get_sample_rate(self) -> float:
@@ -435,7 +435,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             self._create_method_ = self.create_nanostamp_range.__func__
         else:
             self._create_method_ = self.create_timestamp_range.__func__
-        self.precise = nano
+        self._precise = nano
 
     def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
         """Sets the time zone of the contained frames.
@@ -541,9 +541,9 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         if not self.is_infinite:
             samples = self.get_length()
 
-        period_ns = self.sample_period_decimal * 10 ** 9 * step
+        period_ns = self.sample_period_decimal * 10 ** 9 // 1 * step
         if self.assigned_start_timestamp is not None:
-            ns = self._true_start * 10 ** 9
+            ns = self._true_start
 
             if start is None:
                 start = 0
@@ -558,7 +558,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             if start < 0 or stop < 0:
                 raise IndexError("index is out of range")
         else:
-            ns = self._true_end * 10 ** 9
+            ns = self._true_end
 
             if start is None:
                 start = -samples
@@ -811,7 +811,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         else:
             remain, sample = math.modf((nano_ts - self._true_start) * (self._sample_rate / NANO_SCALE))
             if approx or remain == 0:
-                true_nano_ts = np.uint64(self._true_start + sample * self.sample_period_decimal * 10 ** 9)
+                true_nano_ts = np.uint64(self._true_start + sample * (self.sample_period_decimal * 10 ** 9 // 1))
                 return IndexDateTime(int(sample), Timestamp.fromnanostamp(true_nano_ts))
 
         return IndexDateTime(None, None)

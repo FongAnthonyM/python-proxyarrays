@@ -34,7 +34,7 @@ class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
         self,
         start: int | None = None,
         stop: int | None = None,
-        step: int | None = None,
+        step: int = 1,
         dtype: np.dtype | str | None = None,
         frame: bool | None = None,
         **kwargs: Any,
@@ -94,15 +94,20 @@ class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
             stop = None
             step = 1
 
-            shape = slice(None),
+            shape = slice(None)
         else:
             shape = list(slices)
 
             slice_ = shape[self.axis]
-            start = slice_.start
-            stop = slice_.stop
-            step = 1 if slice_.step is None else slice_.step
-
-            shape[self.axis] = slice(None)
+            if isinstance(slice_, int):
+                start = slice_
+                stop = slice_ + 1
+                step = 1
+                shape[self.axis] = 0
+            else:
+                start = slice_.start
+                stop = slice_.stop
+                step = 1 if slice_.step is None else slice_.step
+                shape[self.axis] = slice(None)
 
         return self._create_method(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]
