@@ -116,6 +116,14 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return self._data_method.__get__(self, self.__class__)()
 
     @property
+    def start_datetimes(self) -> tuple[Timestamp | None]:
+        """The start datetimes of this frame."""
+        try:
+            return self.get_start_datetimes.caching_call()
+        except AttributeError:
+            return self.get_start_datetimes()
+
+    @property
     def start_datetime(self) -> Timestamp | None:
         """The start datetime of this frame."""
         return self.frames[0].start_datetime if self.frames else None
@@ -127,15 +135,39 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return start.date() if start is not None else None
 
     @property
+    def start_nanostamps(self) -> tuple[Timestamp | None]:
+        """The start nanostamps of this frame."""
+        try:
+            return self.get_start_nanostamps.caching_call()
+        except AttributeError:
+            return self.get_start_nanostamps()
+    
+    @property
     def start_nanostamp(self) -> float | None:
         """The start timestamp of this frame."""
         return self.frames[0].start_nanostamp if self.frames else None
 
     @property
+    def start_timestamps(self) -> tuple[Timestamp | None]:
+        """The start timestamps of this frame."""
+        try:
+            return self.get_start_timestamps.caching_call()
+        except AttributeError:
+            return self.get_start_timestamps()
+    
+    @property
     def start_timestamp(self) -> float | None:
         """The start timestamp of this frame."""
         return self.frames[0].start_timestamp if self.frames else None
 
+    @property
+    def end_datetimes(self) -> tuple[Timestamp | None]:
+        """The end datetimes of this frame."""
+        try:
+            return self.get_end_datetimes.caching_call()
+        except AttributeError:
+            return self.get_end_datetimes()
+    
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this frame."""
@@ -148,10 +180,26 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return end.date() if end is not None else None
 
     @property
+    def end_nanostamps(self) -> tuple[Timestamp | None]:
+        """The end nanostamps of this frame."""
+        try:
+            return self.get_end_nanostamps.caching_call()
+        except AttributeError:
+            return self.get_end_nanostamps()
+    
+    @property
     def end_nanostamp(self) -> float | None:
         """The end timestamp of this frame."""
         return self.frames[-1].end_nanostamp if self.frames else None
 
+    @property
+    def end_timestamps(self) -> tuple[Timestamp | None]:
+        """The end timestamps of this frame."""
+        try:
+            return self.get_end_timestamps.caching_call()
+        except AttributeError:
+            return self.get_end_timestamps()
+    
     @property
     def end_timestamp(self) -> float | None:
         """The end timestamp of this frame."""
@@ -268,7 +316,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         self.get_sample_period()
 
     # Getters and Setters
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_datetimes(self) -> tuple[Timestamp | None]:
         """Get the start_timestamp datetimes of all contained frames.
 
@@ -280,7 +328,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             starts[index] = frame.start_datetime
         return tuple(starts)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_nanostamps(self) -> np.ndarray:
         """Get the start_nanostamp nanostamps of all contained frames.
 
@@ -294,7 +342,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
                 starts[index] = start
         return starts
     
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_timestamps(self) -> np.ndarray:
         """Get the start_timestamp timestamps of all contained frames.
         
@@ -308,7 +356,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
                 starts[index] = start
         return starts
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_datetimes(self) -> tuple[Timestamp | None]:
         """Get the end_timestamp datetimes of all contained frames.
 
@@ -320,7 +368,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             ends[index] = frame.end_datetime
         return tuple(ends)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_nanostamps(self) -> np.ndarray:
         """Get the end_nanostamp nanostamps of all contained frames.
 
@@ -334,7 +382,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
                 ends[index] = end
         return ends
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_timestamps(self) -> np.ndarray:
         """Get the end_timestamp timestamps of all contained frames.
 
@@ -348,7 +396,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
                 ends[index] = end
         return ends
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rates(self) -> tuple[float]:
         """Get the sample rates of all contained frames.
 
@@ -357,7 +405,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         return tuple(frame.get_sample_rate() for frame in self.frames)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rates_decimal(self) -> tuple[Decimal]:
         """Get the sample rates of all contained frames.
 
@@ -366,7 +414,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         return tuple(frame.get_sample_rate_decimal() for frame in self.frames)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rate(self) -> float:
         """Get the sample rate of this frame from the contained frames/objects.
 
@@ -382,7 +430,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return min(sample_rates)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_rate_decimal(self) -> Decimal:
         """Get the sample rate of this frame from the contained frames/objects.
 
@@ -398,7 +446,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return min(sample_rates)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_periods(self) -> tuple[float]:
         """Get the sample periods of all contained frames.
 
@@ -407,7 +455,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         return tuple(frame.get_sample_period() for frame in self.frames)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_periods_decimal(self) -> tuple[Decimal]:
         """Get the sample periods of all contained frames.
 
@@ -416,7 +464,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         return tuple(frame.get_sample_period_decimal() for frame in self.frames)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_period(self) -> float:
         """Get the sample period of this frame.
 
@@ -432,7 +480,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             warn(f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_period_decimal(self) -> Decimal:
         """Get the sample period of this frame.
 
@@ -600,7 +648,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         #     self.refresh()
 
     # Get Nanostamps
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_nanostamps(self) -> np.ndarray | None:
         """Gets all the nanostamps of this frame.
 
@@ -741,7 +789,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return data_array
     
     # Get Timestamps
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
         """Gets all the timestamps of this frame.
 
@@ -920,7 +968,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         nano_ts = nanostamp(timestamp)
 
         index = None
-        times = self.get_end_nanostamps()
+        times = self.end_nanostamps
 
         if nano_ts < self.start_nanostamp:
             if tails:

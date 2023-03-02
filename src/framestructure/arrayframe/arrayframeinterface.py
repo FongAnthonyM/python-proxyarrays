@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatchmethod
+from baseobjects.functions import singlekwargdispatch
 from baseobjects.typing import AnyCallable
 from baseobjects import BaseObject
 from baseobjects.cachingtools import CachingObject
@@ -123,7 +123,7 @@ class ArrayFrameInterface(CachingObject):
         new_frame.mode = 'a'
         return new_frame
 
-    @singlekwargdispatchmethod("method")
+    @singlekwargdispatch("method")
     def set_spawn_editable(self, method: AnyCallable | str) -> None:
         """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
 

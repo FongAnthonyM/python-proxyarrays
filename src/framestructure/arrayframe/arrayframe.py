@@ -19,7 +19,7 @@ from typing import Any, NamedTuple
 from warnings import warn
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatchmethod
+from baseobjects.functions import singlekwargdispatch
 from baseobjects.cachingtools import CachingObject, timed_keyless_cache
 import numpy as np
 
@@ -131,6 +131,16 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_shape.caching_call()
         except AttributeError:
             return self.get_shape()
+
+    @property
+    def max_ndim(self) -> int:
+        """The maximum number dimension in the contained frames/objects if they are different across axes."""
+        return len(self.max_shape)
+
+    @property
+    def min_ndim(self) -> int:
+        """The minimum number dimension in the contained frames/objects if they are different across axes."""
+        return len(self.min_shape)
 
     @property
     def lengths(self) -> tuple[int]:
@@ -292,7 +302,7 @@ class ArrayFrame(ArrayFrameInterface):
         self.clear_caches()
     
     # Getters
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_any_updating(self) -> bool:
         """Checks if any contained frames/objects are updating.
 
@@ -304,7 +314,7 @@ class ArrayFrame(ArrayFrameInterface):
                 return True
         return False
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_shapes(self) -> tuple[tuple[int]]:
         """Get the shapes from the contained frames/objects.
 
@@ -313,7 +323,7 @@ class ArrayFrame(ArrayFrameInterface):
         """
         return tuple(frame.get_shape() for frame in self.frames)
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_min_shape(self) -> tuple[int]:
         """Get the minimum shapes from the contained frames/objects if they are different across axes.
 
@@ -340,7 +350,7 @@ class ArrayFrame(ArrayFrameInterface):
                 shape[ax] = min(shape_array[:, ax])
         return tuple(shape)
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_max_shape(self) -> tuple[int]:
         """Get the maximum shapes from the contained frames/objects if they are different across axes.
 
@@ -367,7 +377,7 @@ class ArrayFrame(ArrayFrameInterface):
                 shape[ax] = max(shape_array[:, ax])
         return tuple(shape)
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_shape(self) -> tuple[int]:
         """Get the shape of this frame from the contained frames/objects.
 
@@ -381,7 +391,7 @@ class ArrayFrame(ArrayFrameInterface):
             warn(f"The ArrayFrame '{self}' does not have a valid shape, returning minimum shape.")
         return self.get_min_shape()
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_lengths(self) -> tuple[int]:
         """Get the lengths of the contained frames/objects.
 
@@ -395,7 +405,7 @@ class ArrayFrame(ArrayFrameInterface):
 
         return tuple(lengths)
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_length(self) -> int:
         """Get the length of this frame as the sum of the contained frames/objects length.
 
@@ -404,7 +414,7 @@ class ArrayFrame(ArrayFrameInterface):
         """
         return int(sum(self.get_lengths()))
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_frame_start_indices(self) -> tuple[int]:
         """Get the start indices of the contained files based on the lengths of the contained frames/objects.
 
@@ -419,7 +429,7 @@ class ArrayFrame(ArrayFrameInterface):
             previous += frame_length
         return tuple(starts)
 
-    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", collective=False)
+    @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_frame_end_indices(self) -> tuple[int]:
         """Get the end indices of the contained files based on the lengths of the contained frames/objects.
 
@@ -435,7 +445,7 @@ class ArrayFrame(ArrayFrameInterface):
         return tuple(ends)
 
     # Main Get Item
-    @singlekwargdispatchmethod("item")
+    @singlekwargdispatch("item")
     def get_item(self, item: Any) -> Any:
         """Get an item from this frame based on the input. For Ellipsis return all the data.
 
@@ -543,7 +553,7 @@ class ArrayFrame(ArrayFrameInterface):
             key = self.frame_sort_key
         self.frames.sort(key=key, reverse=reverse)
 
-    @singlekwargdispatchmethod("other")
+    @singlekwargdispatch("other")
     def concatenate(self, other: ArrayFrameInterface | list[ArrayFrameInterface]) -> ArrayFrameInterface:
         """Concatenates this frame object with another frame or a list.
 
@@ -606,7 +616,7 @@ class ArrayFrame(ArrayFrameInterface):
         return self.combine_type(frames=self.frames[start:stop:step])
 
     # Get Frame within by Index
-    @singlekwargdispatchmethod("indices")
+    @singlekwargdispatch("indices")
     def get_from_index(
         self,
         indices: Iterable[int | slice | Iterable] | int | slice,
@@ -810,17 +820,16 @@ class ArrayFrame(ArrayFrameInterface):
             The requested range as an array.
         """
         if slices is None:
-            slices = [slice(None)] * len(self.max_shape)
+            slices = [slice(None)] * self.max_ndim
 
         # Create nan numpy array
-        max_shape = self.max_shape
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (len(max_shape) - len(slices))
+        full_slices = slices + [slice(None)] * (self.max_ndim - len(slices))
         t_shape = [None] * len(full_slices)
         for i, slice_ in enumerate(full_slices):
             if slice_ is not None:
                 start = 0 if slice_.start is None else slice_.start
-                stop = max_shape[i] if slice_.stop is None else slice_.stop
+                stop = self.max_shape[i] if slice_.stop is None else slice_.stop
                 step = 1 if slice_.step is None else slice_.step
                 t_shape[i] = (stop - start) // step
             else:
@@ -860,10 +869,7 @@ class ArrayFrame(ArrayFrameInterface):
         slices[self.axis] = slice(inner_start, inner_stop, axis_slice.step)
 
         # Get start and stop data array locations
-        if array_slices is None:
-            array_slices = [slice(None)] * len(da_shape)
-        else:
-            array_slices = list(array_slices)
+        array_slices = [slice(None)] * len(da_shape) if array_slices is None else list(array_slices)
 
         da_axis_slice = array_slices[self.axis]
         array_start = 0 if da_axis_slice.start is None else da_axis_slice.start
@@ -929,7 +935,7 @@ class ArrayFrame(ArrayFrameInterface):
         if axis is None:
             axis = self.axis
 
-        slices = [slice(None)] * len(self.max_shape)
+        slices = [slice(None)] * self.max_ndim
         slices[axis] = slice(start, stop, step)
         if (frame is None and self.returns_frame) or frame:
             return self.get_slices_frame(slices=slices)
@@ -955,7 +961,7 @@ class ArrayFrame(ArrayFrameInterface):
         if axis is None:
             axis = self.axis
 
-        slices = [slice(None)] * len(self.max_shape)
+        slices = [slice(None)] * self.max_ndim
         slices[axis] = item
         if (frame is None and self.returns_frame) or frame:
             return self.get_slices_frame(slices=slices)

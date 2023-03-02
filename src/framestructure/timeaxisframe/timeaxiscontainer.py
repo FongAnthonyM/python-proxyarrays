@@ -485,7 +485,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         raise NotImplemented
 
     # Get Nanostamps
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_nanostamps(self) -> np.ndarray | None:
         """Gets the nanostamps of this frame.
 
@@ -568,7 +568,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         return data_array
 
     # Get Timestamps
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
         """Gets the timestamps of this frame.
 
@@ -651,7 +651,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         return data_array
 
     # Datetimes [Timestamp]
-    @timed_keyless_cache(call_method="clearing_call", collective=False)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
 

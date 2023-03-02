@@ -18,7 +18,7 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatchmethod
+from baseobjects.functions import singlekwargdispatch
 
 # Local Packages #
 from ..timeseriesframe import TimeSeriesContainer
@@ -119,7 +119,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         self.load()
 
     # File
-    @singlekwargdispatchmethod("file")
+    @singlekwargdispatch("file")
     def set_file(self, file: Any, **kwargs: Any) -> None:
         """Sets the file for this frame to wrap.
 
