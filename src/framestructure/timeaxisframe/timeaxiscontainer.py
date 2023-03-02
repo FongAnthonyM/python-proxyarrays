@@ -975,6 +975,6 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
             index = int(np.searchsorted(self.nanostamps, nano_ts))
             true_timestamp = self.nanostamps[index]
             if approx or nano_ts == true_timestamp:
-                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp))
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
 
         raise IndexError("Timestamp out of range.")

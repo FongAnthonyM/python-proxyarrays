@@ -484,7 +484,7 @@ class ArrayFrame(ArrayFrameInterface):
         """
         is_slices = True
         for element in item:
-            if isinstance(element, int):
+            if not isinstance(element, slice):
                 is_slices = False
                 break
 
@@ -621,7 +621,7 @@ class ArrayFrame(ArrayFrameInterface):
         self,
         indices: Iterable[int | slice | Iterable] | int | slice,
         reverse: bool = False,
-        frame: bool | None = True,
+        frame: bool | None = None,
     ) -> Any:
         """Gets data from this object if given an index which can be in serval formats.
 
@@ -640,7 +640,7 @@ class ArrayFrame(ArrayFrameInterface):
         self,
         indices: Iterable[int | slice | Iterable[slice | int | None]],
         reverse: bool = False,
-        frame: bool | None = True,
+        frame: bool | None = None,
     ) -> ArrayFrameInterface | np.ndarray:
         """Gets a nested frame or data from within this frame.
 
@@ -668,7 +668,7 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_slice(item=indices, frame=frame)
 
     @get_from_index.register
-    def _(self, indices: int, frame: bool | None = True) -> Any:
+    def _(self, indices: int, frame: bool | None = None) -> Any:
         """Get a contained frame/object or data from a contained frame/object.
 
         Args:
@@ -682,7 +682,7 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_frame(index=indices)
         else:
             frame_index, _, inner_index = self.find_inner_frame_index(super_index=indices)
-            return self.frames[frame_index].get_from_index(super_index=inner_index)
+            return self.frames[frame_index].get_from_index(indices=inner_index)
 
     # Find Inner Indices within Frames
     def find_inner_frame_index(self, super_index: int) -> FrameIndex:

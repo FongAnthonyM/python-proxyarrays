@@ -51,9 +51,6 @@ class BlankArrayFrame(ArrayFrameInterface):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(*args, int=init, **kwargs)
-
         # New Attributes #
         # Shape
         self._shape: tuple[int] | None = None
@@ -63,7 +60,10 @@ class BlankArrayFrame(ArrayFrameInterface):
         self.dtype: np.dtype | str = "f4"
 
         # Assign Methods #
-        self.generate_data: Callable[[tuple[int], Any], np.ndarray] = nan_array
+        self._generate_method: Callable[[tuple[int], Any], np.ndarray] = self.create_nans.__func__
+
+        # Parent Attributes #
+        super().__init__(*args, int=init, **kwargs)
 
         # Construct Object #
         if init:
@@ -77,6 +77,11 @@ class BlankArrayFrame(ArrayFrameInterface):
     @shape.setter
     def shape(self, value: tuple[int]) -> None:
         self._shape = value
+
+    @property
+    def generate_data(self):
+        """The selected method for creating timestamps"""
+        return self._generate_method.__get__(self, self.__class__)
 
     # Numpy ndarray Methods
     def __array__(self, dtype: Any = None) -> np.ndarray:
@@ -136,7 +141,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         if isinstance(item, slice):
             return self.create_data_slice(item)
         elif isinstance(item, (tuple, list)):
-            return self.create_data_slice(item)
+            return self.create_slices_data(item)
         elif isinstance(item, ...):
             return self.create_data_range()
 
@@ -150,17 +155,17 @@ class BlankArrayFrame(ArrayFrameInterface):
         if isinstance(generator, str):
             generator = generator.lower()
             if generator == "nan":
-                self.generate_data = nan_array
+                self._generate_data = nan_array
             elif generator == "empty":
-                self.generate_data = np.empty
+                self._generate_data = np.empty
             elif generator == "zeros":
-                self.generate_data = np.zeros
+                self._generate_data = np.zeros
             elif generator == "ones":
-                self.generate_data = np.ones
+                self._generate_data = np.ones
             elif generator == "full":
-                self.generate_data = np.full
+                self._generate_data = np.full
         else:
-            self.generate_data = generator
+            self._generate_data = generator
 
     # Shape
     def validate_shape(self) -> bool:
@@ -183,6 +188,19 @@ class BlankArrayFrame(ArrayFrameInterface):
         self.shape = shape
 
     # Create Data
+    def create_nans(self, shape: int | Iterable | tuple[int], dtype: object | None = None, **kwargs: Any) -> np.ndarray:
+        """Creates an array of NaNs.
+
+        Args:
+            shape: The shape of the array to create.
+            dtype: The data type of the array.
+            **kwargs: The other numpy keyword arguments for creating an array.
+
+        Returns:
+            The array of NaNs.
+        """
+        return nan_array(shape=shape, dtype=dtype, **kwargs)
+
     def create_data_range(
         self,
         start: int | None = None,
@@ -279,8 +297,8 @@ class BlankArrayFrame(ArrayFrameInterface):
                 if isinstance(slice_, int):
                     shape.append(1)
                 else:
-                    start = slice_.start
-                    stop = slice_.stop
+                    start = 0 if slice_.start is None else slice_.start
+                    stop = self.shape[index] if slice_.stop is None else slice_.stop
                     step = 1 if slice_.step is None else slice_.step
 
                     if start < 0:
@@ -289,7 +307,7 @@ class BlankArrayFrame(ArrayFrameInterface):
                     if stop < 0:
                         stop = self.shape[index] + stop
 
-                    if start < 0 or start >= self.shape[index] or stop < 0 or stop > self.shape[index]:
+                    if start < 0 or start > self.shape[index] or stop < 0 or stop > self.shape[index]:
                         raise IndexError("index is out of range")
 
                     size = stop - start
@@ -322,7 +340,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         return self.create_data_range(start=start, stop=stop, step=step, frame=frame)
 
     # Get Index
-    def get_from_index(self, indices: Sized | int, reverse: bool = False, frame: bool = True) -> Any:
+    def get_from_index(self, indices: Sized | int, reverse: bool = False, frame: bool | None = None) -> Any:
         """Get an item recursively from within this frame using indices.
 
         Args:
@@ -340,12 +358,12 @@ class BlankArrayFrame(ArrayFrameInterface):
         else:
             raise IndexError("index out of range")
 
-        if frame:
+        if (frame is None and self.returns_frame) or frame:
             new_blank = self.copy()
             new_blank._shape[self.axis] = 1
             return new_blank
         else:
-            return self.create_data_range(start=start, stop=start + 1)
+            return self.create_data_range(start=start, stop=start + 1)[0]
 
     # Get Ranges of Data with Slices
     def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
