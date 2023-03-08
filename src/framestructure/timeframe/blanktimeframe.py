@@ -319,7 +319,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         """
         start = self._assigned_start
         end = self._assigned_end
-        length = self._assigned_length
+        length = self._assigned_length    
 
         if self.is_infinite:
             self._true_start = None if start is None else start
@@ -329,8 +329,12 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         if length is None:
             length = int((end - start) * self._sample_rate / NANO_SCALE)
         elif self._sample_rate is None:
+            if end < start:
+                raise ValueError("assigned end is before start") 
             self._sample_rate = Decimal(length * NANO_SCALE / (end - start))
-
+        
+        if length < 0:
+            raise ValueError("assigned length must be positive") 
         if start is not None:
             end = start + np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
         if end is not None:
