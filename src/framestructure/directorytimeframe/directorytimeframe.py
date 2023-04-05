@@ -130,7 +130,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         mode: str = 'a',
         update: bool = False,
         open_: bool = False,
-        build: bool = False,
+        build: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
