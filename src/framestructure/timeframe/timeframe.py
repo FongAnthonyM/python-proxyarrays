@@ -822,8 +822,8 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             The requested timestamp.
         """
-        frame_index, _, inner_index = self.find_inner_frame_index(super_index=super_index)
-        return self.frames[frame_index].get_timestamp_from_index(super_index=inner_index)
+        frame_index, _, inner_index = self.find_inner_frame_index(super_index)
+        return self.frames[frame_index].get_timestamp_from_index(inner_index)
 
     def get_timestamp_range(
         self,
@@ -940,7 +940,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             All the times as a tuple of datetimes.
         """
         frame_index, _, inner_index = self.find_inner_frame_index(super_index=index)
-        return self.frames[frame_index].get_datetime(super_index=inner_index)
+        return self.frames[frame_index].get_datetime(inner_index)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this frame.
