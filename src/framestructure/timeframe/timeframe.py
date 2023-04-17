@@ -567,7 +567,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         discontinuities = []
         for index, frame in enumerate(self.frames):
             # Check Each Frame
-            discontinuities.append(frame.where_discontinuous())
+            discontinuities.append(frame.where_discontinuous(tolerance=tolerance))
 
             # Check Inbetween Frames
             if index + 1 < len(self.frames):

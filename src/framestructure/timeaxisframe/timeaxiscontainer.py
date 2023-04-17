@@ -433,9 +433,9 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         if tolerance is None:
             tolerance = self.time_tolerance
 
-        data = self.nanostamps
-        period_ns = np.uint64(self.sample_period_decimal * 10 ** 9)
-        tolerance = np.uint64(tolerance * 10 ** 9)
+        data = self.nanostamps.astype("int64")
+        period_ns = np.int64(self.sample_period_decimal * 10 ** 9)
+        tolerance = np.int64(tolerance * 10 ** 9)
         if data.shape[0] > self.switch_algorithm_size:
             discontinuous = []
             for index in range(0, len(data) - 1):
