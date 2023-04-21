@@ -977,7 +977,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             if tails:
                 index = times.shape[0] - 1
         else:
-            index = int(np.searchsorted(times, nano_ts))
+            index = int(np.searchsorted(times, nano_ts, side="right") - 1)
 
         if index is None:
             raise IndexError("Frame not found. Timestamp out of range")
