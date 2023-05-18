@@ -930,7 +930,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         elif isinstance(correction, str):
             correction = self.get_correction(correction)
 
-        if correction:
+        if correction and self.data.size != 0:
             data, time_axis = correction(data, time_axis, axis=axis, tolerance=tolerance, **kwargs)
 
         self.data = np.append(self.data, data, axis)
@@ -1033,6 +1033,24 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             The requested closest index and the value at that index.
         """
         return self.time_axis.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+
+    def find_day_index(
+        self,
+        timestamp: datetime.date | float | int | np.dtype,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> IndexDateTime:
+        """Finds the index with given day, can give approximate values.
+
+        Args:
+            timestamp: The timestamp to find the index for.
+            approx: Determines if an approximate index will be given if the time is not present.
+            tails: Determines if the first or last index will be give the requested time is outside the axis.
+
+        Returns:
+            The requested closest index and the value at that index.
+        """
+        return self.time_axis.find_day_index(timestamp=timestamp, approx=approx, tails=tails)
 
 
 # Assign Cyclic Definitions

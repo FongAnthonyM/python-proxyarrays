@@ -138,6 +138,14 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         self.get_datetimes.clear_cache()
 
     @property
+    def day_nanostamps(self) -> np.ndarray | None:
+        """The day nanosecond timestamps of this frame."""
+        try:
+            return self.get_day_nanostamps.caching_call()
+        except AttributeError:
+            return self.get_day_nanostamps()
+
+    @property
     def timestamps(self) -> np.ndarray | None:
         """The timestamps of this frame."""
         try:
@@ -567,6 +575,16 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         data_array[array_slice] = self.nanostamps[slice_]
         return data_array
 
+    # Get Day Nanostamps
+    @timed_keyless_cache(call_method="clearing_call", local=True)
+    def get_day_nanostamps(self) -> np.ndarray | None:
+        """Gets the day nanostamps of this frame.
+
+        Returns:
+            The day nanostamps of this frame.
+        """
+        return (self.get_nanostamps() // 864e11 * 864e11).astype("u8")
+    
     # Get Timestamps
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
@@ -841,7 +859,6 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         Args:
             data: The data to append.
-            time_axis: The timestamps of the data.
             axis: The axis to append the data to.
             tolerance: The allowed deviation a sample can be away from the sample period.
             correction: Determines if time correction will be run on the data and the type if a str.
@@ -861,8 +878,8 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         elif isinstance(correction, str):
             correction = self.get_correction(correction)
 
-        if correction:
-            data, = correction(data, tolerance=tolerance)
+        if correction and self.data.size != 0:
+            data = correction(data, tolerance=tolerance)
 
         self.data = np.append(self.data, data, axis)
 
@@ -974,6 +991,39 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         else:
             index = int(np.searchsorted(self.nanostamps, nano_ts, side="right") - 1)
             true_timestamp = self.nanostamps[index]
+            if approx or nano_ts == true_timestamp:
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
+
+        raise IndexError("Timestamp out of range.")
+    
+    def find_day_index(
+        self,
+        timestamp: datetime.date | float | int | np.dtype,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> IndexDateTime:
+        """Finds the index with given day, can give approximate values.
+
+        Args:
+            timestamp: The timestamp to find the index for.
+            approx: Determines if an approximate index will be given if the time is not present.
+            tails: Determines if the first or last index will be give the requested time is outside the axis.
+
+        Returns:
+            The requested closest index and the value at that index.
+        """
+        nano_ts = nanostamp(timestamp)
+
+        samples = self.get_length()
+        if nano_ts < self.day_nanostamps[0]:
+            if tails:
+                return IndexDateTime(0, Timestamp.fromnanostamp(self.day_nanostamps[0], tz=self.tzinfo))
+        elif nano_ts > self.day_nanostamps[-1]:
+            if tails:
+                return IndexDateTime(samples, Timestamp.fromnanostamp(self.day_nanostamps[-1], tz=self.tzinfo))
+        else:
+            index = int(np.searchsorted(self.day_nanostamps, nano_ts, side="right") - 1)
+            true_timestamp = self.day_nanostamps[index]
             if approx or nano_ts == true_timestamp:
                 return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
 
