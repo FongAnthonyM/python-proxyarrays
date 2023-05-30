@@ -444,7 +444,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return sample_rates[0]
         else:
             warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
-            return min(sample_rates)
+            return self.sample_rates[np.nanargmin(np.asarray(self.sample_rates))]
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_sample_periods(self) -> tuple[float]:
