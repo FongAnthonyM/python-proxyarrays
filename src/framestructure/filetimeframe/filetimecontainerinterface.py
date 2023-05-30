@@ -64,16 +64,41 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
     # Magic Methods
     # Construction/Destruction
     def __init__(self, file: Any = None, mode: str | None = None, init: bool = True, **kwargs: Any) -> None:
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
         # Containers #
-        self.file: Any = None
+        self._path: pathlib.Path | None = None
+        self._file: Any = None
+        self.file_kwargs: dict[str, Any] = {}
+
+        # Parent Attributes #
+        super().__init__(init=False)
 
         # Object Construction #
         if init:
             self.construct(file=file, mode=mode, **kwargs)
+
+    @property
+    def path(self) -> pathlib.Path:
+        """The path to the data file."""
+        return self._path
+
+    @path.setter
+    def path(self, value: str | pathlib.Path) -> None:
+        if isinstance(value, pathlib.Path) or value is None:
+            self._path = value
+        else:
+            self._path = pathlib.Path(value)
+
+    @property
+    def file(self) -> pathlib.Path:
+        """The file object."""
+        if self._file is None:
+            self._file = self.file_type(self._path, **self.file_kwargs)
+        return self._file
+
+    @file.setter
+    def file(self, value: str | pathlib.Path) -> None:
+        self.set_file(value)
 
     @property
     def data(self) -> Any:
@@ -128,7 +153,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
             **kwargs: The keyword arguments for constructing the file.
         """
         if isinstance(file, self.file_type):
-            self.file = file
+            self._file = file
         else:
             raise TypeError(f"{type(self)} cannot set file with {type(file)}")
 
@@ -141,7 +166,8 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
             file: The path to create the file.
             **kwargs: The keyword arguments for constructing the file.
         """
-        self.file = self.file_type(file, **kwargs)
+        self.path = file
+        self.file_kwargs = kwargs
 
     def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
