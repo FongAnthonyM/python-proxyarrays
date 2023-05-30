@@ -513,7 +513,7 @@ class ArrayFrame(ArrayFrameInterface):
             If this frame has a valid/continuous shape.
         """
         shapes = np.asarray(self.shapes)
-        return (shapes == shapes[0]).all()
+        return np.delete(shapes == shapes[0], self.axis, 1).all()
 
     def resize(self, shape: Iterable[int] | None = None, **kwargs: Any) -> None:
         """Changes the shape of the frame without changing its data.
@@ -831,7 +831,7 @@ class ArrayFrame(ArrayFrameInterface):
                 start = 0 if slice_.start is None else slice_.start
                 stop = self.max_shape[i] if slice_.stop is None else slice_.stop
                 step = 1 if slice_.step is None else slice_.step
-                t_shape[i] = (stop - start) // step
+                t_shape[i] = int(stop - start) // step
             else:
                 t_shape[i] = 1
         data = np.empty(shape=t_shape)
