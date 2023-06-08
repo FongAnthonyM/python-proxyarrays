@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" __init__.py
-
+"""__init__.py
+A time series frame that wraps file object which contains time series.
 """
 # Package Header #
-from ..__header__ import *
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -12,6 +10,7 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
+
 # Imports #
 # Local Packages #
-from .filetimeframe import FileTimeFrame
+from .filetimecontainerinterface import FileTimeContainerInterface

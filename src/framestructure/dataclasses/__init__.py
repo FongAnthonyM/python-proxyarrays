@@ -1,5 +1,5 @@
 """__init__.py
-Frames for directory/file objects which contain time series data.
+A time series frame that wraps file object which contains time series.
 """
 # Package Header #
 from ..header import *
@@ -13,5 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .directorytimeframeinterface import DirectoryTimeFrameInterface
-from .directorytimeframe import DirectoryTimeFrame
+from ..timeframe.timeframeinterface import FoundTimeRange
+from ..timeseriesframe.timeseriesframeinterface import FoundTimeDataRange
