@@ -1,4 +1,4 @@
-""" timeframeinterface.py
+"""timeframeinterface.py
 An interface which outlines the basis for a time frame.
 """
 # Package Header #
@@ -32,6 +32,7 @@ from ..arrayframe import ArrayFrameInterface
 # Classes #
 class TimeFrameInterface(ArrayFrameInterface):
     """An interface which outlines the basis for a time frame."""
+
     # Magic Methods #
     # Construction/Destruction
     @property
@@ -305,7 +306,7 @@ class TimeFrameInterface(ArrayFrameInterface):
             The requested range of timestamps.
         """
         pass  # return self.times[slice(start_timestamp, stop, step)]
-    
+
     @abstractmethod
     def fill_timestamps_array(
         self,
@@ -367,7 +368,9 @@ class TimeFrameInterface(ArrayFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
@@ -419,7 +422,7 @@ class TimeFrameInterface(ArrayFrameInterface):
             The requested range.
         """
         pass
-    
+
     # Find Time
     @abstractmethod
     def find_time_index(
@@ -466,19 +469,23 @@ class TimeFrameInterface(ArrayFrameInterface):
         if start is None:
             start_index = 0
         else:
-            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
+            start_index, _ = self.find_time_index(
+                timestamp=start, approx=approx, tails=tails
+            )
 
         if stop is None:
             stop_index = self.get_length()
         else:
-            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
+            stop_index, _ = self.find_time_index(
+                timestamp=stop, approx=approx, tails=tails
+            )
 
         return FoundTimeRange(
             self.get_nanostamp_range(start_index, stop_index, step, frame=True),
             start_index,
             stop_index,
         )
-    
+
     def find_timestamp_range(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
@@ -505,12 +512,16 @@ class TimeFrameInterface(ArrayFrameInterface):
         if start is None:
             start_index = 0
         else:
-            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
-        
+            start_index, _ = self.find_time_index(
+                timestamp=start, approx=approx, tails=tails
+            )
+
         if stop is None:
-            stop_index = self.get_length()    
+            stop_index = self.get_length()
         else:
-            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
+            stop_index, _ = self.find_time_index(
+                timestamp=stop, approx=approx, tails=tails
+            )
 
         return FoundTimeRange(
             self.get_timestamp_range(start_index, stop_index, step, frame=True),
@@ -572,8 +583,14 @@ class TimeFrameInterface(ArrayFrameInterface):
             else:
                 start = self.end_nanostamp + np.int64(stop)
 
-        return self.find_nanostamp_range(self.start_nanotimestamp + start, self.end_nanotimestamp + stop, step, approx, tails)
-    
+        return self.find_nanostamp_range(
+            self.start_nanotimestamp + start,
+            self.end_nanotimestamp + stop,
+            step,
+            approx,
+            tails,
+        )
+
     def find_time_seconds(
         self,
         start: float | int | np.dtype | None = None,
@@ -599,18 +616,21 @@ class TimeFrameInterface(ArrayFrameInterface):
                 start = self.start_timestamp + start
             else:
                 start = self.end_timestamp + start
-                
+
         if stop is not None:
             if stop >= 0:
                 start = self.start_timestamp + stop
             else:
                 start = self.end_timestamp + stop
-        
-        return self.find_timestamp_range(self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails)
+
+        return self.find_timestamp_range(
+            self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails
+        )
 
 
 class FoundTimeRange(NamedTuple):
     """A name tuple for returning a range of times with its start and end."""
+
     data: TimeFrameInterface | None
     start: int | None
     end: int | None

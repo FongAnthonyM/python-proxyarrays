@@ -1,4 +1,4 @@
-""" timeaxisframe.py
+"""timeaxisframe.py
 A frame for holding time axis information.
 """
 # Package Header #
@@ -27,6 +27,7 @@ from .timeaxiscontainer import TimeAxisContainer
 # Classes #
 class TimeAxisFrame(TimeFrame, TimeAxisFrameInterface):
     """A TimeFrame that has been expanded to be a time axis."""
+
     default_fill_type = BlankTimeAxisFrame
     time_axis_type = TimeAxisContainer
 

@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 Description: framestructure provides several classes for creating structures of dataframes.
 """
 # Package Header #

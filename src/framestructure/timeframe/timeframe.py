@@ -1,4 +1,4 @@
-""" timeaxisframe.py
+"""timeaxisframe.py
 A frame for holding time information.
 """
 # Package Header #
@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from collections.abc import Iterable
 from decimal import Decimal
-import datetime  
+import datetime
 from typing import Any, Union
 from warnings import warn
 
@@ -55,6 +55,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         update: Determines if this frame will start_timestamp updating or not.
         init: Determines if this object will construct.
     """
+
     default_fill_type = BlankTimeFrame
     time_axis_type = None
 
@@ -65,9 +66,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         frames: Iterable[TimeFrameInterface] | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
-        mode: str = 'a',
+        mode: str = "a",
         update: bool = False,
-        init: bool = True
+        init: bool = True,
     ) -> None:
         # Parent Attributes #
         super().__init__(init=False)
@@ -83,7 +84,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         # Object Construction #
         if init:
-            self.construct(frames=frames, precise=precise, tzinfo=tzinfo, mode=mode, update=update)
+            self.construct(
+                frames=frames, precise=precise, tzinfo=tzinfo, mode=mode, update=update
+            )
 
     @property
     def precise(self) -> bool:
@@ -141,7 +144,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return self.get_start_nanostamps.caching_call()
         except AttributeError:
             return self.get_start_nanostamps()
-    
+
     @property
     def start_nanostamp(self) -> float | None:
         """The start timestamp of this frame."""
@@ -154,7 +157,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return self.get_start_timestamps.caching_call()
         except AttributeError:
             return self.get_start_timestamps()
-    
+
     @property
     def start_timestamp(self) -> float | None:
         """The start timestamp of this frame."""
@@ -167,7 +170,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return self.get_end_datetimes.caching_call()
         except AttributeError:
             return self.get_end_datetimes()
-    
+
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this frame."""
@@ -186,7 +189,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return self.get_end_nanostamps.caching_call()
         except AttributeError:
             return self.get_end_nanostamps()
-    
+
     @property
     def end_nanostamp(self) -> float | None:
         """The end timestamp of this frame."""
@@ -199,7 +202,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             return self.get_end_timestamps.caching_call()
         except AttributeError:
             return self.get_end_timestamps()
-    
+
     @property
     def end_timestamp(self) -> float | None:
         """The end timestamp of this frame."""
@@ -341,11 +344,11 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             if start is not None:
                 starts[index] = start
         return starts
-    
+
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_timestamps(self) -> np.ndarray:
         """Get the start_timestamp timestamps of all contained frames.
-        
+
         Returns:
             All the start_timestamp timestamps.
         """
@@ -427,7 +430,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(
+                f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate."
+            )
             return min(sample_rates)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -443,7 +448,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(
+                f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate."
+            )
             return self.sample_rates[np.nanargmin(np.asarray(self.sample_rates))]
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -477,7 +484,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(
+                f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period."
+            )
             return max(sample_periods)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -493,7 +502,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(
+                f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period."
+            )
             return max(sample_periods)
 
     def set_precision(self, nano: bool) -> None:
@@ -540,7 +551,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             sample_rate: The new sample rate to change to.
             **kwargs: Any additional kwargs need to change the shape of contained frames/objects.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if sample_rate is None:
@@ -681,8 +692,12 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             The requested nanostamp.
         """
-        frame_index, _, inner_index = self.find_inner_frame_index(super_index=super_index)
-        return self.frames[frame_index].get_nanostamp_from_index(super_index=inner_index)
+        frame_index, _, inner_index = self.find_inner_frame_index(
+            super_index=super_index
+        )
+        return self.frames[frame_index].get_nanostamp_from_index(
+            super_index=inner_index
+        )
 
     def get_nanostamp_range(
         self,
@@ -710,7 +725,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         nanostamps = nan_array(length, dtype="u8")
 
-        ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
+        ts = self.fill_nanostamps_array(
+            data_array=nanostamps, slice_=slice(start, stop, step)
+        )
         if frame:
             return self.time_axis_type(
                 ts,
@@ -740,7 +757,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_frame_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
+        range_frame_indices = self.parse_range_super_indices(
+            start=slice_.start, stop=slice_.stop
+        )
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
@@ -750,13 +769,15 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         # Get start_nanostamp and stop array locations
         array_start = 0 if array_slice.start is None else array_slice.start
-        array_stop = da_shape[self.axis] if array_slice.stop is None else array_slice.stop
+        array_stop = (
+            da_shape[self.axis] if array_slice.stop is None else array_slice.stop
+        )
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
             "array_slice": array_slice,
-            "slice_": slice_
+            "slice_": slice_,
         }
 
         # Get Data
@@ -773,7 +794,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
             # Middle Frames
             fill_kwargs["slice_"] = slice(None, None, slice_.step)
-            for frame in self.frames[start_frame + 1:stop_frame]:
+            for frame in self.frames[start_frame + 1 : stop_frame]:
                 d_size = len(frame)
                 a_start = a_stop
                 a_stop = a_start + d_size
@@ -787,7 +808,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             self.frames[stop_frame].fill_nanostamps_array(**fill_kwargs)
 
         return data_array
-    
+
     # Get Timestamps
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
@@ -851,7 +872,9 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         timestamps = nan_array(length)
 
-        ts = self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
+        ts = self.fill_timestamps_array(
+            data_array=timestamps, slice_=slice(start, stop, step)
+        )
         if frame:
             return self.time_axis_type(
                 ts,
@@ -862,7 +885,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
             )
         else:
             return ts
-    
+
     def fill_timestamps_array(
         self,
         data_array: np.ndarray,
@@ -881,23 +904,27 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_frame_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
+        range_frame_indices = self.parse_range_super_indices(
+            start=slice_.start, stop=slice_.stop
+        )
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
         inner_start = range_frame_indices.start.inner_index
         inner_stop = range_frame_indices.stop.inner_index
         slice_ = slice(inner_start, inner_stop, slice_.step)
-        
+
         # Get start_timestamp and stop array locations
         array_start = 0 if array_slice.start is None else array_slice.start
-        array_stop = da_shape[self.axis] if array_slice.stop is None else array_slice.stop
+        array_stop = (
+            da_shape[self.axis] if array_slice.stop is None else array_slice.stop
+        )
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
             "array_slice": array_slice,
-            "slice_": slice_
+            "slice_": slice_,
         }
 
         # Get Data
@@ -914,7 +941,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
             # Middle Frames
             fill_kwargs["slice_"] = slice(None, None, slice_.step)
-            for frame in self.frames[start_frame + 1:stop_frame]:
+            for frame in self.frames[start_frame + 1 : stop_frame]:
                 d_size = len(frame)
                 a_start = a_stop
                 a_stop = a_start + d_size
@@ -952,11 +979,13 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         for frame in self.frames:
             datetimes.extend(frame.get_datetimes())
         return tuple(datetimes)
-    
+
     # Find Time
-    def find_frame(self, timestamp: datetime.datetime | float, tails: bool = False) -> IndexValue:
+    def find_frame(
+        self, timestamp: datetime.datetime | float, tails: bool = False
+    ) -> IndexValue:
         """Finds a frame with a given timestamp in its range
-        
+
         Args:
             timestamp: The time to find within the frames.
             tails: Determines if the flanking frames will be given if the timestamp is out of the range.
@@ -1013,7 +1042,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
                 tails=tails,
             )
             super_index = self.frame_start_indices[index] + location
-                
+
         return IndexDateTime(super_index, true_datetime)
 
 

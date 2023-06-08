@@ -1,4 +1,3 @@
-
 """Sphinx configuration."""
 # Package Header #
 from src.framestructure.header import *

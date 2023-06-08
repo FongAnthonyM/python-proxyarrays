@@ -1,4 +1,4 @@
-""" timeseriesframeinterface.py
+"""timeseriesframeinterface.py
 An interface which outlines the basis for a time series frame.
 """
 # Package Header #
@@ -34,6 +34,7 @@ from ..timeaxisframe import TimeAxisFrameInterface
 # Classes #
 class TimeSeriesFrameInterface(TimeFrameInterface):
     """An interface which outlines the basis for a time series frame."""
+
     time_series_type = None
 
     # Magic Methods #
@@ -356,7 +357,9 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
@@ -408,7 +411,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
             The requested range.
         """
         pass
-    
+
     # Find Index
     @abstractmethod
     def find_time_index(
@@ -430,7 +433,12 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         pass
 
     # Find Data
-    def find_data(self, timestamp: datetime.datetime | float, approx: bool = False, tails: bool = False,) -> FoundData:
+    def find_data(
+        self,
+        timestamp: datetime.datetime | float,
+        approx: bool = False,
+        tails: bool = False,
+    ) -> FoundData:
         """Find the data at a specific time.
 
         Args:
@@ -441,7 +449,9 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         Returns:
             The found data at the timestamp.
         """
-        index, dt = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+        index, dt = self.find_time_index(
+            timestamp=timestamp, approx=approx, tails=tails
+        )
         slices = (slice(None),) * self.t_axis + (index,)
         data = self.data[slices]
 
@@ -467,15 +477,26 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
         Returns:
             The data range on the axis and the start_timestamp and stop indices.
         """
-        axis, start_index, stop_index = self.find_nanostamp_range(start, stop, step, approx, tails)
+        axis, start_index, stop_index = self.find_nanostamp_range(
+            start, stop, step, approx, tails
+        )
 
-        data = self.get_range(start=start_index, stop=stop_index, step=step, axis=self.t_axis, frame=False)
+        data = self.get_range(
+            start=start_index, stop=stop_index, step=step, axis=self.t_axis, frame=False
+        )
 
         if axis is None:
             return FoundTimeDataRange(None, None, None, None, None, None)
         else:
             t_series = self.time_series_type(data, time_axis=axis)
-            return FoundTimeDataRange(t_series, axis, axis.start_datetime, axis.end_datetime, start_index, stop_index)
+            return FoundTimeDataRange(
+                t_series,
+                axis,
+                axis.start_datetime,
+                axis.end_datetime,
+                start_index,
+                stop_index,
+            )
 
     def find_data_nanoseconds(
         self,
@@ -548,6 +569,7 @@ class TimeSeriesFrameInterface(TimeFrameInterface):
 
 class FoundTimeDataRange(NamedTuple):
     """A named tuple for returning a found data range."""
+
     data: TimeSeriesFrameInterface | None
     axis: TimeAxisFrameInterface | None
     start: Timestamp | None

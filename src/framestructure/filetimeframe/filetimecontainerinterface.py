@@ -1,4 +1,4 @@
-""" filetimecontainerinterface.py
+"""filetimecontainerinterface.py
 A time series frame that wraps file object which contains time series.
 """
 # Package Header #
@@ -42,6 +42,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         init: Determines if this object will construct.
         **kwargs: The keyword arguments for constructing the file object.
     """
+
     file_type: Any = None
 
     # Class Methods #
@@ -63,7 +64,13 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
 
     # Magic Methods
     # Construction/Destruction
-    def __init__(self, file: Any = None, mode: str | None = None, init: bool = True, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        file: Any = None,
+        mode: str | None = None,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
         # New Attributes #
         # Containers #
         self._path: pathlib.Path | None = None
@@ -122,7 +129,9 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, file: Any = None, mode: str | None = None, **kwargs: Any) -> None:
+    def construct(
+        self, file: Any = None, mode: str | None = None, **kwargs: Any
+    ) -> None:
         """Constructs this object.
 
         Args:
@@ -169,7 +178,9 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         self.path = file
         self.file_kwargs = kwargs
 
-    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
+    def open(
+        self, mode: str | None = None, **kwargs: Any
+    ) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
 
         Args:
@@ -219,7 +230,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         Args:
             value: A data object.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
     @abstractmethod
@@ -238,7 +249,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         Args:
             value: A time axis object.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
     @abstractmethod

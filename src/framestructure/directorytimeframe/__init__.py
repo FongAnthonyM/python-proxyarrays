@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 Frames for directory/file objects which contain time series data.
 """
 # Package Header #

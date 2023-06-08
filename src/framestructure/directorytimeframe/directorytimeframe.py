@@ -1,4 +1,4 @@
-""" directorytimeframe.py
+"""directorytimeframe.py
 A frame for directory/file objects which contain time series data.
 """
 # Package Header #
@@ -49,6 +49,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         **kwargs: The keyword arguments to create contained frames.
         init: Determines if this object will construct.
     """
+
     default_return_frame_type: type = TimeSeriesFrame
     default_frame_type: type = None
 
@@ -74,7 +75,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         self,
         path: pathlib.Path | str | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
-        mode: str = 'a',
+        mode: str = "a",
         update: bool = False,
         open_: bool = False,
         build: bool = True,
@@ -94,7 +95,15 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
 
         # Object Construction #
         if init:
-            self.construct(path=path, frames=frames, mode=mode, update=update, open_=open_, build=build, **kwargs)
+            self.construct(
+                path=path,
+                frames=frames,
+                mode=mode,
+                update=update,
+                open_=open_,
+                build=build,
+                **kwargs,
+            )
 
     @property
     def path(self) -> pathlib.Path:
@@ -127,7 +136,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         self,
         path: pathlib.Path | str | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
-        mode: str = 'a',
+        mode: str = "a",
         update: bool = False,
         open_: bool = False,
         build: bool = True,
@@ -190,7 +199,9 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         return self.frame_type.validate_path(path)
 
     # Path and File System
-    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
+    def open(
+        self, mode: str | None = None, **kwargs: Any
+    ) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
 
         Args:

@@ -1,4 +1,4 @@
-""" blanktimeaxisframe.py
+"""blanktimeaxisframe.py
 A frame for generating time axis information.
 """
 # Package Header #
@@ -28,6 +28,7 @@ from .timeaxisframeinterface import TimeAxisFrameInterface
 # Classes #
 class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
     """A frame for generating time axis information."""
+
     # Instance Methods #
     # Create Data
     def create_data_range(
@@ -53,7 +54,6 @@ class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
             The data requested.
         """
         if (frame is None and self.returns_frame) or frame:
-
             if start is None:
                 start = self._assigned_start
             else:
@@ -110,4 +110,6 @@ class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
                 step = 1 if slice_.step is None else slice_.step
                 shape[self.axis] = slice(None)
 
-        return self._create_method(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]
+        return self._create_method(start=start, stop=stop, step=step, dtype=dtype)[
+            tuple(shape)
+        ]

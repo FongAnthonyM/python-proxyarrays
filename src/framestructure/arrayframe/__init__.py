@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 Base Array frames.
 """
 # Package Header #

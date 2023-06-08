@@ -1,4 +1,4 @@
-""" blanktimeseriesframe.py
+"""blanktimeseriesframe.py
 A frame for holding blank time series data such as NaNs, zeros, or a single number.
 """
 # Package Header #
@@ -29,5 +29,5 @@ class BlankTimeSeriesFrame(BlankTimeFrame, TimeSeriesFrameInterface):
 
     This frame does not store a blank array, rather it generates an array whenever data would be accessed.
     """
-    time_series_type = TimeSeriesContainer
 
+    time_series_type = TimeSeriesContainer

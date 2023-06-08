@@ -1,4 +1,4 @@
-""" arraycontainer.py
+"""arraycontainer.py
 A frame container that wraps an array like object to give it frame functionality.
 """
 # Package Header #
@@ -25,7 +25,9 @@ from .arrayframeinterface import ArrayFrameInterface
 
 # Definitions #
 # Classes #
-class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
+class ArrayContainer(
+    ArrayFrameInterface
+):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
     """A frame container that wraps an array like object to give it frame functionality.
 
     Attributes:
@@ -41,13 +43,14 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
     """
+
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
         data: np.ndarray | None = None,
         shape: Iterable[int] | None = None,
-        mode: str = 'a',
+        mode: str = "a",
         init: bool = True,
         *args: Any,
         **kwargs: Any,
@@ -129,7 +132,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             An editable version of this frame.
         """
         copy_ = self.copy()
-        copy_.mode = 'a'
+        copy_.mode = "a"
         if self.data is not None:
             copy_.data = self.data.copy()
         return copy_
@@ -171,7 +174,12 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         """
         return True
 
-    def resize(self, shape: Iterable[int] | None = None, dtype: np.dtype | str | None = None, **kwargs: Any) -> None:
+    def resize(
+        self,
+        shape: Iterable[int] | None = None,
+        dtype: np.dtype | str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Changes the shape of the frame without changing its data.
 
         Args:
@@ -179,7 +187,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             dtype: The data type of the data to resize to.
             **kwargs: Any other kwargs for reshaping.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if shape is None:
@@ -209,7 +217,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             data: The data to append onto the contained data.
             axis: The axis to append the new data.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if axis is None:
@@ -220,7 +228,12 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
         else:
             self.data = np.append(self.data, data, axis)
 
-    def append_frame(self, frame: ArrayFrameInterface, axis: int | None = None, truncate: bool | None = None) -> None:
+    def append_frame(
+        self,
+        frame: ArrayFrameInterface,
+        axis: int | None = None,
+        truncate: bool | None = None,
+    ) -> None:
         """Appends data from another frame to this frame.
 
         Args:
@@ -228,7 +241,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             axis: The axis to append the data along.
             truncate: Determines if the other frame's data will be truncated to fit this frame's shape.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if axis is None:
@@ -268,7 +281,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             axis: The axis to append the data along.
             truncate: Determines if the other frames' data will be truncated to fit this frame's shape.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         frames = list(frames)
@@ -277,7 +290,9 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             self.data = frames.pop(0)[...]
 
         for frame in frames:
-            self.append_frame(frame, axis=axis, truncate=truncate)  # Can be rewritten to be faster.
+            self.append_frame(
+                frame, axis=axis, truncate=truncate
+            )  # Can be rewritten to be faster.
 
     def get_range(
         self,
@@ -327,7 +342,7 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
             step: The interval to set the data of the range.
             axis: The axis to set the data along.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if axis is None:
@@ -372,7 +387,9 @@ class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (S
 
         return self.get_range(start=start, stop=start + 1, frame=frame)
 
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:

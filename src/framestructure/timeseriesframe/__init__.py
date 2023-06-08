@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 Frames for holding time series.
 """
 # Package Header #

@@ -1,4 +1,4 @@
-""" arrayframe.py
+"""arrayframe.py
 A frame for holding different data types which are similar to a numpy array.
 """
 # Package Header #
@@ -66,6 +66,7 @@ class ArrayFrame(ArrayFrameInterface):
         update: Determines if this frame will start updating or not.
         init: Determines if this object will construct.
     """
+
     # TODO: Consider making the frame work multidimensional. (Only single-dimensional right now.)
     default_return_frame_type: type = ArrayFrameInterface
     default_combine_type: type | None = ArrayContainer
@@ -75,7 +76,7 @@ class ArrayFrame(ArrayFrameInterface):
     def __init__(
         self,
         frames: Iterable[ArrayFrameInterface] | None = None,
-        mode: str = 'a',
+        mode: str = "a",
         update: bool = False,
         init: bool = True,
         *args: Any,
@@ -115,7 +116,7 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_min_shape.caching_call()
         except AttributeError:
             return self.get_min_shape()
-    
+
     @property
     def max_shape(self) -> tuple[tuple[int]]:
         """Get the maximum shapes from the contained frames/objects if they are different across axes."""
@@ -123,7 +124,7 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_max_shape.caching_call()
         except AttributeError:
             return self.get_max_shape()
-    
+
     @property
     def shape(self) -> tuple[int]:
         """Returns the shape of this frame if all contained shapes are the same and uses cached value if available."""
@@ -295,12 +296,12 @@ class ArrayFrame(ArrayFrameInterface):
         self.timeless_caching(get_caches=get_caches)
         for frame in self.frames:
             frame.disable_updating(get_caches=get_caches)
-    
+
     def clear(self) -> None:
         """Clears this object."""
         self.frames.clear()
         self.clear_caches()
-    
+
     # Getters
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
     def get_any_updating(self) -> bool:
@@ -338,9 +339,9 @@ class ArrayFrame(ArrayFrameInterface):
             n_dims[index] = len(shape)
 
         max_dims = max(n_dims)
-        shape_array = np.zeros((n_frames, max_dims), dtype='i')
+        shape_array = np.zeros((n_frames, max_dims), dtype="i")
         for index, s in enumerate(shapes):
-            shape_array[index, :n_dims[index]] = s
+            shape_array[index, : n_dims[index]] = s
 
         shape = [None] * max_dims
         for ax in range(max_dims):
@@ -365,9 +366,9 @@ class ArrayFrame(ArrayFrameInterface):
             n_dims[index] = len(shape)
 
         max_dims = max(n_dims)
-        shape_array = np.zeros((n_frames, max_dims), dtype='i')
+        shape_array = np.zeros((n_frames, max_dims), dtype="i")
         for index, s in enumerate(shapes):
-            shape_array[index, :n_dims[index]] = s
+            shape_array[index, : n_dims[index]] = s
 
         shape = [None] * max_dims
         for ax in range(max_dims):
@@ -388,7 +389,9 @@ class ArrayFrame(ArrayFrameInterface):
             The shape of this frame or the minimum shapes of the contained frames/objects.
         """
         if not self.validate_shape():
-            warn(f"The ArrayFrame '{self}' does not have a valid shape, returning minimum shape.")
+            warn(
+                f"The ArrayFrame '{self}' does not have a valid shape, returning minimum shape."
+            )
         return self.get_min_shape()
 
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
@@ -458,7 +461,9 @@ class ArrayFrame(ArrayFrameInterface):
         if item is Ellipsis:
             return self.get_all_data()
         else:
-            raise TypeError(f"A {type(item)} cannot be used to get an item from {type(self)}.")
+            raise TypeError(
+                f"A {type(item)} cannot be used to get an item from {type(self)}."
+            )
 
     @get_item.register
     def _(self, item: slice) -> Any:
@@ -523,7 +528,7 @@ class ArrayFrame(ArrayFrameInterface):
             **kwargs: Any additional kwargs need to change the shape of contained frames/objects.
         """
         # Todo: Fix this for along length.
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
 
         if shape is None:
@@ -554,7 +559,9 @@ class ArrayFrame(ArrayFrameInterface):
         self.frames.sort(key=key, reverse=reverse)
 
     @singlekwargdispatch("other")
-    def concatenate(self, other: ArrayFrameInterface | list[ArrayFrameInterface]) -> ArrayFrameInterface:
+    def concatenate(
+        self, other: ArrayFrameInterface | list[ArrayFrameInterface]
+    ) -> ArrayFrameInterface:
         """Concatenates this frame object with another frame or a list.
 
         Args:
@@ -563,7 +570,9 @@ class ArrayFrame(ArrayFrameInterface):
         Returns:
             A new frame which is the concatenation of this frame and another object.
         """
-        raise TypeError(f"A {type(other)} cannot be used to concatenate a {type(self)}.")
+        raise TypeError(
+            f"A {type(other)} cannot be used to concatenate a {type(self)}."
+        )
 
     @concatenate.register
     def _(self, other: ArrayFrameInterface) -> ArrayFrameInterface:
@@ -598,10 +607,7 @@ class ArrayFrame(ArrayFrameInterface):
         self.frames.append(item)
 
     def combine_frames(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None
+        self, start: int | None = None, stop: int | None = None, step: int | None = None
     ) -> ArrayFrameInterface:
         """Combines a range of frames into a single frame.
 
@@ -633,7 +639,9 @@ class ArrayFrame(ArrayFrameInterface):
         Returns:
             The requested frame or data.
         """
-        raise TypeError(f"A {type(indices)} be used to get from super_index for a {type(self)}.")
+        raise TypeError(
+            f"A {type(indices)} be used to get from super_index for a {type(self)}."
+        )
 
     @get_from_index.register(Iterable)
     def _(
@@ -659,7 +667,9 @@ class ArrayFrame(ArrayFrameInterface):
             index = indices.pop()
 
         if indices:
-            return self.frames[index].get_from_index(indices=indices, reverse=reverse, frame=frame)
+            return self.frames[index].get_from_index(
+                indices=indices, reverse=reverse, frame=frame
+            )
         elif isinstance(index, Iterable):
             return self.get_slices(slices=index, frame=frame)
         elif isinstance(index, int):
@@ -681,7 +691,9 @@ class ArrayFrame(ArrayFrameInterface):
         if (frame is None and self.returns_frame) or frame:
             return self.get_frame(index=indices)
         else:
-            frame_index, _, inner_index = self.find_inner_frame_index(super_index=indices)
+            frame_index, _, inner_index = self.find_inner_frame_index(
+                super_index=indices
+            )
             return self.frames[frame_index].get_from_index(indices=inner_index)
 
     # Find Inner Indices within Frames
@@ -711,7 +723,9 @@ class ArrayFrame(ArrayFrameInterface):
         frame_inner_index = int(super_index - frame_start_index)
         return FrameIndex(frame_index, frame_start_index, frame_inner_index)
 
-    def find_inner_frame_indices(self, super_indices: Iterable[int]) -> tuple[FrameIndex]:
+    def find_inner_frame_indices(
+        self, super_indices: Iterable[int]
+    ) -> tuple[FrameIndex]:
         """Find the frame and inner index of several super indices.
 
         Args:
@@ -741,17 +755,25 @@ class ArrayFrame(ArrayFrameInterface):
                 frame_index = bisect_right(frame_start_indices, super_index) - 1
                 frame_start_index = frame_start_indices[frame_index]
                 frame_inner_index = int(super_index - frame_start_index)
-                inner_indices[i] = FrameIndex(frame_index, frame_start_index, frame_inner_index)
+                inner_indices[i] = FrameIndex(
+                    frame_index, frame_start_index, frame_inner_index
+                )
         else:  # Many indices to find
-            frame_indices = list(np.searchsorted(frame_start_indices, super_indices, side='right') - 1)
+            frame_indices = list(
+                np.searchsorted(frame_start_indices, super_indices, side="right") - 1
+            )
             for i, frame_index in enumerate(frame_indices):
                 frame_start_index = frame_start_indices[frame_index]
                 frame_inner_index = int(super_indices[i] - frame_start_index)
-                inner_indices[i] = FrameIndex(frame_index, frame_start_index, frame_inner_index)
+                inner_indices[i] = FrameIndex(
+                    frame_index, frame_start_index, frame_inner_index
+                )
 
         return tuple(inner_indices)
 
-    def parse_range_super_indices(self, start: int | None = None, stop: int | None = None) -> RangeIndices:
+    def parse_range_super_indices(
+        self, start: int | None = None, stop: int | None = None
+    ) -> RangeIndices:
         """Parses indices for a range and returns them as FrameIndex objects.
 
         Args:
@@ -772,12 +794,18 @@ class ArrayFrame(ArrayFrameInterface):
                 stop_index = self.find_inner_frame_index(stop)
             else:
                 stop_frame = len(self.frames) - 1
-                stop_index = FrameIndex(stop_frame, self.frame_start_indices[stop_frame], self.lengths[stop_frame])
+                stop_index = FrameIndex(
+                    stop_frame,
+                    self.frame_start_indices[stop_frame],
+                    self.lengths[stop_frame],
+                )
 
         return RangeIndices(start_index, stop_index)
 
     # Get Ranges of Data with Slices
-    def get_slices(self, slices: Iterable[slice], frame: bool | None = None) -> ArrayFrameInterface | np.ndarray:
+    def get_slices(
+        self, slices: Iterable[slice], frame: bool | None = None
+    ) -> ArrayFrameInterface | np.ndarray:
         """Get data from within using slices to determine the ranges.
 
         Args:
@@ -792,7 +820,9 @@ class ArrayFrame(ArrayFrameInterface):
         else:
             return self.get_slices_array(slices=slices)
 
-    def get_slices_frame(self, slices: Iterable[slice] | None = None) -> ArrayFrameInterface:
+    def get_slices_frame(
+        self, slices: Iterable[slice] | None = None
+    ) -> ArrayFrameInterface:
         """Gets a range of data as a new frame.
 
         Args:
@@ -803,14 +833,18 @@ class ArrayFrame(ArrayFrameInterface):
         """
         slices = list(slices)
         axis_slice = slices[self.axis]
-        range_frame_indices = self.parse_range_super_indices(start=axis_slice.start, stop=axis_slice.stop)
+        range_frame_indices = self.parse_range_super_indices(
+            start=axis_slice.start, stop=axis_slice.stop
+        )
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
 
         return self.return_frame_type(frames=[self.frames[start_frame:stop_frame]])
 
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
@@ -860,7 +894,9 @@ class ArrayFrame(ArrayFrameInterface):
         # Get indices range
         da_shape = data_array.shape
         axis_slice = slices[self.axis]
-        range_frame_indices = self.parse_range_super_indices(start=axis_slice.start, stop=axis_slice.stop)
+        range_frame_indices = self.parse_range_super_indices(
+            start=axis_slice.start, stop=axis_slice.stop
+        )
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
@@ -869,17 +905,23 @@ class ArrayFrame(ArrayFrameInterface):
         slices[self.axis] = slice(inner_start, inner_stop, axis_slice.step)
 
         # Get start and stop data array locations
-        array_slices = [slice(None)] * len(da_shape) if array_slices is None else list(array_slices)
+        array_slices = (
+            [slice(None)] * len(da_shape)
+            if array_slices is None
+            else list(array_slices)
+        )
 
         da_axis_slice = array_slices[self.axis]
         array_start = 0 if da_axis_slice.start is None else da_axis_slice.start
-        array_stop = da_shape[self.axis] if da_axis_slice.stop is None else da_axis_slice.stop
+        array_stop = (
+            da_shape[self.axis] if da_axis_slice.stop is None else da_axis_slice.stop
+        )
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
             "data_array": data_array,
             "array_slices": array_slices,
-            "slices": slices
+            "slices": slices,
         }
 
         # Get Data
@@ -896,7 +938,7 @@ class ArrayFrame(ArrayFrameInterface):
 
             # Middle Frames
             slices[self.axis] = slice(None, None, axis_slice.step)
-            for frame in self.frames[start_frame + 1:stop_frame]:
+            for frame in self.frames[start_frame + 1 : stop_frame]:
                 d_size = len(frame)
                 a_start = a_stop
                 a_stop = a_start + d_size
@@ -905,7 +947,7 @@ class ArrayFrame(ArrayFrameInterface):
 
             # Last Frame
             a_start = a_stop
-            array_slices[self.axis]= slice(a_start, array_stop, da_axis_slice.step)
+            array_slices[self.axis] = slice(a_start, array_stop, da_axis_slice.step)
             slices[self.axis] = slice(None, inner_stop, axis_slice.step)
             self.frames[stop_frame].fill_slices_array(**fill_kwargs)
 
@@ -969,7 +1011,9 @@ class ArrayFrame(ArrayFrameInterface):
             return self.get_slices_array(slices=slices)
 
     # Get Frame based on Index
-    def get_frame(self, index: int, frame: bool | None = None) -> ArrayFrameInterface | np.ndarray:
+    def get_frame(
+        self, index: int, frame: bool | None = None
+    ) -> ArrayFrameInterface | np.ndarray:
         """Get a contained frame/object or data from a contained frame/object.
 
         Args:

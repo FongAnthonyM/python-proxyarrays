@@ -1,4 +1,4 @@
-""" timeseriesframe.py
+"""timeseriesframe.py
 A TimeFrame that has been expanded to handle time series data.
 """
 # Package Header #
@@ -28,6 +28,7 @@ from .timeseriescontainer import TimeSeriesContainer
 # Classes #
 class TimeSeriesFrame(TimeFrame, TimeSeriesFrameInterface):
     """A TimeFrame that has been expanded to handle time series data."""
+
     default_fill_type = BlankTimeSeriesFrame
     time_axis_type = TimeAxisContainer
     time_series_type = TimeSeriesContainer

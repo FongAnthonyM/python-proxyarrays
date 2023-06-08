@@ -1,4 +1,4 @@
-""" timeaxisframeinterface.py
+"""timeaxisframeinterface.py
 An interface which outlines the basis for a time axis frame.
 """
 # Package Header #
@@ -33,6 +33,7 @@ from ..timeframe import TimeFrameInterface
 # Classes #
 class TimeAxisFrameInterface(TimeFrameInterface):
     """An interface which outlines the basis for a time axis frame."""
+
     # Magic Methods #
     # Numpy ndarray Methods
     @abstractmethod
@@ -300,7 +301,7 @@ class TimeAxisFrameInterface(TimeFrameInterface):
             The requested range of timestamps.
         """
         pass  # return self.times[slice(start_timestamp, stop, step)]
-    
+
     @abstractmethod
     def fill_timestamps_array(
         self,
@@ -344,7 +345,9 @@ class TimeAxisFrameInterface(TimeFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
@@ -396,7 +399,7 @@ class TimeAxisFrameInterface(TimeFrameInterface):
             The requested range.
         """
         pass
-    
+
     # Find Time
     @abstractmethod
     def find_time_index(

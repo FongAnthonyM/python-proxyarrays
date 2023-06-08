@@ -1,4 +1,4 @@
-""" arrayframeinterface.py
+"""arrayframeinterface.py
 An interface which outlines the basis for an array frame.
 """
 # Package Header #
@@ -39,6 +39,7 @@ class ArrayFrameInterface(CachingObject):
         returns_frame: Determines if methods will return frames or numpy arrays.
         mode: Determines if this frame is editable or read only.
     """
+
     # Magic Methods #
     # Construction/Destruction
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -52,7 +53,7 @@ class ArrayFrameInterface(CachingObject):
 
         self.returns_frame: bool = False
 
-        self.mode: str = 'a'
+        self.mode: str = "a"
 
     @property
     def spawn_editable(self) -> AnyCallable:
@@ -120,7 +121,7 @@ class ArrayFrameInterface(CachingObject):
             An editable version of this frame.
         """
         new_frame = self.copy()
-        new_frame.mode = 'a'
+        new_frame.mode = "a"
         return new_frame
 
     @singlekwargdispatch("method")
@@ -130,7 +131,9 @@ class ArrayFrameInterface(CachingObject):
         Args:
             method: The function or method name to set the _spawn_editable method to.
         """
-        raise TypeError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
+        raise TypeError(
+            f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable."
+        )
 
     @set_spawn_editable.register(Callable)
     def _(self, method: AnyCallable) -> None:
@@ -236,7 +239,12 @@ class ArrayFrameInterface(CachingObject):
 
     # Get Frame within by Index
     @abstractmethod
-    def get_from_index(self, indices: Iterator | Iterable | int, reverse: bool = False, frame: bool = True) -> Any:
+    def get_from_index(
+        self,
+        indices: Iterator | Iterable | int,
+        reverse: bool = False,
+        frame: bool = True,
+    ) -> Any:
         """Get an item recursively from within this frame using indices.
 
         Args:
@@ -251,7 +259,9 @@ class ArrayFrameInterface(CachingObject):
 
     # Get Ranges of Data with Slices
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:

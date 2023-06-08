@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 A time series frame that wraps file object which contains time series.
 """
 # Package Header #

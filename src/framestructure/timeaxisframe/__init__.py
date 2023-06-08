@@ -1,4 +1,4 @@
-""" __init__.py
+"""__init__.py
 Frames for timestamps and time information.
 """
 # Package Header #

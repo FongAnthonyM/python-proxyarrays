@@ -1,5 +1,4 @@
-
-""" header.py
+"""header.py
 Description: Information about this package.
 """
 # Header #
@@ -16,5 +15,14 @@ __license__ = "MIT"
 __version__ = "0.4.0"
 __status__ = "Prototype"
 
-__all__ = ["__package_name__", "__author__", "__credits__", "__maintainer__", "__email__",
-           "__copyright__", "__license__", "__version__", "__status__"]
+__all__ = [
+    "__package_name__",
+    "__author__",
+    "__credits__",
+    "__maintainer__",
+    "__email__",
+    "__copyright__",
+    "__license__",
+    "__version__",
+    "__status__",
+]

@@ -1,4 +1,4 @@
-""" blanktimeframe.py
+"""blanktimeframe.py
 A frame for generating time information.
 """
 # Package Header #
@@ -61,6 +61,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         is_infinite: Determines if this blank frame is infinite.
         init: Determines if this object will construct.
     """
+
     time_axis_type = None
 
     # Magic Methods
@@ -135,7 +136,11 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_start_datetime(self) -> Timestamp | None:
         """The assigned start for this frame."""
-        return Timestamp.fromnanostamp(self._assigned_start, self.tzinfo) if self._assigned_start is not None else None
+        return (
+            Timestamp.fromnanostamp(self._assigned_start, self.tzinfo)
+            if self._assigned_start is not None
+            else None
+        )
 
     @property
     def assigned_start_nanostamp(self) -> np.uint64 | None:
@@ -145,18 +150,26 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_start_timestamp(self) -> float | None:
         """The assigned start timstamp for this frame."""
-        return float(self._assigned_start / NANO_SCALE) if self._assigned_start is not None else None
+        return (
+            float(self._assigned_start / NANO_SCALE)
+            if self._assigned_start is not None
+            else None
+        )
 
     @property
     def start_datetime(self) -> Timestamp | None:
         """The start timestamp of this frame."""
-        return Timestamp.fromnanostamp(self._true_start, self.tzinfo) if self._assigned_start is not None else None
+        return (
+            Timestamp.fromnanostamp(self._true_start, self.tzinfo)
+            if self._assigned_start is not None
+            else None
+        )
 
     @property
     def start_date(self) -> datetime.date | None:
         """The start date of the data in this frame."""
         return self.start_datetime.date() if self._true_start is not None else None
-    
+
     @property
     def start_nanostamp(self) -> np.uint64 | None:
         """The start nanosecond timestamp of this frame."""
@@ -170,7 +183,11 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_end_datetime(self) -> Timestamp | None:
         """The assigned end for this frame."""
-        return Timestamp.fromnanostamp(self._assigned_end, self.tzinfo) if self._assigned_end is not None else None
+        return (
+            Timestamp.fromnanostamp(self._assigned_end, self.tzinfo)
+            if self._assigned_end is not None
+            else None
+        )
 
     @property
     def assigned_end_nanostamp(self) -> np.uint64 | None:
@@ -180,12 +197,20 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
     @property
     def assigned_end_timestamp(self) -> float | None:
         """The assigned end timstamp for this frame."""
-        return float(self._assigned_end / NANO_SCALE) if self._assigned_end is not None else None
+        return (
+            float(self._assigned_end / NANO_SCALE)
+            if self._assigned_end is not None
+            else None
+        )
 
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end timestamp of this frame."""
-        return Timestamp.fromnanostamp(self._true_end, self.tzinfo) if self._assigned_end is not None else None
+        return (
+            Timestamp.fromnanostamp(self._true_end, self.tzinfo)
+            if self._assigned_end is not None
+            else None
+        )
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -291,7 +316,11 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             self.sample_period = sample_period
 
         if sample_rate is not None:
-            self._sample_rate = sample_rate if isinstance(sample_rate, Decimal) else Decimal(sample_rate)
+            self._sample_rate = (
+                sample_rate
+                if isinstance(sample_rate, Decimal)
+                else Decimal(sample_rate)
+            )
 
         if is_infinite is not None:
             self.is_infinite = is_infinite
@@ -319,7 +348,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         """
         start = self._assigned_start
         end = self._assigned_end
-        length = self._assigned_length    
+        length = self._assigned_length
 
         if self.is_infinite:
             self._true_start = None if start is None else start
@@ -330,16 +359,20 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             length = int((end - start) * self._sample_rate / NANO_SCALE)
         elif self._sample_rate is None:
             if end < start:
-                raise ValueError("assigned end is before start") 
+                raise ValueError("assigned end is before start")
             self._sample_rate = Decimal(length * NANO_SCALE / (end - start))
-        
+
         if length < 0:
-            raise ValueError("assigned length must be positive") 
+            raise ValueError("assigned length must be positive")
         if start is not None:
-            end = start + np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
+            end = start + np.uint64(length) * np.uint64(
+                self.sample_period_decimal * NANO_SCALE
+            )
         if end is not None:
             end = Decimal(str(end))
-            start = end - np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
+            start = end - np.uint64(length) * np.uint64(
+                self.sample_period_decimal * NANO_SCALE
+            )
         else:
             raise ValueError("Either start or end must be assigned.")
 
@@ -351,46 +384,58 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         self._shape = tuple(new_shape)
         return length
 
-    def _assign_start(self, value: datetime.datetime | float | int | np.dtype | None, is_nano: bool = False) -> None:
+    def _assign_start(
+        self,
+        value: datetime.datetime | float | int | np.dtype | None,
+        is_nano: bool = False,
+    ) -> None:
         """Assigns the start of this frame.
-        
+
         Args:
             value: The value to assign as the start.
-            is_nano: Determines if the input is in nanoseconds. 
+            is_nano: Determines if the input is in nanoseconds.
         """
         if value is None:
             self._assigned_end = None
         else:
             self._assigned_start = nanostamp(value=value, is_nano=is_nano)
 
-    def assign_start(self, value: datetime.datetime | float | int | np.dtype, is_nano: bool = False) -> None:
+    def assign_start(
+        self, value: datetime.datetime | float | int | np.dtype, is_nano: bool = False
+    ) -> None:
         """Assigns the start of this frame and refreshes this object.
 
         Args:
             value: The value to assign as the start.
-            is_nano: Determines if the input is in nanoseconds. 
+            is_nano: Determines if the input is in nanoseconds.
         """
         self._assign_start(value=value, is_nano=is_nano)
         self.refresh()
 
-    def _assign_end(self, value: datetime.datetime | float | int | np.dtype | None, is_nano: bool = False) -> None:
+    def _assign_end(
+        self,
+        value: datetime.datetime | float | int | np.dtype | None,
+        is_nano: bool = False,
+    ) -> None:
         """Assigns the end of this frame.
 
         Args:
             value: The value to assign as the end.
-            is_nano: Determines if the input is in nanoseconds. 
+            is_nano: Determines if the input is in nanoseconds.
         """
         if value is None:
             self._assigned_end = None
         else:
             self._assigned_end = nanostamp(value=value, is_nano=is_nano)
 
-    def assign_end(self, value: datetime.datetime | float | int | np.dtype, is_nano: bool = False) -> None:
+    def assign_end(
+        self, value: datetime.datetime | float | int | np.dtype, is_nano: bool = False
+    ) -> None:
         """Assigns the end of this frame and refreshes this object.
 
         Args:
             value: The value to assign as the end.
-            is_nano: Determines if the input is in nanoseconds. 
+            is_nano: Determines if the input is in nanoseconds.
         """
         self._assign_end(value=value, is_nano=is_nano)
         self.refresh()
@@ -466,7 +511,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             shape: The shape to change this frame to.
             **kwargs: Any other kwargs for reshaping.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
         self.shape = shape
         self.refresh()
@@ -488,7 +533,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             sample_rate: The new sample rate for the data.
             **kwargs: Keyword arguments for the resampling.
         """
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
         self.sample_rate = sample_rate
         self.refresh()
@@ -519,7 +564,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
 
     def make_continuous(self) -> None:
         """Adjusts the data to make it continuous."""
-        if self.mode == 'r':
+        if self.mode == "r":
             raise IOError("not writable")
         self.refresh()
 
@@ -545,7 +590,7 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         if not self.is_infinite:
             samples = self.get_length()
 
-        period_ns = self.sample_period_decimal * 10 ** 9 // 1 * step
+        period_ns = self.sample_period_decimal * 10**9 // 1 * step
         if self.assigned_start_timestamp is not None:
             ns = self._true_start
 
@@ -581,9 +626,13 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         stop_adjusted = np.uint64(ns + stop * period_ns)
 
         if dtype is not None:
-            return np.arange(start_adjusted, stop_adjusted, np.uint64(period_ns), dtype="u8").astype(dtype)
+            return np.arange(
+                start_adjusted, stop_adjusted, np.uint64(period_ns), dtype="u8"
+            ).astype(dtype)
         else:
-            return np.arange(start_adjusted, stop_adjusted, np.uint64(period_ns), dtype="u8")
+            return np.arange(
+                start_adjusted, stop_adjusted, np.uint64(period_ns), dtype="u8"
+            )
 
     def create_nanostamp_slice(self, slice_: slice) -> np.ndarray:
         """Creates a range of nanosecond timestamps from a slice.
@@ -594,7 +643,9 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         Returns:
             The requested data.
         """
-        return self.create_nanostamp_range(start=slice_.start, stop=slice_.stop, step=slice_.step)
+        return self.create_nanostamp_range(
+            start=slice_.start, stop=slice_.stop, step=slice_.step
+        )
 
     def get_nanostamps(self) -> np.ndarray:
         """Gets all the nanosecond timestamps of this frame.
@@ -683,11 +734,17 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             The requested timestamps.
         """
         if dtype is not None:
-            return (self.create_nanostamp_range(start=start, stop=stop, step=step) / 10 ** 9).astype(dtype)
+            return (
+                self.create_nanostamp_range(start=start, stop=stop, step=step) / 10**9
+            ).astype(dtype)
         else:
-            return self.create_nanostamp_range(start=start, stop=stop, step=step) / 10 ** 9
+            return (
+                self.create_nanostamp_range(start=start, stop=stop, step=step) / 10**9
+            )
 
-    def create_timestamp_slice(self, slice_: slice, dtype: np.dtype | str | None = None) -> np.ndarray:
+    def create_timestamp_slice(
+        self, slice_: slice, dtype: np.dtype | str | None = None
+    ) -> np.ndarray:
         """Creates a range of timestamps from a slice.
 
         Args:
@@ -697,7 +754,9 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         Returns:
             The requested data.
         """
-        return self.create_timestamp_range(start=slice_.start, stop=slice_.stop, step=slice_.step, dtype=dtype)
+        return self.create_timestamp_range(
+            start=slice_.start, stop=slice_.stop, step=slice_.step, dtype=dtype
+        )
 
     def get_timestamps(self) -> np.ndarray:
         """Gets all the timestamps of this frame.
@@ -776,7 +835,9 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return Timestamp.fromnanostamp(self.create_nanostamp_range(index, index+1)[0], tz=self.tzinfo)
+        return Timestamp.fromnanostamp(
+            self.create_nanostamp_range(index, index + 1)[0], tz=self.tzinfo
+        )
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes as Timestamps of this frame.
@@ -784,7 +845,10 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
         Returns:
             All the times.
         """
-        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.create_nanostamp_range())
+        return tuple(
+            Timestamp.fromnanostamp(ts, tz=self.tzinfo)
+            for ts in self.create_nanostamp_range()
+        )
 
     # Find
     def find_time_index(
@@ -813,9 +877,14 @@ class BlankTimeFrame(BlankArrayFrame, TimeFrameInterface):
             if tails:
                 return IndexDateTime(samples, self.end_datetime)
         else:
-            remain, sample = math.modf((nano_ts - self._true_start) * (self._sample_rate / NANO_SCALE))
+            remain, sample = math.modf(
+                (nano_ts - self._true_start) * (self._sample_rate / NANO_SCALE)
+            )
             if approx or remain == 0:
-                true_nano_ts = np.uint64(self._true_start + sample * (self.sample_period_decimal * 10 ** 9 // 1))
+                true_nano_ts = np.uint64(
+                    self._true_start
+                    + sample * (self.sample_period_decimal * 10**9 // 1)
+                )
                 return IndexDateTime(int(sample), Timestamp.fromnanostamp(true_nano_ts))
 
         return IndexDateTime(None, None)

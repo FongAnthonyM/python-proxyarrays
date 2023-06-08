@@ -1,4 +1,4 @@
-""" directorytimeframeinterface.py
+"""directorytimeframeinterface.py
 An interface which outlines a directory/file object to be used as time series frame.
 """
 # Package Header #
@@ -35,6 +35,7 @@ from ..timeseriesframe import TimeSeriesFrameInterface
 # Classes #
 class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
     """An interface which outlines a directory/file object to be used as time series frame."""
+
     # Class Methods #
     @classmethod
     @abstractmethod
@@ -88,7 +89,9 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
     # Instance Methods #
     # File
     @abstractmethod
-    def open(self, mode: str | None = None, ** kwargs: Any) -> "DirectoryTimeFrameInterface":
+    def open(
+        self, mode: str | None = None, **kwargs: Any
+    ) -> "DirectoryTimeFrameInterface":
         """Opens this directory frame which opens all the contained frames.
 
         Args:
@@ -408,7 +411,9 @@ class DirectoryTimeFrameInterface(TimeSeriesFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(
+        self, slices: Iterable[slice | int | None] | None = None
+    ) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
