@@ -504,8 +504,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         return True
 
-    def make_continuous(
-        self, axis: int | None = None, tolerance: float | None = None
+    def make_continuous(self, axis: int | None = None, tolerance: float | None = None
     ) -> None:
         """Adjusts the data to make it continuous.
 
@@ -900,6 +899,9 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         """
         if self.mode == "r":
             raise IOError("not writable")
+        
+        if not any(data.shape):
+            return
 
         if axis is None:
             axis = self.axis
@@ -1028,9 +1030,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
             index = int(np.searchsorted(self.nanostamps, nano_ts, side="right") - 1)
             true_timestamp = self.nanostamps[index]
             if approx or nano_ts == true_timestamp:
-                return IndexDateTime(
-                    index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo)
-                )
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
 
         raise IndexError("Timestamp out of range.")
 

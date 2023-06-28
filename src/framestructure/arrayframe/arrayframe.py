@@ -759,9 +759,7 @@ class ArrayFrame(ArrayFrameInterface):
                     frame_index, frame_start_index, frame_inner_index
                 )
         else:  # Many indices to find
-            frame_indices = list(
-                np.searchsorted(frame_start_indices, super_indices, side="right") - 1
-            )
+            frame_indices = list(np.searchsorted(frame_start_indices, super_indices, side="left"))
             for i, frame_index in enumerate(frame_indices):
                 frame_start_index = frame_start_indices[frame_index]
                 frame_inner_index = int(super_indices[i] - frame_start_index)

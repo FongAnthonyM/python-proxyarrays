@@ -953,6 +953,9 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         """
         if self.mode == "r":
             raise IOError("not writable")
+        
+        if not any(data.shape):
+            return
 
         if axis is None:
             axis = self.axis
@@ -1071,9 +1074,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The requested closest index and the value at that index.
         """
-        return self.time_axis.find_time_index(
-            timestamp=timestamp, approx=approx, tails=tails
-        )
+        return self.time_axis.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
 
     def find_day_index(
         self,
@@ -1091,9 +1092,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The requested closest index and the value at that index.
         """
-        return self.time_axis.find_day_index(
-            timestamp=timestamp, approx=approx, tails=tails
-        )
+        return self.time_axis.find_day_index(timestamp=timestamp, approx=approx, tails=tails)
 
 
 # Assign Cyclic Definitions
