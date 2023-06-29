@@ -67,7 +67,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
-        update: bool = False,
+        update: bool = True,
         init: bool = True,
     ) -> None:
         # Parent Attributes #
