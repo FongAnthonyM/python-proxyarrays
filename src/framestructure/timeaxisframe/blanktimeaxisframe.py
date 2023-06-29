@@ -110,6 +110,4 @@ class BlankTimeAxisFrame(BlankTimeFrame, TimeAxisFrameInterface):
                 step = 1 if slice_.step is None else slice_.step
                 shape[self.axis] = slice(None)
 
-        return self._create_method(start=start, stop=stop, step=step, dtype=dtype)[
-            tuple(shape)
-        ]
+        return self._create_method(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]

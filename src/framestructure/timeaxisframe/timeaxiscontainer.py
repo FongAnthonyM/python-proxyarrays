@@ -177,11 +177,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def start_datetime(self) -> Timestamp | None:
         """The start datetime of this frame."""
         nanostamps = self.nanostamps
-        return (
-            Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo)
-            if nanostamps is not None
-            else None
-        )
+        return Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo) if nanostamps is not None else None
 
     @property
     def start_date(self) -> datetime.date | None:
@@ -205,11 +201,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this frame."""
         nanostamps = self.nanostamps
-        return (
-            Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo)
-            if nanostamps is not None
-            else None
-        )
+        return Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo) if nanostamps is not None else None
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -265,11 +257,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
     @property
     def tail_correction(self) -> AnyCallable | None:
         """The correction method for data to be appended."""
-        return (
-            self._tail_correction.__get__(self, self.__class__)
-            if self._tail_correction is not None
-            else None
-        )
+        return self._tail_correction.__get__(self, self.__class__) if self._tail_correction is not None else None
 
     # Instance Methods #
     # Constructors/Destructors
@@ -426,22 +414,16 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
             raise IOError("not writable")
 
         if not self.validate_sample_rate():
-            raise ValueError(
-                "the data needs to have a uniform sample rate before resampling"
-            )
+            raise ValueError("the data needs to have a uniform sample rate before resampling")
 
         nanostamps = self.nanostamps
         if nanostamps is not None:
             period_ns = np.uint64(self.sample_period_decimal * 10**9)
-            self._nanostamps = np.arange(
-                nanostamps[0], nanostamps[-1], period_ns, dtype="u8"
-            )
+            self._nanostamps = np.arange(nanostamps[0], nanostamps[-1], period_ns, dtype="u8")
 
         timestamps = self.timestamps
         if timestamps is not None:
-            self._timestamps = np.arange(
-                timestamps[0], timestamps[-1], self.sample_period, dtype="f8"
-            )
+            self._timestamps = np.arange(timestamps[0], timestamps[-1], self.sample_period, dtype="f8")
 
         self.get_nanostamps.clear_cache()
         self.get_timestamps.clear_cache()
@@ -470,9 +452,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
                 if abs(interval - period_ns) >= tolerance:
                     discontinuous.append(index)
         else:
-            discontinuous = list(
-                np.where(np.abs(np.ediff1d(data) - period_ns) > tolerance)[0] + 1
-            )
+            discontinuous = list(np.where(np.abs(np.ediff1d(data) - period_ns) > tolerance)[0] + 1)
 
         if discontinuous:
             return discontinuous
@@ -504,8 +484,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         return True
 
-    def make_continuous(self, axis: int | None = None, tolerance: float | None = None
-    ) -> None:
+    def make_continuous(self, axis: int | None = None, tolerance: float | None = None) -> None:
         """Adjusts the data to make it continuous.
 
         Args:
@@ -698,9 +677,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return tuple(
-            Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.get_nanostamps()
-        )
+        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.get_nanostamps())
 
     def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this frame base on the index.
@@ -759,16 +736,11 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         Returns:
             The original array but filled.
         """
-        data_array[array_slice] = tuple(
-            Timestamp.fromnanostamp(ts, tz=self.tzinfo)
-            for ts in self.nanostamps[slice_]
-        )
+        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps[slice_])
         return data_array
 
     # For Other Data
-    def shift_to_nearest_sample_end(
-        self, data: np.ndarray, tolerance: float | None = None
-    ) -> np.ndarray:
+    def shift_to_nearest_sample_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
         """Shifts data to the nearest valid sample after this frame's data.
 
         Args:
@@ -800,9 +772,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         return data
 
-    def shift_to_the_end(
-        self, data: np.ndarray, tolerance: float | None = None
-    ) -> np.ndarray:
+    def shift_to_the_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
         """Shifts data to the next valid sample after this frame's data.
 
         Args:
@@ -828,9 +798,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
 
         return data
 
-    def default_tail_correction(
-        self, data: np.ndarray, tolerance: float | None = None
-    ) -> np.ndarray:
+    def default_tail_correction(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
         """Shifts data to the nearest valid sample after this frame's data or to the next valid sample after this frame.
 
         Args:
@@ -899,7 +867,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         """
         if self.mode == "r":
             raise IOError("not writable")
-        
+
         if not any(data.shape):
             return
 
@@ -985,9 +953,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         for frame in frames:
             self.append_frame(frame, axis=axis, truncate=truncate)
 
-    def get_intervals(
-        self, start: int | None = None, stop: int | None = None, step: int | None = None
-    ) -> np.ndarray:
+    def get_intervals(self, start: int | None = None, stop: int | None = None, step: int | None = None) -> np.ndarray:
         """Get the intervals between each time in the time axis.
 
         Args:
@@ -1055,9 +1021,7 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
         samples = self.get_length()
         if nano_ts < self.day_nanostamps[0]:
             if tails:
-                return IndexDateTime(
-                    0, Timestamp.fromnanostamp(self.day_nanostamps[0], tz=self.tzinfo)
-                )
+                return IndexDateTime(0, Timestamp.fromnanostamp(self.day_nanostamps[0], tz=self.tzinfo))
         elif nano_ts > self.day_nanostamps[-1]:
             if tails:
                 return IndexDateTime(
@@ -1068,8 +1032,6 @@ class TimeAxisContainer(ArrayContainer, TimeAxisFrameInterface):
             index = int(np.searchsorted(self.day_nanostamps, nano_ts, side="right") - 1)
             true_timestamp = self.day_nanostamps[index]
             if approx or nano_ts == true_timestamp:
-                return IndexDateTime(
-                    index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo)
-                )
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
 
         raise IndexError("Timestamp out of range.")

@@ -345,9 +345,7 @@ class TimeAxisFrameInterface(TimeFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(
-        self, slices: Iterable[slice | int | None] | None = None
-    ) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:

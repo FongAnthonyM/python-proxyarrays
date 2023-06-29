@@ -199,9 +199,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         return self.frame_type.validate_path(path)
 
     # Path and File System
-    def open(
-        self, mode: str | None = None, **kwargs: Any
-    ) -> DirectoryTimeFrameInterface:
+    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
 
         Args:

@@ -230,11 +230,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
     @property
     def tail_correction(self) -> AnyCallable | None:
         """The correction method for data to be appended."""
-        return (
-            self._tail_correction.__get__(self, self.__class__)
-            if self._tail_correction is not None
-            else None
-        )
+        return self._tail_correction.__get__(self, self.__class__) if self._tail_correction is not None else None
 
     # Instance Methods #
     # Constructors/Destructors
@@ -297,9 +293,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         Returns:
             The resampler.
         """
-        self.resampler = Resample(
-            old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis
-        )
+        self.resampler = Resample(old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis)
         return self.resampler
 
     # Getters and Setters
@@ -428,14 +422,10 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             raise IOError("not writable")
 
         if not self.validate_sample_rate():
-            raise ValueError(
-                "the data needs to have a uniform sample rate before resampling"
-            )
+            raise ValueError("the data needs to have a uniform sample rate before resampling")
 
         # Todo: Make Resample for multiple frames (maybe edit resampler from an outer layer)
-        self.data = self.resampler(
-            data=self.data[...], new_fs=self.sample_rate, **kwargs
-        )
+        self.data = self.resampler(data=self.data[...], new_fs=self.sample_rate, **kwargs)
         self.time_axis.resample(sample_rate=sample_rate)
 
     # Continuous Data
@@ -461,9 +451,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         """
         return self.time_axis.validate_continuous(tolerance)
 
-    def make_continuous(
-        self, axis: int | None = None, tolerance: float | None = None
-    ) -> None:
+    def make_continuous(self, axis: int | None = None, tolerance: float | None = None) -> None:
         """Adjusts the data to make it continuous.
 
         Args:
@@ -520,9 +508,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
 
             if discontinuities:
                 for next_d in discontinuities:
-                    if (self.time_axis[next_d] - self.time_axis[next_d - 1]) < (
-                        2 * self.sample_period
-                    ):
+                    if (self.time_axis[next_d] - self.time_axis[next_d - 1]) < (2 * self.sample_period):
                         consecutive.append(discontinuities.pop(0))
                     else:
                         consecutive.append(next_d - 1)
@@ -536,16 +522,12 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             if new_size > 1:
                 times = self.time_axis[consecutive[0] : consecutive[-1] + 1]
                 data = self.get_range(consecutive[0], consecutive[-1] + 1)
-                interpolator = interpolate.interp1d(
-                    times, data, interp_type, axis, fill_value=fill_value, **kwargs
-                )
+                interpolator = interpolate.interp1d(times, data, interp_type, axis, fill_value=fill_value, **kwargs)
                 self.set_range(interpolator(new_times), start=discontinuity)
             else:
                 self.time_axis[discontinuity] = start
 
-    def fill_time_correction(
-        self, axis: int | None = None, tolerance: float | None = None, **kwargs: Any
-    ) -> None:
+    def fill_time_correction(self, axis: int | None = None, tolerance: float | None = None, **kwargs: Any) -> None:
         """Fill empty sections of the data with blank values.
 
         Args:
@@ -571,15 +553,11 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
                 previous_timestamp = self.time_axis[previous]
                 if (timestamp - previous_timestamp) >= (2 * self.sample_period):
                     real = discontinuity - previous_discontinuity
-                    blank = (
-                        round((timestamp - previous_timestamp) * self.sample_rate) - 1
-                    )
+                    blank = round((timestamp - previous_timestamp) * self.sample_rate) - 1
                     offsets = np.append(offsets, [[real, blank]], axis=0)
                     gap_discontinuities.append(discontinuities)
                     previous_discontinuity = discontinuity
-            offsets = np.append(
-                offsets, [[self.time_axis - discontinuities[-1], 0]], axis=0
-            )
+            offsets = np.append(offsets, [[self.time_axis - discontinuities[-1], 0]], axis=0)
 
             new_size = np.sum(offsets)
             new_shape = list(self.data.shape)
@@ -604,9 +582,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
                 self.set_range(old_data[tuple(slices)], start=new_start)
 
                 self.time_axis[new_start:new_mid] = old_times[slice_]
-                self.time_axis[new_mid:new_end] = np.arange(
-                    mid_timestamp, end_timestamp, self.sample_period
-                )
+                self.time_axis[new_mid:new_end] = np.arange(mid_timestamp, end_timestamp, self.sample_period)
 
                 old_start = discontinuity
                 new_start += sum(offset)
@@ -778,9 +754,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         if fill_value is None:
             fill_value = self.interpolate_fill_value
 
-        interpolator = interpolate.interp1d(
-            x, y, interp_type, axis, fill_value=fill_value, **kwargs
-        )
+        interpolator = interpolate.interp1d(x, y, interp_type, axis, fill_value=fill_value, **kwargs)
         new_x = x + shift
         new_y = interpolator(new_x)
 
@@ -828,9 +802,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             else:
                 remain = math.remainder(shift, period)
             small_shift = -remain
-            data, time_axis = self.interpolate_shift_other(
-                data, time_axis, small_shift, axis=axis, **kwargs
-            )
+            data, time_axis = self.interpolate_shift_other(data, time_axis, small_shift, axis=axis, **kwargs)
 
         return data, time_axis
 
@@ -869,9 +841,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             period = self.sample_period
 
         if abs(shift - period) > tolerance:
-            data, time_axis = self.interpolate_shift_other(
-                data, time_axis, period - shift, axis=axis, **kwargs
-            )
+            data, time_axis = self.interpolate_shift_other(data, time_axis, period - shift, axis=axis, **kwargs)
 
         return data, time_axis
 
@@ -901,13 +871,9 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             shift = time_axis[0] - self.timestamps[-1]
 
         if shift >= 0:
-            data, time_axis = self.shift_to_nearest_sample_end(
-                data, time_axis, axis, tolerance, **kwargs
-            )
+            data, time_axis = self.shift_to_nearest_sample_end(data, time_axis, axis, tolerance, **kwargs)
         else:
-            data, time_axis = self.shift_to_the_end(
-                data, time_axis, axis, tolerance, **kwargs
-            )
+            data, time_axis = self.shift_to_the_end(data, time_axis, axis, tolerance, **kwargs)
 
         return data, time_axis
 
@@ -953,7 +919,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         """
         if self.mode == "r":
             raise IOError("not writable")
-        
+
         if not any(data.shape):
             return
 
@@ -969,9 +935,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
             correction = self.get_correction(correction)
 
         if correction and self.data.size != 0:
-            data, time_axis = correction(
-                data, time_axis, axis=axis, tolerance=tolerance, **kwargs
-            )
+            data, time_axis = correction(data, time_axis, axis=axis, tolerance=tolerance, **kwargs)
 
         self.data = np.append(self.data, data, axis)
         self.time_axis = self.time_axis.append(time_axis)
@@ -1042,9 +1006,7 @@ class TimeSeriesContainer(ArrayContainer, TimeSeriesFrameInterface):
         for frame in frames:
             self.append_frame(frame, axis=axis, truncate=truncate)
 
-    def get_intervals(
-        self, start: int | None = None, stop: int | None = None, step: int | None = None
-    ) -> np.ndarray:
+    def get_intervals(self, start: int | None = None, stop: int | None = None, step: int | None = None) -> np.ndarray:
         """Get the intervals between each time in the time axis.
 
         Args:

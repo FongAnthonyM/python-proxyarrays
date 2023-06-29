@@ -368,9 +368,7 @@ class TimeFrameInterface(ArrayFrameInterface):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(
-        self, slices: Iterable[slice | int | None] | None = None
-    ) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
@@ -469,16 +467,12 @@ class TimeFrameInterface(ArrayFrameInterface):
         if start is None:
             start_index = 0
         else:
-            start_index, _ = self.find_time_index(
-                timestamp=start, approx=approx, tails=tails
-            )
+            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
 
         if stop is None:
             stop_index = self.get_length()
         else:
-            stop_index, _ = self.find_time_index(
-                timestamp=stop, approx=approx, tails=tails
-            )
+            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
 
         return FoundTimeRange(
             self.get_nanostamp_range(start_index, stop_index, step, frame=True),
@@ -512,16 +506,12 @@ class TimeFrameInterface(ArrayFrameInterface):
         if start is None:
             start_index = 0
         else:
-            start_index, _ = self.find_time_index(
-                timestamp=start, approx=approx, tails=tails
-            )
+            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
 
         if stop is None:
             stop_index = self.get_length()
         else:
-            stop_index, _ = self.find_time_index(
-                timestamp=stop, approx=approx, tails=tails
-            )
+            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
 
         return FoundTimeRange(
             self.get_timestamp_range(start_index, stop_index, step, frame=True),
@@ -623,9 +613,7 @@ class TimeFrameInterface(ArrayFrameInterface):
             else:
                 start = self.end_timestamp + stop
 
-        return self.find_timestamp_range(
-            self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails
-        )
+        return self.find_timestamp_range(self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails)
 
 
 class FoundTimeRange(NamedTuple):

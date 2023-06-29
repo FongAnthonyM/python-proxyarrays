@@ -84,9 +84,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         # Object Construction #
         if init:
-            self.construct(
-                frames=frames, precise=precise, tzinfo=tzinfo, mode=mode, update=update
-            )
+            self.construct(frames=frames, precise=precise, tzinfo=tzinfo, mode=mode, update=update)
 
     @property
     def precise(self) -> bool:
@@ -430,9 +428,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(
-                f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate."
-            )
+            warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return min(sample_rates)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -448,9 +444,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(
-                f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate."
-            )
+            warn(f"The TimeAxisFrame '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return self.sample_rates[np.nanargmin(np.asarray(self.sample_rates))]
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -484,9 +478,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(
-                f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period."
-            )
+            warn(f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -502,9 +494,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(
-                f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period."
-            )
+            warn(f"The TimeAxisFrame '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     def set_precision(self, nano: bool) -> None:
@@ -692,12 +682,8 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         Returns:
             The requested nanostamp.
         """
-        frame_index, _, inner_index = self.find_inner_frame_index(
-            super_index=super_index
-        )
-        return self.frames[frame_index].get_nanostamp_from_index(
-            super_index=inner_index
-        )
+        frame_index, _, inner_index = self.find_inner_frame_index(super_index=super_index)
+        return self.frames[frame_index].get_nanostamp_from_index(super_index=inner_index)
 
     def get_nanostamp_range(
         self,
@@ -725,9 +711,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         nanostamps = nan_array(length, dtype="u8")
 
-        ts = self.fill_nanostamps_array(
-            data_array=nanostamps, slice_=slice(start, stop, step)
-        )
+        ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
         if frame:
             return self.time_axis_type(
                 ts,
@@ -757,9 +741,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_frame_indices = self.parse_range_super_indices(
-            start=slice_.start, stop=slice_.stop
-        )
+        range_frame_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
@@ -769,9 +751,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         # Get start_nanostamp and stop array locations
         array_start = 0 if array_slice.start is None else array_slice.start
-        array_stop = (
-            da_shape[self.axis] if array_slice.stop is None else array_slice.stop
-        )
+        array_stop = da_shape[self.axis] if array_slice.stop is None else array_slice.stop
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
@@ -872,9 +852,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         timestamps = nan_array(length)
 
-        ts = self.fill_timestamps_array(
-            data_array=timestamps, slice_=slice(start, stop, step)
-        )
+        ts = self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
         if frame:
             return self.time_axis_type(
                 ts,
@@ -904,9 +882,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_frame_indices = self.parse_range_super_indices(
-            start=slice_.start, stop=slice_.stop
-        )
+        range_frame_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
 
         start_frame = range_frame_indices.start.index
         stop_frame = range_frame_indices.stop.index
@@ -916,9 +892,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
 
         # Get start_timestamp and stop array locations
         array_start = 0 if array_slice.start is None else array_slice.start
-        array_stop = (
-            da_shape[self.axis] if array_slice.stop is None else array_slice.stop
-        )
+        array_stop = da_shape[self.axis] if array_slice.stop is None else array_slice.stop
 
         # Contained frame/object fill kwargs
         fill_kwargs = {
@@ -981,9 +955,7 @@ class TimeFrame(ArrayFrame, TimeFrameInterface):
         return tuple(datetimes)
 
     # Find Time
-    def find_frame(
-        self, timestamp: datetime.datetime | float, tails: bool = False
-    ) -> IndexValue:
+    def find_frame(self, timestamp: datetime.datetime | float, tails: bool = False) -> IndexValue:
         """Finds a frame with a given timestamp in its range
 
         Args:
