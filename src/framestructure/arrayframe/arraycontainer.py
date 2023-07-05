@@ -25,9 +25,7 @@ from .arrayframeinterface import ArrayFrameInterface
 
 # Definitions #
 # Classes #
-class ArrayContainer(
-    ArrayFrameInterface
-):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
+class ArrayContainer(ArrayFrameInterface):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
     """A frame container that wraps an array like object to give it frame functionality.
 
     Attributes:
@@ -220,6 +218,9 @@ class ArrayContainer(
         if self.mode == "r":
             raise IOError("not writable")
 
+        if not any(data.shape):
+            return
+
         if axis is None:
             axis = self.axis
 
@@ -290,9 +291,7 @@ class ArrayContainer(
             self.data = frames.pop(0)[...]
 
         for frame in frames:
-            self.append_frame(
-                frame, axis=axis, truncate=truncate
-            )  # Can be rewritten to be faster.
+            self.append_frame(frame, axis=axis, truncate=truncate)  # Can be rewritten to be faster.
 
     def get_range(
         self,
@@ -387,9 +386,7 @@ class ArrayContainer(
 
         return self.get_range(start=start, stop=start + 1, frame=frame)
 
-    def get_slices_array(
-        self, slices: Iterable[slice | int | None] | None = None
-    ) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:

@@ -131,9 +131,7 @@ class ArrayFrameInterface(CachingObject):
         Args:
             method: The function or method name to set the _spawn_editable method to.
         """
-        raise TypeError(
-            f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable."
-        )
+        raise TypeError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
 
     @set_spawn_editable.register(Callable)
     def _(self, method: AnyCallable) -> None:
@@ -259,9 +257,7 @@ class ArrayFrameInterface(CachingObject):
 
     # Get Ranges of Data with Slices
     @abstractmethod
-    def get_slices_array(
-        self, slices: Iterable[slice | int | None] | None = None
-    ) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:

@@ -76,7 +76,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         path: pathlib.Path | str | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = "a",
-        update: bool = False,
+        update: bool = True,
         open_: bool = False,
         build: bool = True,
         init: bool = True,
@@ -137,7 +137,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         path: pathlib.Path | str | None = None,
         frames: Iterable[DirectoryTimeFrameInterface] | None = None,
         mode: str = "a",
-        update: bool = False,
+        update: bool = True,
         open_: bool = False,
         build: bool = True,
         **kwargs: Any,
@@ -199,9 +199,7 @@ class DirectoryTimeFrame(TimeSeriesFrame, DirectoryTimeFrameInterface):
         return self.frame_type.validate_path(path)
 
     # Path and File System
-    def open(
-        self, mode: str | None = None, **kwargs: Any
-    ) -> DirectoryTimeFrameInterface:
+    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
 
         Args:

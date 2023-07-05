@@ -129,9 +129,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(
-        self, file: Any = None, mode: str | None = None, **kwargs: Any
-    ) -> None:
+    def construct(self, file: Any = None, mode: str | None = None, **kwargs: Any) -> None:
         """Constructs this object.
 
         Args:
@@ -178,9 +176,7 @@ class FileTimeContainerInterface(TimeSeriesContainer, DirectoryTimeFrameInterfac
         self.path = file
         self.file_kwargs = kwargs
 
-    def open(
-        self, mode: str | None = None, **kwargs: Any
-    ) -> DirectoryTimeFrameInterface:
+    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeFrameInterface:
         """Opens this directory frame which opens all the contained frames.
 
         Args:

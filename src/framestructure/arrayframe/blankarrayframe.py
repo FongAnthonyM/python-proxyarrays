@@ -62,9 +62,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         self.dtype: np.dtype | str = "f4"
 
         # Assign Methods #
-        self._generate_method: Callable[
-            [tuple[int], Any], np.ndarray
-        ] = self.create_nans.__func__
+        self._generate_method: Callable[[tuple[int], Any], np.ndarray] = self.create_nans.__func__
 
         # Parent Attributes #
         super().__init__(*args, int=init, **kwargs)
@@ -103,9 +101,7 @@ class BlankArrayFrame(ArrayFrameInterface):
 
     # Instance Methods #
     # Constructors/Destructors
-    def construct(
-        self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None
-    ) -> None:
+    def construct(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None) -> None:
         """Constructs this object.
 
         Args:
@@ -152,9 +148,7 @@ class BlankArrayFrame(ArrayFrameInterface):
             return self.create_data_range()
 
     # Setters
-    def set_data_generator(
-        self, generator: str | Callable[[tuple[int], Any], np.ndarray]
-    ) -> None:
+    def set_data_generator(self, generator: str | Callable[[tuple[int], Any], np.ndarray]) -> None:
         """Sets this frame's data generator to either numpy array creator or a function that will create data.
 
         Args:
@@ -270,9 +264,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         else:
             return self.generate_data(shape=shape, dtype=dtype, **kwargs)
 
-    def create_data_slice(
-        self, slice_: slice, dtype: np.dtype | str | None = None, **kwargs: Any
-    ) -> np.ndarray:
+    def create_data_slice(self, slice_: slice, dtype: np.dtype | str | None = None, **kwargs: Any) -> np.ndarray:
         """Creates data from a slice.
 
         Args:
@@ -283,9 +275,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         Returns:
             The requested data.
         """
-        return self.create_data_range(
-            slice_.start, slice_.stop, slice_.step, dtype, **kwargs
-        )
+        return self.create_data_range(slice_.start, slice_.stop, slice_.step, dtype, **kwargs)
 
     def create_slices_data(
         self,
@@ -324,12 +314,7 @@ class BlankArrayFrame(ArrayFrameInterface):
                     if stop < 0:
                         stop = self.shape[index] + stop
 
-                    if (
-                        start < 0
-                        or start > self.shape[index]
-                        or stop < 0
-                        or stop > self.shape[index]
-                    ):
+                    if start < 0 or start > self.shape[index] or stop < 0 or stop > self.shape[index]:
                         raise IndexError("index is out of range")
 
                     size = stop - start
@@ -362,9 +347,7 @@ class BlankArrayFrame(ArrayFrameInterface):
         return self.create_data_range(start=start, stop=stop, step=step, frame=frame)
 
     # Get Index
-    def get_from_index(
-        self, indices: Sized | int, reverse: bool = False, frame: bool | None = None
-    ) -> Any:
+    def get_from_index(self, indices: Sized | int, reverse: bool = False, frame: bool | None = None) -> Any:
         """Get an item recursively from within this frame using indices.
 
         Args:
@@ -390,9 +373,7 @@ class BlankArrayFrame(ArrayFrameInterface):
             return self.create_data_range(start=start, stop=start + 1)[0]
 
     # Get Ranges of Data with Slices
-    def get_slices_array(
-        self, slices: Iterable[slice | int | None] | None = None
-    ) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
