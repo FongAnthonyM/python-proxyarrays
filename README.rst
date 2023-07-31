@@ -1,4 +1,4 @@
-Frame Structure
+proxy Structure
 ===============
 
 |PyPI| |Status| |Python Version| |License|
@@ -51,7 +51,7 @@ Requirements
 Installation
 ------------
 
-You can install *Frame Structure* via pip_ from PyPI_:
+You can install *proxy Structure* via pip_ from PyPI_:
 
 .. code:: console
 
@@ -75,7 +75,7 @@ License
 -------
 
 Distributed under the terms of the `MIT license`_,
-*Frame Structure* is free and open source software.
+*proxy Structure* is free and open source software.
 
 
 Issues

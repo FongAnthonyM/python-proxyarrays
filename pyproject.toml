@@ -19,11 +19,11 @@ classifiers = [
 Changelog = "https://github.com/FongAnthonyM/python-proxyarrays/releases"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-baseobjects = "^1.9.0"
-dspobjects = "^0.2.0"
-numpy = "^1.21.1"
-scipy = "^1.6.1"
+python = ">=3.10"
+baseobjects = ">=1.9.0"
+dspobjects = ">=0.2.0"
+numpy = ">=1.25.1"
+scipy = ">=1.6.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
