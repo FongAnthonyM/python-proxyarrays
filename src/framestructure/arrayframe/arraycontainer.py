@@ -2,7 +2,7 @@
 A frame container that wraps an array like object to give it frame functionality.
 """
 # Package Header #
-from framestructure.header import *
+from proxyarrays.header import *
 
 # Header #
 __author__ = __author__

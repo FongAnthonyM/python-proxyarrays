@@ -6,7 +6,7 @@
   "friendly_name": "Frame Structure",
   "github_user": "FongAnthonyM",
   "license": "MIT",
-  "package_name": "framestructure",
-  "project_name": "python-framestructure",
+  "package_name": "proxyarrays",
+  "project_name": "python-proxyarrays",
   "version": "0.0.0"
 }

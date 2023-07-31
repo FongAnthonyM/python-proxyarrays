@@ -6,8 +6,8 @@ Reference
     :backlinks: none
 
 
-framestructure.__main__
+proxyarrays.__main__
 -----------------------
 
-.. automodule:: framestructure.__main__
+.. automodule:: proxyarrays.__main__
    :members:

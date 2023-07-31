@@ -25,7 +25,7 @@ import numpy as np
 
 # Local Packages #
 from .arrayframeinterface import ArrayFrameInterface
-from framestructure.arrayframe.arraycontainer import ArrayContainer
+from proxyarrays.arrayframe.arraycontainer import ArrayContainer
 
 
 # Definitions #

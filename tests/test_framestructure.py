@@ -1,4 +1,4 @@
-from framestructure.cli import main
+from proxyarrays.cli import main
 
 
 def test_main():

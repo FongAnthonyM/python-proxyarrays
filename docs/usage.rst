@@ -1,6 +1,6 @@
 Usage
 =====
 
-.. click:: framestructure.__main__:main
-   :prog: python-framestructure
+.. click:: proxyarrays.__main__:main
+   :prog: python-proxyarrays
    :nested: full

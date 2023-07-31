@@ -1,5 +1,5 @@
 """__init__.py
-Description: framestructure provides several classes for creating structures of dataframes.
+Description: proxyarrays provides several classes for creating structures of dataframes.
 """
 # Package Header #
 from .header import *
