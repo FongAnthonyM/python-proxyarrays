@@ -1,4 +1,4 @@
-"""proxyarraybase.py
+"""baseproxyarray.py
 A base which outlines the basis for a proxy array.
 """
 # Package Header #
@@ -29,7 +29,7 @@ import numpy as np
 # Definitions #
 # Classes #
 # Todo: Create a file/edit mode base object to inherit from
-class ProxyArrayBase(CachingObject):
+class BaseProxyArray(CachingObject):
     """A base which outlines the basis for a proxy array.
 
     Attributes:
@@ -294,7 +294,7 @@ class ProxyArrayBase(CachingObject):
         step: int | None = None,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> Union["ProxyArrayBase", np.ndarray]:
+    ) -> Union["BaseProxyArray", np.ndarray]:
         """Gets a range of data along an axis.
 
         Args:

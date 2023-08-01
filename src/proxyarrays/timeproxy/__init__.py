@@ -13,6 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .timeproxybase import TimeProxyBase
+from .basetimeproxy import BaseTimeProxy
 from .blanktimeproxy import BlankTimeProxy
 from .timeproxy import TimeProxy

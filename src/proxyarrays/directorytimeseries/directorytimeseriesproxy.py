@@ -21,12 +21,12 @@ from typing import Any
 
 # Local Packages #
 from ..timeseries import TimeSeriesProxy
-from .directorytimeseriesbase import DirectoryTimeSeriesBase
+from .basedirectorytimeseries import BaseDirectoryTimeSeries
 
 
 # Definitions #
 # Classes #
-class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
+class ProxyDirectoryTimeSeries(TimeSeriesProxy, BaseDirectoryTimeSeries):
     """A proxy for directory/file objects which contain time series data.
 
     Class Attributes:
@@ -74,7 +74,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        proxies: Iterable[DirectoryTimeSeriesBase] | None = None,
+        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "a",
         update: bool = True,
         open_: bool = False,
@@ -88,7 +88,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
         self.glob_condition: str = "*"
 
         self.proxy_type: type = self.default_proxy_type
-        self.proxy_paths: set[pathlib.Path] = set()
+        self.proxy_paths: dict[pathlib.Path, "ProxyDirectoryTimeSeries"] = {}
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -118,7 +118,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
             self._path = pathlib.Path(value)
 
     # Context Managers
-    def __enter__(self) -> "DirectoryTimeSeriesBase":
+    def __enter__(self) -> "BaseDirectoryTimeSeries":
         """The context enter which opens the directory.
 
         Returns:
@@ -135,7 +135,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        proxies: Iterable[DirectoryTimeSeriesBase] | None = None,
+        proxies: Iterable[BaseDirectoryTimeSeries] | None = None,
         mode: str = "a",
         update: bool = True,
         open_: bool = False,
@@ -174,8 +174,8 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
         for path in self.path.glob(self.glob_condition):
             if path not in self.proxy_paths:
                 if self.proxy_creation_condition(path):
-                    self.proxies.append(self.proxy_type(path, open_=open_, **kwargs))
-                    self.proxy_paths.add(path)
+                    self.proxy_paths[path] = proxy = self.proxy_type(path, open_=open_, **kwargs)
+                    self.proxies.append(proxy)
         self.proxies.sort(key=lambda proxy: proxy.start_timestamp)
         self.clear_caches()
 
@@ -183,7 +183,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
     def proxy_creation_condition(
         self,
         path: str | pathlib.Path,
-        proxy: DirectoryTimeSeriesBase | None = None,
+        proxy: BaseDirectoryTimeSeries | None = None,
         **kwargs: Any,
     ) -> bool:
         """Determines if a proxy will be constructed.
@@ -199,7 +199,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, DirectoryTimeSeriesBase):
         return self.proxy_type.validate_path(path)
 
     # Path and File System
-    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeSeriesBase:
+    def open(self, mode: str | None = None, **kwargs: Any) -> BaseDirectoryTimeSeries:
         """Opens this directory proxy which opens all the contained proxies.
 
         Args:

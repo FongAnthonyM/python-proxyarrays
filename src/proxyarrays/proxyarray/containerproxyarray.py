@@ -20,12 +20,12 @@ from typing import Any, Union
 import numpy as np
 
 # Local Packages #
-from .proxyarraybase import ProxyArrayBase
+from .baseproxyarray import BaseProxyArray
 
 
 # Definitions #
 # Classes #
-class ContainerProxyArray(ProxyArrayBase):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
+class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
     """A proxy container that wraps an array like object to give it proxy functionality.
 
     Attributes:
@@ -119,7 +119,7 @@ class ContainerProxyArray(ProxyArrayBase):  # Todo: Make this a StaticWrapper (S
             self.mode = mode
 
     # Editable Copy Methods
-    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> ProxyArrayBase:
+    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
         """The default method for creating an editable version of this proxy.
 
         Args:
@@ -231,7 +231,7 @@ class ContainerProxyArray(ProxyArrayBase):  # Todo: Make this a StaticWrapper (S
 
     def append_proxy(
         self,
-        proxy: ProxyArrayBase,
+        proxy: BaseProxyArray,
         axis: int | None = None,
         truncate: bool | None = None,
     ) -> None:
@@ -271,7 +271,7 @@ class ContainerProxyArray(ProxyArrayBase):  # Todo: Make this a StaticWrapper (S
 
     def add_proxies(
         self,
-        proxies: Iterable[ProxyArrayBase],
+        proxies: Iterable[BaseProxyArray],
         axis: int | None = None,
         truncate: bool | None = None,
     ) -> None:

@@ -21,12 +21,12 @@ from dspobjects.operations import nan_array
 import numpy as np
 
 # Local Packages #
-from .proxyarraybase import ProxyArrayBase
+from .baseproxyarray import BaseProxyArray
 
 
 # Definitions #
 # Classes #
-class BlankProxyArray(ProxyArrayBase):
+class BlankProxyArray(BaseProxyArray):
     """A proxy for holding blank data such as NaNs, zeros, or a single number.
 
     This proxy does not store a blank array, rather it generates an array whenever data would be accessed.
@@ -331,7 +331,7 @@ class BlankProxyArray(ProxyArrayBase):
         step: int | None = None,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
 
         Args:

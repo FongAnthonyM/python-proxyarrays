@@ -1,5 +1,5 @@
-"""directorytimeseriesbase.py
-An interface which outlines a directory/file object to be used as time series proxy.
+"""basetimeaxis.py
+An interface which outlines the basis for a time axis proxy.
 """
 # Package Header #
 from ..header import *
@@ -17,7 +17,6 @@ from abc import abstractmethod
 from collections.abc import Iterable
 import datetime
 from decimal import Decimal
-import pathlib
 from typing import Any
 
 # Third-Party Packages #
@@ -26,51 +25,16 @@ from dspobjects.time import Timestamp
 import numpy as np
 
 # Local Packages #
-from ..proxyarray import ProxyArrayBase
-from ..timeproxy import TimeProxyBase
-from ..timeseries import TimeSeriesProxyBase
+from ..proxyarray import BaseProxyArray
+from ..timeproxy import BaseTimeProxy
 
 
 # Definitions #
 # Classes #
-class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
-    """An interface which outlines a directory/file object to be used as time series proxy."""
+class BaseTimeAxis(BaseTimeProxy):
+    """An interface which outlines the basis for a time axis proxy."""
 
-    # Class Methods #
-    @classmethod
-    @abstractmethod
-    def validate_path(cls, path: str | pathlib.Path) -> bool:
-        """Validates if the path can be used as Directory TimeProxy proxy.
-
-        Args:
-            path: The path to directory/file object that this proxy will wrap.
-
-        Returns:
-            If the path is usable.
-        """
-        pass
-
-    # Magic Methods
-    # Construction/Destruction
-    # def __init__(self, data=None, times=True, init=True):
-    #     self.axis = 0
-    #     self.sample_rate = 0
-    #
-    #     self.data = None
-    #     self.times = None
-    #
-    #     if init:
-    #         self.construct(data=data, times=times)
-
-    # Instance Methods
-    # Constructors/Destructors
-    # def construct(self, data=None, times=None):
-    #     if data is not None:
-    #         self.data = data
-    #
-    #     if times is not None:
-    #         self.times = times
-
+    # Magic Methods #
     # Numpy ndarray Methods
     @abstractmethod
     def __array__(self, dtype: Any = None) -> np.ndarray:
@@ -87,34 +51,6 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
         pass
 
     # Instance Methods #
-    # File
-    @abstractmethod
-    def open(self, mode: str | None = None, **kwargs: Any) -> "DirectoryTimeSeriesBase":
-        """Opens this directory proxy which opens all the contained proxies.
-
-        Args:
-            mode: The mode to open all the proxies in.
-            **kwargs: The keyword arguments to open all the proxies with.
-
-        Returns:
-            This object.
-        """
-        pass
-
-    @abstractmethod
-    def close(self) -> None:
-        """Closes this proxy."""
-        pass
-
-    @abstractmethod
-    def require(self, **kwargs: Any) -> None:
-        """Create this directory and all the contained proxies if they do not exist.
-
-        Args:
-            **kwargs: Keyword arguments for requiring the directory.
-        """
-        pass
-
     # Getters
     @abstractmethod
     def get_shape(self) -> tuple[int]:
@@ -290,7 +226,7 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -325,18 +261,6 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
 
     # Get Timestamps
     @abstractmethod
-    def get_datetime(self, index: int) -> Timestamp:
-        """A datetime from this proxy base on the index.
-
-        Args:
-            index: The index of the datetime to get.
-
-        Returns:
-            All the times as a tuple of datetimes.
-        """
-        pass
-
-    @abstractmethod
     def get_timestamps(self) -> np.ndarray:
         """Gets all the timestamps of this proxy.
 
@@ -364,7 +288,7 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of timestamps with indices.
 
         Args:
@@ -399,7 +323,19 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
 
     # Datetimes [Timestamp]
     @abstractmethod
-    def get_datetimes(self) -> tuple[datetime.datetime]:
+    def get_datetime(self, index: int) -> Timestamp:
+        """A datetime from this proxy base on the index.
+
+        Args:
+            index: The index of the datetime to get.
+
+        Returns:
+            All the times as a tuple of datetimes.
+        """
+        pass
+
+    @abstractmethod
+    def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this proxy.
 
         Returns:
@@ -447,7 +383,7 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
         step: int | None = None,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
 
         Args:
@@ -462,11 +398,11 @@ class DirectoryTimeSeriesBase(TimeSeriesProxyBase):
         """
         pass
 
-    # Find Index
+    # Find TimeProxy
     @abstractmethod
     def find_time_index(
         self,
-        timestamp: datetime.datetime | float,
+        timestamp: datetime.datetime | float | int | np.dtype,
         approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:

@@ -13,5 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .directorytimeseriesbase import DirectoryTimeSeriesBase
-from .directorytimeseriesproxy import DirectoryTimeSeriesBase
+from .basedirectorytimeseries import BaseDirectoryTimeSeries
+from .directorytimeseriesproxy import ProxyDirectoryTimeSeries

@@ -19,14 +19,14 @@ __email__ = __email__
 # Local Packages #
 from ..timeproxy import TimeProxy
 from ..timeaxis import ContainerTimeAxis
-from .timeseriesproxybase import TimeSeriesProxyBase
+from .basetimeseries import BaseTimeSeries
 from .blanktimeseries import BlankTimeSeries
 from .containertimeseries import ContainerTimeSeries
 
 
 # Definitions #
 # Classes #
-class TimeSeriesProxy(TimeProxy, TimeSeriesProxyBase):
+class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
     """A TimeProxy that has been expanded to handle time series data."""
 
     default_fill_type = BlankTimeSeries

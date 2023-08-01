@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports
 # Local Packages #
-from .proxyarraybase import ProxyArrayBase
+from .baseproxyarray import BaseProxyArray
 from .proxyarray import ProxyArray
 from .containerproxyarray import ContainerProxyArray
 from .blankproxyarray import BlankProxyArray

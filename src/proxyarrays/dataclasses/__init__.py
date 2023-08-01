@@ -13,5 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from ..timeproxy.timeproxybase import FoundTimeRange
-from ..timeseries.timeseriesproxybase import FoundTimeDataRange
+from ..timeproxy.basetimeproxy import FoundTimeRange
+from ..timeseries.basetimeseries import FoundTimeDataRange

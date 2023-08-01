@@ -27,12 +27,12 @@ import numpy as np
 
 # Local Packages #
 from ..proxyarray import BlankProxyArray
-from .timeproxybase import TimeProxyBase
+from .basetimeproxy import BaseTimeProxy
 
 
 # Definitions #
 # Classes #
-class BlankTimeProxy(BlankProxyArray, TimeProxyBase):
+class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     """A proxy for generating time information.
 
     This proxy does not store a blank array, rather it generates an array whenever data would be accessed.
@@ -630,7 +630,7 @@ class BlankTimeProxy(BlankProxyArray, TimeProxyBase):
         stop: int | None = None,
         step: int = 1,
         proxy: bool = False,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Gets a range of nanosecond timestamps along an axis.
 
         Args:
@@ -733,7 +733,7 @@ class BlankTimeProxy(BlankProxyArray, TimeProxyBase):
         stop: int | None = None,
         step: int = 1,
         proxy: bool = False,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Gets a range of timestamps along an axis.
 
         Args:

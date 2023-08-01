@@ -1,5 +1,5 @@
-"""timeproxybase.py
-An interface which outlines the basis for a time proxy.
+"""basetimeseries.py
+An interface which outlines the basis for a time series proxy.
 """
 # Package Header #
 from ..header import *
@@ -17,28 +17,35 @@ from abc import abstractmethod
 from collections.abc import Iterable
 import datetime
 from decimal import Decimal
-from typing import Any, NamedTuple, Union
+from typing import Any, NamedTuple
 
 # Third-Party Packages #
-from dspobjects.dataclasses import IndexDateTime
+from dspobjects.dataclasses import IndexDateTime, FoundData
 from dspobjects.time import Timestamp
 import numpy as np
 
 # Local Packages #
-from ..proxyarray import ProxyArrayBase
+from ..proxyarray import BaseProxyArray
+from ..timeproxy import BaseTimeProxy
+from ..timeaxis import BaseTimeAxis
 
 
 # Definitions #
 # Classes #
-class TimeProxyBase(ProxyArrayBase):
-    """An interface which outlines the basis for a time proxy."""
+class BaseTimeSeries(BaseTimeProxy):
+    """An interface which outlines the basis for a time series proxy."""
+
+    time_series_type = None
 
     # Magic Methods #
-    # Construction/Destruction
     @property
-    def is_continuous(self) -> bool:
-        """If the data in the proxies is continuous."""
-        return self.validate_continuous()
+    def t_axis(self) -> int:
+        """The axis which the time axis is attached."""
+        return self.axis
+
+    @t_axis.setter
+    def t_axis(self, value: int) -> None:
+        self.axis = value
 
     # Numpy ndarray Methods
     @abstractmethod
@@ -231,7 +238,7 @@ class TimeProxyBase(ProxyArrayBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> Union["TimeProxyBase", np.ndarray]:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -293,7 +300,7 @@ class TimeProxyBase(ProxyArrayBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> Union["TimeProxyBase", np.ndarray]:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of timestamps with indices.
 
         Args:
@@ -329,7 +336,7 @@ class TimeProxyBase(ProxyArrayBase):
     # Datetimes [Timestamp]
     @abstractmethod
     def get_datetime(self, index: int) -> Timestamp:
-        """A datetime from this proxy based on the index.
+        """A datetime from this proxy base on the index.
 
         Args:
             index: The index of the datetime to get.
@@ -347,24 +354,6 @@ class TimeProxyBase(ProxyArrayBase):
             All the times as a tuple of datetimes.
         """
         pass
-
-    def get_datetime_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-    ) -> "TimeProxyBase":
-        """Get a range of datetimes with indices.
-
-        Args:
-            start: The start index.
-            stop: The stop index.
-            step: The interval between indices to get datetimes.
-
-        Returns:
-            The requested range of datetimes.
-        """
-        return self.get_nanostamp_range(start, stop, step, proxy=True)
 
     # Get Data
     @abstractmethod
@@ -406,7 +395,7 @@ class TimeProxyBase(ProxyArrayBase):
         step: int | None = None,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
 
         Args:
@@ -421,11 +410,11 @@ class TimeProxyBase(ProxyArrayBase):
         """
         pass
 
-    # Find TimeProxy
+    # Find Index
     @abstractmethod
     def find_time_index(
         self,
-        timestamp: datetime.datetime | float | int | np.dtype,
+        timestamp: datetime.datetime | float,
         approx: bool = True,
         tails: bool = False,
     ) -> IndexDateTime:
@@ -441,15 +430,38 @@ class TimeProxyBase(ProxyArrayBase):
         """
         pass
 
-    def find_nanostamp_range(
+    # Find Data
+    def find_data(
+        self,
+        timestamp: datetime.datetime | float,
+        approx: bool = False,
+        tails: bool = False,
+    ) -> FoundData:
+        """Find the data at a specific time.
+
+        Args:
+            timestamp: The time to find the data at.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The found data at the timestamp.
+        """
+        index, dt = self.find_time_index(timestamp=timestamp, approx=approx, tails=tails)
+        slices = (slice(None),) * self.t_axis + (index,)
+        data = self.data[slices]
+
+        return FoundData(data, index, dt)
+
+    def find_data_range(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
         approx: bool = True,
         tails: bool = False,
-    ) -> "FoundTimeRange":
-        """Finds the nanostamp range on the axis inbetween two times, can give approximate values.
+    ) -> "FoundTimeDataRange":
+        """Finds the data range on the axis inbetween two times, can give approximate values.
 
         Args:
             start: The first time to find for the range.
@@ -459,97 +471,34 @@ class TimeProxyBase(ProxyArrayBase):
             tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
-            The nanostamp range on the axis and the start_nanostamp and stop indices.
+            The data range on the axis and the start_timestamp and stop indices.
         """
-        if isinstance(step, datetime.timedelta):
-            step = step.total_seconds()
+        axis, start_index, stop_index = self.find_nanostamp_range(start, stop, step, approx, tails)
 
-        if start is None:
-            start_index = 0
+        data = self.get_range(start=start_index, stop=stop_index, step=step, axis=self.t_axis, proxy=False)
+
+        if axis is None:
+            return FoundTimeDataRange(None, None, None, None, None, None)
         else:
-            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
+            t_series = self.time_series_type(data, time_axis=axis)
+            return FoundTimeDataRange(
+                t_series,
+                axis,
+                axis.start_datetime,
+                axis.end_datetime,
+                start_index,
+                stop_index,
+            )
 
-        if stop is None:
-            stop_index = self.get_length()
-        else:
-            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
-
-        return FoundTimeRange(
-            self.get_nanostamp_range(start_index, stop_index, step, proxy=True),
-            start_index,
-            stop_index,
-        )
-
-    def find_timestamp_range(
-        self,
-        start: datetime.datetime | float | int | np.dtype | None = None,
-        stop: datetime.datetime | float | int | np.dtype | None = None,
-        step: int | float | datetime.timedelta | None = None,
-        approx: bool = True,
-        tails: bool = False,
-    ) -> "FoundTimeRange":
-        """Finds the timestamp range on the axis inbetween two times, can give approximate values.
-
-        Args:
-            start: The first time to find for the range.
-            stop: The last time to find for the range.
-            step: The step between elements in the range.
-            approx: Determines if an approximate indices will be given if the time is not present.
-            tails: Determines if the first or last times will be give the requested item is outside the axis.
-
-        Returns:
-            The timestamp range on the axis and the start_timestamp and stop indices.
-        """
-        if isinstance(step, datetime.timedelta):
-            step = step.total_seconds()
-
-        if start is None:
-            start_index = 0
-        else:
-            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
-
-        if stop is None:
-            stop_index = self.get_length()
-        else:
-            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
-
-        return FoundTimeRange(
-            self.get_timestamp_range(start_index, stop_index, step, proxy=True),
-            start_index,
-            stop_index,
-        )
-
-    def find_datetime_range(
-        self,
-        start: datetime.datetime | float | int | np.dtype | None = None,
-        stop: datetime.datetime | float | int | np.dtype | None = None,
-        step: int | float | datetime.timedelta | None = None,
-        approx: bool = True,
-        tails: bool = False,
-    ) -> "FoundTimeRange":
-        """Finds the datetime range on the axis inbetween two times, can give approximate values.
-
-        Args:
-            start: The first time to find for the range.
-            stop: The last time to find for the range.
-            step: The step between elements in the range.
-            approx: Determines if an approximate indices will be given if the time is not present.
-            tails: Determines if the first or last times will be give the requested item is outside the axis.
-
-        Returns:
-            The datetime range on the axis and the start and stop indices.
-        """
-        return self.find_nanostamp_range(start, stop, step, approx, tails)
-
-    def find_time_nanoseconds(
+    def find_data_nanoseconds(
         self,
         start: float | int | np.dtype | None = None,
         stop: float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
         approx: bool = True,
         tails: bool = False,
-    ) -> "FoundTimeRange":
-        """Finds the datetime range on the axis inbetween two second offsets, can give approximate values.
+    ) -> "FoundTimeDataRange":
+        """Finds the data range on the axis inbetween two nanosecond offsets, can give approximate values.
 
         Args:
             start: The first time to find for the range.
@@ -559,7 +508,7 @@ class TimeProxyBase(ProxyArrayBase):
             tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
-            The datetime range on the axis and the start and stop indices.
+            The data range on the axis and the start_timestamp and stop indices.
         """
         if start is not None:
             if start >= 0:
@@ -573,23 +522,17 @@ class TimeProxyBase(ProxyArrayBase):
             else:
                 start = self.end_nanostamp + np.int64(stop)
 
-        return self.find_nanostamp_range(
-            self.start_nanotimestamp + start,
-            self.end_nanotimestamp + stop,
-            step,
-            approx,
-            tails,
-        )
+        return self.find_data_range(start, stop, step, approx, tails)
 
-    def find_time_seconds(
+    def find_data_seconds(
         self,
         start: float | int | np.dtype | None = None,
         stop: float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
         approx: bool = True,
         tails: bool = False,
-    ) -> "FoundTimeRange":
-        """Finds the datetime range on the axis inbetween two second offsets, can give approximate values.
+    ) -> "FoundTimeDataRange":
+        """Finds the data range on the axis inbetween two second offsets, can give approximate values.
 
         Args:
             start: The first time to find for the range.
@@ -599,7 +542,7 @@ class TimeProxyBase(ProxyArrayBase):
             tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
-            The datetime range on the axis and the start and stop indices.
+            The data range on the axis and the start_timestamp and stop indices.
         """
         if start is not None:
             if start >= 0:
@@ -613,12 +556,15 @@ class TimeProxyBase(ProxyArrayBase):
             else:
                 start = self.end_timestamp + stop
 
-        return self.find_timestamp_range(self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails)
+        return self.find_data_range(start, stop, step, approx, tails)
 
 
-class FoundTimeRange(NamedTuple):
-    """A name tuple for returning a range of times with its start and end."""
+class FoundTimeDataRange(NamedTuple):
+    """A named tuple for returning a found data range."""
 
-    data: TimeProxyBase | None
-    start: int | None
-    end: int | None
+    data: BaseTimeSeries | None
+    axis: BaseTimeSeries | None
+    start: Timestamp | None
+    end: Timestamp | None
+    start_index: int | None
+    end_index: int | None

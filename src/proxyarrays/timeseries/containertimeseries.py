@@ -30,16 +30,16 @@ from scipy import interpolate
 
 # Local Packages #
 from ..proxyarray import ContainerProxyArray
-from ..timeproxy import TimeProxyBase
-from ..timeaxis import ContainerTimeAxis, TimeAxisProxyBase
-from .timeseriesproxybase import TimeSeriesProxyBase
+from ..timeproxy import BaseTimeProxy
+from ..timeaxis import ContainerTimeAxis, BaseTimeAxis
+from .basetimeseries import BaseTimeSeries
 
 
 # Todo: Make an interpolator object
 # Todo: Make implement data mapping to reduce memory
 # Definitions #
 # Classes #
-class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
+class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
     """A time series proxy container that wraps an array like object to give it time series proxy functionality.
 
     Attributes:
@@ -72,7 +72,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
     def __init__(
         self,
         data: np.ndarray | None = None,
-        time_axis: TimeAxisProxyBase | np.ndarray | None = None,
+        time_axis: BaseTimeAxis | np.ndarray | None = None,
         shape: Iterable[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
@@ -105,7 +105,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
         self._tail_correction = self.default_tail_correction.__func__
 
         # Containers
-        self.time_axis: TimeAxisProxyBase | None = None
+        self.time_axis: BaseTimeAxis | None = None
 
         # Object Construction #
         if init:
@@ -259,7 +259,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
             mode: Determines if the contents of this proxy are editable or not.
             **kwargs: Keyword arguments for creating a new numpy array.
         """
-        is_axis_type = isinstance(time_axis, TimeAxisProxyBase)
+        is_axis_type = isinstance(time_axis, BaseTimeAxis)
         if time_axis is not None and not is_axis_type:
             self.time_axis = ContainerTimeAxis(
                 data=time_axis,
@@ -613,7 +613,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -671,7 +671,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of timestamps with indices.
 
         Args:
@@ -942,7 +942,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
 
     def append_proxy(
         self,
-        proxy: TimeSeriesProxyBase,
+        proxy: BaseTimeAxis,
         axis: int | None = None,
         truncate: bool | None = None,
         correction: str | bool | None = None,
@@ -980,7 +980,7 @@ class ContainerTimeSeries(ContainerProxyArray, TimeSeriesProxyBase):
 
     def add_proxies(
         self,
-        proxies: Iterable[TimeSeriesProxyBase],
+        proxies: Iterable[BaseTimeAxis],
         axis: int | None = None,
         truncate: bool | None = None,
     ) -> None:

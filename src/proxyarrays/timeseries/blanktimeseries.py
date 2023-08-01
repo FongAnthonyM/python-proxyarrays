@@ -18,13 +18,13 @@ __email__ = __email__
 
 # Local Packages #
 from ..timeproxy import BlankTimeProxy
-from .timeseriesproxybase import TimeSeriesProxyBase
+from .basetimeseries import BaseTimeSeries
 from .containertimeseries import ContainerTimeSeries
 
 
 # Definitions #
 # Classes #
-class BlankTimeSeries(BlankTimeProxy, TimeSeriesProxyBase):
+class BlankTimeSeries(BlankTimeProxy, BaseTimeSeries):
     """A proxy for holding blank time series data such as NaNs, zeros, or a single number.
 
     This proxy does not store a blank array, rather it generates an array whenever data would be accessed.

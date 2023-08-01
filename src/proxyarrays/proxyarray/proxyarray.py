@@ -24,7 +24,7 @@ from baseobjects.cachingtools import timed_keyless_cache
 import numpy as np
 
 # Local Packages #
-from .proxyarraybase import ProxyArrayBase
+from .baseproxyarray import BaseProxyArray
 from proxyarrays.proxyarray.containerproxyarray import ContainerProxyArray
 
 
@@ -41,7 +41,7 @@ class RangeIndices(NamedTuple):
     stop: proxyIndex | int | None
 
 
-class ProxyArray(ProxyArrayBase):
+class ProxyArray(BaseProxyArray):
     """A proxy for holding different data types which are similar to a numpy array.
 
     This object acts as an abstraction of several contained numpy like objects, to appear as combined numpy array.
@@ -68,14 +68,14 @@ class ProxyArray(ProxyArrayBase):
     """
 
     # TODO: Consider making the proxy work multidimensional. (Only single-dimensional right now.)
-    default_return_proxy_type: type = ProxyArrayBase
+    default_return_proxy_type: type = BaseProxyArray
     default_combine_type: type | None = ContainerProxyArray
 
     # Magic Methods
     # Construction/Destruction
     def __init__(
         self,
-        proxies: Iterable[ProxyArrayBase] | None = None,
+        proxies: Iterable[BaseProxyArray] | None = None,
         mode: str = "a",
         update: bool = True,
         init: bool = True,
@@ -188,7 +188,7 @@ class ProxyArray(ProxyArrayBase):
             return self.get_length()
 
     # Arithmetic
-    def __add__(self, other: ProxyArrayBase | list):
+    def __add__(self, other: BaseProxyArray | list):
         """When the add operator is called it concatenates this proxy with other proxies or a list."""
         return self.concatenate(other=other)
 
@@ -213,7 +213,7 @@ class ProxyArray(ProxyArrayBase):
     # Constructors/Destructors
     def construct(
         self,
-        proxies: Iterable[ProxyArrayBase] = None,
+        proxies: Iterable[BaseProxyArray] = None,
         mode: str = None,
         update: bool | None = None,
     ) -> None:
@@ -239,7 +239,7 @@ class ProxyArray(ProxyArrayBase):
             self.mode = mode
 
     # Editable Copy Methods
-    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> ProxyArrayBase:
+    def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
         """The default method for creating an editable version of this proxy.
 
         Returns:
@@ -495,7 +495,7 @@ class ProxyArray(ProxyArrayBase):
             return self.get_from_index(item)
 
     @get_item.register
-    def _(self, item: int) -> ProxyArrayBase:
+    def _(self, item: int) -> BaseProxyArray:
         """Get an item from this proxy based on an int and return a proxy.
 
         Args:
@@ -555,7 +555,7 @@ class ProxyArray(ProxyArrayBase):
         self.proxies.sort(key=key, reverse=reverse)
 
     @singlekwargdispatch("other")
-    def concatenate(self, other: ProxyArrayBase | list[ProxyArrayBase]) -> ProxyArrayBase:
+    def concatenate(self, other: BaseProxyArray | list[BaseProxyArray]) -> BaseProxyArray:
         """Concatenates this proxy object with another proxy or a list.
 
         Args:
@@ -567,7 +567,7 @@ class ProxyArray(ProxyArrayBase):
         raise TypeError(f"A {type(other)} cannot be used to concatenate a {type(self)}.")
 
     @concatenate.register
-    def _(self, other: ProxyArrayBase) -> ProxyArrayBase:
+    def _(self, other: BaseProxyArray) -> BaseProxyArray:
         """Concatenates this proxy object with another proxy.
 
         Args:
@@ -579,7 +579,7 @@ class ProxyArray(ProxyArrayBase):
         return type(self)(proxies=self.proxies + other.proxies, update=self.is_updating)
 
     @concatenate.register(list)
-    def _(self, other: list[ProxyArrayBase]) -> ProxyArrayBase:
+    def _(self, other: list[BaseProxyArray]) -> BaseProxyArray:
         """Concatenates this proxy object with another list.
 
         Args:
@@ -600,7 +600,7 @@ class ProxyArray(ProxyArrayBase):
 
     def combine_proxies(
         self, start: int | None = None, stop: int | None = None, step: int | None = None
-    ) -> ProxyArrayBase:
+    ) -> BaseProxyArray:
         """Combines a range of proxies into a single proxy.
 
         Args:
@@ -639,7 +639,7 @@ class ProxyArray(ProxyArrayBase):
         indices: Iterable[int | slice | Iterable[slice | int | None]],
         reverse: bool = False,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a nested proxy or data from within this proxy.
 
         Args:
@@ -779,7 +779,7 @@ class ProxyArray(ProxyArrayBase):
         return RangeIndices(start_index, stop_index)
 
     # Get Ranges of Data with Slices
-    def get_slices(self, slices: Iterable[slice], proxy: bool | None = None) -> ProxyArrayBase | np.ndarray:
+    def get_slices(self, slices: Iterable[slice], proxy: bool | None = None) -> BaseProxyArray | np.ndarray:
         """Get data from within using slices to determine the ranges.
 
         Args:
@@ -794,7 +794,7 @@ class ProxyArray(ProxyArrayBase):
         else:
             return self.get_slices_array(slices=slices)
 
-    def get_slices_proxy(self, slices: Iterable[slice] | None = None) -> ProxyArrayBase:
+    def get_slices_proxy(self, slices: Iterable[slice] | None = None) -> BaseProxyArray:
         """Gets a range of data as a new proxy.
 
         Args:
@@ -921,7 +921,7 @@ class ProxyArray(ProxyArrayBase):
         step: int | None = None,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
 
         Args:
@@ -949,7 +949,7 @@ class ProxyArray(ProxyArrayBase):
         item: slice,
         axis: int | None = None,
         proxy: bool | None = None,
-    ) -> ProxyArrayBase | np.ndarray:
+    ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along the main axis using a slice.
 
         Args:
@@ -971,7 +971,7 @@ class ProxyArray(ProxyArrayBase):
             return self.get_slices_array(slices=slices)
 
     # Get proxy based on Index
-    def get_proxy(self, index: int, proxy: bool | None = None) -> ProxyArrayBase | np.ndarray:
+    def get_proxy(self, index: int, proxy: bool | None = None) -> BaseProxyArray | np.ndarray:
         """Get a contained proxy/object or data from a contained proxy/object.
 
         Args:

@@ -18,14 +18,14 @@ __email__ = __email__
 
 # Local Packages #
 from ..timeproxy import TimeProxy
-from .timeaxisproxybase import TimeAxisProxyBase
+from .basetimeaxis import BaseTimeAxis
 from .blanktimeaxis import BlankTimeAxis
 from .containertimeaxis import ContainerTimeAxis
 
 
 # Definitions #
 # Classes #
-class TimeAxisProxy(TimeProxy, TimeAxisProxyBase):
+class TimeAxisProxyAxis(TimeProxy, BaseTimeAxis):
     """A TimeProxy that has been expanded to be a time axis."""
 
     default_fill_type = BlankTimeAxis
@@ -33,4 +33,4 @@ class TimeAxisProxy(TimeProxy, TimeAxisProxyBase):
 
 
 # Assign Cyclic Definitions
-TimeAxisProxy.default_return_proxy_type = TimeAxisProxy
+TimeAxisProxyAxis.default_return_proxy_type = TimeAxisProxyAxis

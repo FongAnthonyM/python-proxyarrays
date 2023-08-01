@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .timeseriesproxybase import TimeSeriesProxyBase
+from .basetimeseries import BaseTimeSeries
 from .containertimeseries import ContainerTimeSeries
 from .blanktimeseries import BlankTimeSeries
 from .timeseriesproxy import TimeSeriesProxy

@@ -13,4 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .containerfiletimeseriesbase import ContainerFileTimeSeriesBase
+from .basecontainerfiletimeseries import BaseContainerFileTimeSeries

@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .timeaxisproxybase import TimeAxisProxyBase
+from .basetimeaxis import BaseTimeAxis
 from .containertimeaxis import ContainerTimeAxis
 from .blanktimeaxis import BlankTimeAxis
-from .timeaxisproxy import TimeAxisProxy
+from .timeaxisproxy import TimeAxisProxyAxis

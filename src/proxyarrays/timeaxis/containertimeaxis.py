@@ -29,13 +29,13 @@ import numpy as np
 
 # Local Packages #
 from ..proxyarray import ContainerProxyArray
-from ..timeproxy import TimeProxyBase
-from .timeaxisproxybase import TimeAxisProxyBase
+from ..timeproxy import BaseTimeProxy
+from .basetimeaxis import BaseTimeAxis
 
 
 # Definitions #
 # Classes #
-class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
+class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     """A time axis proxy container that wraps an array like object to give it time axis proxy functionality.
 
     Attributes:
@@ -533,7 +533,7 @@ class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -626,7 +626,7 @@ class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Get a range of timestamps with indices.
 
         Args:
@@ -696,7 +696,7 @@ class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = False,
-    ) -> tuple[Timestamp] | TimeProxyBase:
+    ) -> tuple[Timestamp] | BaseTimeProxy:
         """Get a range of datetimes with indices.
 
         Args:
@@ -889,7 +889,7 @@ class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
 
     def append_proxy(
         self,
-        proxy: TimeAxisProxyBase,
+        proxy: BaseTimeAxis,
         axis: int | None = None,
         truncate: bool | None = None,
         correction: str | bool | None = None,
@@ -927,7 +927,7 @@ class ContainerTimeAxis(ContainerProxyArray, TimeAxisProxyBase):
 
     def add_proxies(
         self,
-        proxies: Iterable[TimeAxisProxyBase],
+        proxies: Iterable[BaseTimeAxis],
         axis: int | None = None,
         truncate: bool | None = None,
     ) -> None:

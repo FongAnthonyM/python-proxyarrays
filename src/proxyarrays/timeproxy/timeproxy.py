@@ -28,14 +28,14 @@ from dspobjects.time import Timestamp, nanostamp
 import numpy as np
 
 # Local Packages #
-from ..proxyarray import ProxyArray, ProxyArrayBase
-from .timeproxybase import TimeProxyBase
+from ..proxyarray import ProxyArray, BaseProxyArray
+from .basetimeproxy import BaseTimeProxy
 from .blanktimeproxy import BlankTimeProxy
 
 
 # Definitions #
 # Classes #
-class TimeProxy(ProxyArray, TimeProxyBase):
+class TimeProxy(ProxyArray, BaseTimeProxy):
     """An ProxyArray that has been expanded to handle time data.
 
     Class Attributes:
@@ -63,7 +63,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
     # Construction/Destruction
     def __init__(
         self,
-        proxies: Iterable[TimeProxyBase] | None = None,
+        proxies: Iterable[BaseTimeProxy] | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
@@ -274,7 +274,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
     # Constructors/Destructors
     def construct(
         self,
-        proxies: Iterable[ProxyArrayBase] = None,
+        proxies: Iterable[BaseProxyArray] = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = None,
@@ -428,7 +428,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisProxy '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return min(sample_rates)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -444,7 +444,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisProxy '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return self.sample_rates[np.nanargmin(np.asarray(self.sample_rates))]
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -478,7 +478,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisProxy '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -494,7 +494,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisProxy '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     def set_precision(self, nano: bool) -> None:
@@ -691,7 +691,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> Union["TimeProxyBase", np.ndarray]:
+    ) -> Union["BaseTimeProxy", np.ndarray]:
         """Get a range of nanostamps with indices.
 
         Args:
@@ -832,7 +832,7 @@ class TimeProxy(ProxyArray, TimeProxyBase):
         stop: int | None = None,
         step: int | None = None,
         proxy: bool = True,
-    ) -> np.ndarray | TimeProxyBase:
+    ) -> np.ndarray | BaseTimeProxy:
         """Gets a range of timestamps along an axis.
 
         Args:

@@ -1,4 +1,4 @@
-"""containerfiletimeseriesbase.py
+"""basecontainerfiletimeseries.py
 A time series proxy that wraps file object which contains time series.
 """
 # Package Header #
@@ -22,12 +22,12 @@ from baseobjects.functions import singlekwargdispatch
 
 # Local Packages #
 from ..timeseries import ContainerTimeSeries
-from ..directorytimeseries import DirectoryTimeSeriesBase
+from ..directorytimeseries import BaseDirectoryTimeSeries
 
 
 # Definitions #
 # Classes #
-class ContainerFileTimeSeriesBase(ContainerTimeSeries, DirectoryTimeSeriesBase):
+class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
     """A time series proxy that wraps file object which contains time series.
 
     Class Attributes:
@@ -176,7 +176,7 @@ class ContainerFileTimeSeriesBase(ContainerTimeSeries, DirectoryTimeSeriesBase):
         self.path = file
         self.file_kwargs = kwargs
 
-    def open(self, mode: str | None = None, **kwargs: Any) -> DirectoryTimeSeriesBase:
+    def open(self, mode: str | None = None, **kwargs: Any) -> BaseDirectoryTimeSeries:
         """Opens this directory proxy which opens all the contained proxies.
 
         Args:
