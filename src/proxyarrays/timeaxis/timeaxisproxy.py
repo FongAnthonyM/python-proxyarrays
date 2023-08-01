@@ -25,7 +25,7 @@ from .containertimeaxis import ContainerTimeAxis
 
 # Definitions #
 # Classes #
-class TimeAxisProxyAxis(TimeProxy, BaseTimeAxis):
+class TimeAxisProxy(TimeProxy, BaseTimeAxis):
     """A TimeProxy that has been expanded to be a time axis."""
 
     default_fill_type = BlankTimeAxis
@@ -33,4 +33,4 @@ class TimeAxisProxyAxis(TimeProxy, BaseTimeAxis):
 
 
 # Assign Cyclic Definitions
-TimeAxisProxyAxis.default_return_proxy_type = TimeAxisProxyAxis
+TimeAxisProxy.default_return_proxy_type = TimeAxisProxy

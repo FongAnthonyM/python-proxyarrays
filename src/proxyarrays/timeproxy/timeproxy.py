@@ -428,7 +428,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(f"The TimeAxisProxy '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return min(sample_rates)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -444,7 +444,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if self.validate_sample_rate():
             return sample_rates[0]
         else:
-            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample rate, returning minimum sample rate.")
+            warn(f"The TimeAxisProxy '{self}' does not have a valid sample rate, returning minimum sample rate.")
             return self.sample_rates[np.nanargmin(np.asarray(self.sample_rates))]
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -478,7 +478,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(f"The TimeAxisProxy '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -494,7 +494,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if self.validate_sample_rate():
             return sample_periods[0]
         else:
-            warn(f"The TimeAxisProxyAxis '{self}' does not have a valid sample period, returning maximum sample period.")
+            warn(f"The TimeAxisProxy '{self}' does not have a valid sample period, returning maximum sample period.")
             return max(sample_periods)
 
     def set_precision(self, nano: bool) -> None:

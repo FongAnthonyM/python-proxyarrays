@@ -16,4 +16,4 @@ __email__ = __email__
 from .basetimeaxis import BaseTimeAxis
 from .containertimeaxis import ContainerTimeAxis
 from .blanktimeaxis import BlankTimeAxis
-from .timeaxisproxy import TimeAxisProxyAxis
+from .timeaxisproxy import TimeAxisProxy

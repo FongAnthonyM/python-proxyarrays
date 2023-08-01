@@ -26,7 +26,7 @@ from .basedirectorytimeseries import BaseDirectoryTimeSeries
 
 # Definitions #
 # Classes #
-class ProxyDirectoryTimeSeries(TimeSeriesProxy, BaseDirectoryTimeSeries):
+class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
     """A proxy for directory/file objects which contain time series data.
 
     Class Attributes:
@@ -88,7 +88,7 @@ class ProxyDirectoryTimeSeries(TimeSeriesProxy, BaseDirectoryTimeSeries):
         self.glob_condition: str = "*"
 
         self.proxy_type: type = self.default_proxy_type
-        self.proxy_paths: dict[pathlib.Path, "ProxyDirectoryTimeSeries"] = {}
+        self.proxy_paths: dict[pathlib.Path, "DirectoryTimeSeriesProxy"] = {}
 
         # Parent Attributes #
         super().__init__(init=False)
