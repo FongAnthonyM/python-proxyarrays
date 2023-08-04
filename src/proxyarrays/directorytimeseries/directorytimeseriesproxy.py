@@ -179,7 +179,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
         self.proxies.sort(key=lambda proxy: proxy.start_timestamp)
         self.clear_caches()
 
-    # proxies
+    # Proxies
     def proxy_creation_condition(
         self,
         path: str | pathlib.Path,
@@ -197,6 +197,66 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
             If the path can be constructed.
         """
         return self.proxy_type.validate_path(path)
+
+    def create_child(
+        self,
+        path: str | list[str],
+        open_: bool = False,
+        **kwargs
+    ) -> None:
+        """Creates a child proxy from the given child path.
+
+        Args:
+            path: The child path to create a proxy from.
+            open_: Determines if the arrays will remain open after construction.
+            **kwargs: The keyword arguments to create contained arrays.
+        """
+        path = path.split('/') if isinstance(path, str) else path.copy()
+
+        child_path = self.path / path.pop(0)
+        proxy = self.proxy_paths.get(child_path, None)
+        if proxy is None:
+            proxy = self.proxy_type(path=child_path, open_=open_, **kwargs)
+            self.proxies.append(proxy)
+            self.proxy_paths[child_path] = proxy
+
+        if path:
+            proxy.create_child(path=path, open_=open_, **kwargs)
+
+        self.proxies.sort(key=lambda f: f.start_timestamp)
+        self.clear_caches()
+
+    def create_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs) -> None:
+        """Creates child arrays the given child paths.
+
+        Args:
+            paths: The child paths and keyword arguments to create arrays from.
+            open_: Determines if the arrays will remain open after construction.
+            sort: Determines if the arrays will be sorted after update.
+            **kwargs: The keyword arguments to create contained arrays.
+        """
+        children_info = {}
+        for path_kwargs in paths:
+            path = path_kwargs["path"]
+            path = path_kwargs["path"] = path.split('/') if isinstance(path, str) else path.copy()
+            child_path = self.path / path.pop(0)
+            info = children_info.get(child_path, None)
+            if info is None:
+                children_info[child_path] = {"kwargs": path_kwargs | {"path": child_path}, "children": [path_kwargs]}
+            else:
+                info["children"].append(path_kwargs)
+
+        for child_path, info in children_info.items():
+            proxy = self.proxy_paths.get(child_path, None)
+            if proxy is None:
+                self.proxy_paths[child_path] = proxy = self.proxy_type(path=child_path, open_=open_, build=False)
+                self.proxies.append(proxy)
+            if info["children"]:
+                proxy.create_children(paths=info["children"], open_=open_)
+
+        if sort:
+            self.proxies.sort(key=lambda f: f.start_timestamp)
+            self.clear_caches()
 
     # Path and File System
     def open(self, mode: str | None = None, **kwargs: Any) -> BaseDirectoryTimeSeries:
