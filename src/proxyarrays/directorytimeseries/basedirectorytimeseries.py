@@ -106,14 +106,14 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         """Closes this proxy."""
         pass
 
-    @abstractmethod
+
     def require(self, **kwargs: Any) -> None:
         """Create this directory and all the contained proxies if they do not exist.
 
         Args:
             **kwargs: Keyword arguments for requiring the directory.
         """
-        pass
+        raise NotImplemented
 
     # Getters
     @abstractmethod

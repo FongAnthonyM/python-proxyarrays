@@ -193,16 +193,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
     def close(self) -> None:
         """Closes this proxy."""
-        self.file.close()
-
-    @abstractmethod
-    def require(self, **kwargs: Any) -> None:
-        """Create this file if it does not exist.
-
-        Args:
-            **kwargs: Keyword arguments for requiring the directory.
-        """
-        pass
+        self.file
 
     @abstractmethod
     def load(self) -> None:
