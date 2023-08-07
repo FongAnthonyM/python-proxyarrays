@@ -206,7 +206,8 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
     def close(self) -> None:
         """Closes this proxy."""
-        self.file
+        if self._file is not None:
+            self._file.close()
 
     @abstractmethod
     def load(self) -> None:
@@ -251,12 +252,3 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         """
         if self.mode == "r":
             raise IOError("not writable")
-
-    @abstractmethod
-    def get_shape(self) -> tuple[int]:
-        """Get the shape of this proxy from the contained proxies/objects.
-
-        Returns:
-            The shape of this proxy.
-        """
-        pass
