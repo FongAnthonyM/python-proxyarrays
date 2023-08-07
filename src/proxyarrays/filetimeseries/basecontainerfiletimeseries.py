@@ -79,7 +79,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         self.file_kwargs: dict[str, Any] = {}
 
         # Parent Attributes #
-        super().__init__(*args, init=False, **kwargs)
+        super().__init__(init=False, **kwargs)
 
         # Object Construction #
         if init:
