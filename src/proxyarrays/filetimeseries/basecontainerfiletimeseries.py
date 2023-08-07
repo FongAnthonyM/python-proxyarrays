@@ -68,21 +68,22 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         self,
         file: Any = None,
         mode: str | None = None,
+        *,
+        path: str | pathlib.Path | None = None,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        # Containers #
         self._path: pathlib.Path | None = None
         self._file: Any = None
         self.file_kwargs: dict[str, Any] = {}
 
         # Parent Attributes #
-        super().__init__(init=False)
+        super().__init__(*args, init=False, **kwargs)
 
         # Object Construction #
         if init:
-            self.construct(file=file, mode=mode, **kwargs)
+            self.construct(file=file, mode=mode, path=path, **kwargs)
 
     @property
     def path(self) -> pathlib.Path:
@@ -129,17 +130,34 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
     # Instance Methods
     # Constructors/Destructors
-    def construct(self, file: Any = None, mode: str | None = None, **kwargs: Any) -> None:
+    def construct(
+        self,
+        file: Any = None,
+        mode: str | None = None,
+        *,
+        path: str | pathlib.Path | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Constructs this object.
 
         Args:
             file: The file object to wrap or a path to the file.
             mode: The mode this proxy and file will be in.
+            path: The path of the file to wrap.
             **kwargs: The keyword arguments for constructing the file object.
         """
         # New Assignment
+        if path is not None:
+            self.path = path
+
         if file is not None:
-            self.set_file(file, mode=mode, **kwargs)
+            self.set_file(file)
+
+        if mode is not None:
+            self.file_kwargs.update(mode=mode)
+
+        if kwargs:
+            self.file_kwargs.update(kwargs)
 
         # Parent Construction
         super().construct(mode=mode)
@@ -152,12 +170,11 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
     # File
     @singlekwargdispatch("file")
-    def set_file(self, file: Any, **kwargs: Any) -> None:
+    def set_file(self, file: Any) -> None:
         """Sets the file for this proxy to wrap.
 
         Args:
             file: The file object for this proxy to wrap.
-            **kwargs: The keyword arguments for constructing the file.
         """
         if isinstance(file, self.file_type):
             self._file = file
@@ -166,15 +183,13 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
     @set_file.register(pathlib.Path)
     @set_file.register(str)
-    def _(self, file: pathlib.Path | str, **kwargs: Any) -> None:
+    def __set_file(self, file: pathlib.Path | str) -> None:
         """Sets the file for this proxy to wrap.
 
         Args:
             file: The path to create the file.
-            **kwargs: The keyword arguments for constructing the file.
         """
         self.path = file
-        self.file_kwargs = kwargs
 
     def open(self, mode: str | None = None, **kwargs: Any) -> BaseDirectoryTimeSeries:
         """Opens this directory proxy which opens all the contained proxies.

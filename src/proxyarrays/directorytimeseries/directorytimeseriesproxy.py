@@ -223,7 +223,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
         if path:
             proxy.create_child(path=path, open_=open_, **kwargs)
 
-        self.proxies.sort(key=lambda f: f.start_timestamp)
+        self.proxies.sort(key=lambda p: p.start_timestamp)
         self.clear_caches()
 
     def create_children(self, paths: list[dict], open_: bool = False, sort: bool = False, **kwargs) -> None:
@@ -252,10 +252,10 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
                 self.proxy_paths[child_path] = proxy = self.proxy_type(path=child_path, open_=open_, build=False)
                 self.proxies.append(proxy)
             if info["children"]:
-                proxy.create_children(paths=info["children"], open_=open_)
+                proxy.create_children(paths=info["children"], open_=open_, sort=sort)
 
         if sort:
-            self.proxies.sort(key=lambda f: f.start_timestamp)
+            self.proxies.sort(key=lambda p: p.start_timestamp)
             self.clear_caches()
 
     # Path and File System
