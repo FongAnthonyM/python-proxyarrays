@@ -277,7 +277,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         proxies: Iterable[BaseProxyArray] = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
-        mode: str = None,
+        mode: str | None = None,
         update: bool | None = None,
     ) -> None:
         """Constructs this object.

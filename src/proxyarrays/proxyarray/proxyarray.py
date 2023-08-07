@@ -78,13 +78,10 @@ class ProxyArray(BaseProxyArray):
         proxies: Iterable[BaseProxyArray] | None = None,
         mode: str = "a",
         update: bool = True,
-        init: bool = True,
         *args: Any,
+        init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(*args, int=init, **kwargs)
-
         # New Attributes #
         # Shape
         self.target_shape: Iterable[int] | None = None
@@ -96,6 +93,9 @@ class ProxyArray(BaseProxyArray):
 
         # Containers #
         self.proxies: list = []
+
+        # Parent Attributes #
+        super().__init__(*args, init=False, **kwargs)
 
         # Object Construction #
         if init:
@@ -214,7 +214,7 @@ class ProxyArray(BaseProxyArray):
     def construct(
         self,
         proxies: Iterable[BaseProxyArray] = None,
-        mode: str = None,
+        mode: str | None = None,
         update: bool | None = None,
     ) -> None:
         """Constructs this object.

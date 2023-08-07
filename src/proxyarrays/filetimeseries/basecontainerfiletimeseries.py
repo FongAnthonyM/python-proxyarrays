@@ -39,6 +39,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
     Args:
         file: The file object to wrap or a path to the file.
         mode: The mode this proxy and file will be in.
+        path: The path of the file to wrap.
         init: Determines if this object will construct.
         **kwargs: The keyword arguments for constructing the file object.
     """
@@ -67,7 +68,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
     def __init__(
         self,
         file: Any = None,
-        mode: str | None = None,
+        mode: str | None = "r",
         *,
         path: str | pathlib.Path | None = None,
         init: bool = True,

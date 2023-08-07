@@ -42,10 +42,7 @@ class BaseProxyArray(CachingObject):
     # Magic Methods #
     # Construction/Destruction
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        # Parent Attributes #
-        super().__init__(*args, **kwargs)
-
-        # New  Attributes #
+        # New Attributes #
         self._is_updating: bool = False
 
         self._spawn_editable: AnyCallable = self._default_spawn_editable.__func__
@@ -53,6 +50,9 @@ class BaseProxyArray(CachingObject):
         self.returns_proxy: bool = False
 
         self.mode: str = "a"
+
+        # Parent Attributes #
+        super().__init__(*args, **kwargs)
 
     @property
     def spawn_editable(self) -> AnyCallable:
