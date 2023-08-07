@@ -216,7 +216,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
         child_path = self.path / path.pop(0)
         proxy = self.proxy_paths.get(child_path, None)
         if proxy is None:
-            proxy = self.proxy_type(path=child_path, open_=open_, **kwargs)
+            proxy = self.proxy_type(path=child_path, mode=self.mode, open_=open_, **kwargs)
             self.proxies.append(proxy)
             self.proxy_paths[child_path] = proxy
 
@@ -249,7 +249,12 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
         for child_path, info in children_info.items():
             proxy = self.proxy_paths.get(child_path, None)
             if proxy is None:
-                self.proxy_paths[child_path] = proxy = self.proxy_type(path=child_path, open_=open_, build=False)
+                self.proxy_paths[child_path] = proxy = self.proxy_type(
+                    path=child_path,
+                    mode=self.mode,
+                    open_=open_,
+                    build=False,
+                )
                 self.proxies.append(proxy)
             if info["children"]:
                 proxy.create_children(paths=info["children"], open_=open_, sort=sort)

@@ -102,7 +102,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
     def file(self) -> pathlib.Path:
         """The file object."""
         if self._file is None:
-            self._file = self.file_type(self._path, **self.file_kwargs)
+            self._file = self.file_type(self._path, mode=self.mode, **self.file_kwargs)
         return self._file
 
     @file.setter
@@ -153,9 +153,6 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
         if file is not None:
             self.set_file(file)
-
-        if mode is not None:
-            self.file_kwargs.update(mode=mode)
 
         if kwargs:
             self.file_kwargs.update(kwargs)
