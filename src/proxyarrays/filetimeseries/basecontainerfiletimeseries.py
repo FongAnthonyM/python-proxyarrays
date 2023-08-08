@@ -31,10 +31,12 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
     """A time series proxy that wraps file object which contains time series.
 
     Class Attributes:
+        default_remain_open: Determines if new files will remain open on initial opening.
         file_type: The file type that this file time proxy will wrap.
 
     Attributes:
         file: The file object to wrap.
+        remain_open: Determines if new files will remain open on initial opening.
 
     Args:
         file: The file object to wrap or a path to the file.
@@ -44,6 +46,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         **kwargs: The keyword arguments for constructing the file object.
     """
 
+    default_remain_open: bool = False
     file_type: Any = None
 
     # Class Methods #
@@ -77,6 +80,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         # New Attributes #
         self._path: pathlib.Path | None = None
         self._file: Any = None
+        self.remain_open: bool = self.default_remain_open
         self.file_kwargs: dict[str, Any] = {}
 
         # Parent Attributes #
