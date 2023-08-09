@@ -106,7 +106,6 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         """Closes this proxy."""
         pass
 
-
     def require(self, **kwargs: Any) -> None:
         """Create this directory and all the contained proxies if they do not exist.
 

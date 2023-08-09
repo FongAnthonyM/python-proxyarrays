@@ -160,7 +160,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
 
         if build:
             if self.path.is_dir():
-                self.construct_proxies(open_=open_, mode=self.mode, **kwargs)
+                self.construct_proxies(open_=open_, **kwargs)
             else:
                 raise IOError(f"{self.path.as_posix()} does not exist.")
 
@@ -174,7 +174,7 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
         for path in self.path.glob(self.glob_condition):
             if path not in self.proxy_paths:
                 if self.proxy_creation_condition(path):
-                    self.proxy_paths[path] = proxy = self.proxy_type(path, open_=open_, **kwargs)
+                    self.proxy_paths[path] = proxy = self.proxy_type(path, open_=open_, mode=self.mode, **kwargs)
                     self.proxies.append(proxy)
         self.proxies.sort(key=lambda proxy: proxy.start_timestamp)
         self.clear_caches()
