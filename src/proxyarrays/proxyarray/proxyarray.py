@@ -709,7 +709,7 @@ class ProxyArray(BaseProxyArray):
         proxy_inner_index = int(super_index - proxy_start_index)
         return proxyIndex(proxy_index, proxy_start_index, proxy_inner_index)
 
-    def find_inner_proxy_indices(self, super_indices: Iterable[int]) -> tuple[proxyIndex]:
+    def find_inner_proxy_indices(self, super_indices: Iterable[int]) -> tuple[proxyIndex, ...]:
         """Find the proxy and inner index of several super indices.
 
         Args:
@@ -760,20 +760,20 @@ class ProxyArray(BaseProxyArray):
             The start and stop indices as proxyIndex objects in a RangeIndices object.
         """
         if start is not None and stop is not None:
-            start_index, stop_index = self.find_inner_proxy_indices([start, stop])
+            start_index, stop_index = self.find_inner_proxy_indices([start, stop-1])
         else:
             if start is not None:
                 start_index = self.find_inner_proxy_index(start)
             else:
                 start_index = proxyIndex(0, 0, 0)
             if stop is not None:
-                stop_index = self.find_inner_proxy_index(stop)
+                stop_index = self.find_inner_proxy_index(stop-1)
             else:
                 stop_proxy = len(self.proxies) - 1
                 stop_index = proxyIndex(
                     stop_proxy,
                     self.proxy_start_indices[stop_proxy],
-                    self.lengths[stop_proxy],
+                    self.lengths[stop_proxy] - 1,
                 )
 
         return RangeIndices(start_index, stop_index)
@@ -808,7 +808,7 @@ class ProxyArray(BaseProxyArray):
         range_proxy_indices = self.parse_range_super_indices(start=axis_slice.start, stop=axis_slice.stop)
 
         start_proxy = range_proxy_indices.start.index
-        stop_proxy = range_proxy_indices.stop.index
+        stop_proxy = range_proxy_indices.stop.index + 1
 
         return self.return_proxy_type(proxies=[self.proxies[start_proxy:stop_proxy]])
 
@@ -867,7 +867,7 @@ class ProxyArray(BaseProxyArray):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         inner_start = range_proxy_indices.start.inner_index
-        inner_stop = range_proxy_indices.stop.inner_index
+        inner_stop = range_proxy_indices.stop.inner_index + 1
         slices[self.axis] = slice(inner_start, inner_stop, axis_slice.step)
 
         # Get start and stop data array locations
@@ -898,7 +898,7 @@ class ProxyArray(BaseProxyArray):
 
             # Middle proxies
             slices[self.axis] = slice(None, None, axis_slice.step)
-            for proxy in self.proxies[start_proxy + 1 : stop_proxy]:
+            for proxy in self.proxies[start_proxy + 1: stop_proxy]:
                 d_size = len(proxy)
                 a_start = a_stop
                 a_stop = a_start + d_size

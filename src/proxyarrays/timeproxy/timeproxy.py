@@ -746,7 +746,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         inner_start = range_proxy_indices.start.inner_index
-        inner_stop = range_proxy_indices.stop.inner_index
+        inner_stop = range_proxy_indices.stop.inner_index + 1
         slice_ = slice(inner_start, inner_stop, slice_.step)
 
         # Get start_nanostamp and stop array locations
@@ -774,7 +774,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
             # Middle proxies
             fill_kwargs["slice_"] = slice(None, None, slice_.step)
-            for proxy in self.proxies[start_proxy + 1 : stop_proxy]:
+            for proxy in self.proxies[start_proxy + 1: stop_proxy]:
                 d_size = len(proxy)
                 a_start = a_stop
                 a_stop = a_start + d_size
@@ -887,7 +887,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         inner_start = range_proxy_indices.start.inner_index
-        inner_stop = range_proxy_indices.stop.inner_index
+        inner_stop = range_proxy_indices.stop.inner_index + 1
         slice_ = slice(inner_start, inner_stop, slice_.step)
 
         # Get start_timestamp and stop array locations
@@ -915,7 +915,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
             # Middle proxies
             fill_kwargs["slice_"] = slice(None, None, slice_.step)
-            for proxy in self.proxies[start_proxy + 1 : stop_proxy]:
+            for proxy in self.proxies[start_proxy + 1: stop_proxy]:
                 d_size = len(proxy)
                 a_start = a_stop
                 a_stop = a_start + d_size
