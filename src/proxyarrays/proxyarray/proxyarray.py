@@ -62,9 +62,12 @@ class ProxyArray(BaseProxyArray):
 
     Args:
         proxies: An iterable holding proxies/objects to store in this proxy.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         mode: Determines if the contents of this proxy are editable or not.
         update: Determines if this proxy will start updating or not.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
+        **kwargs: Keyword arguments for inheritance.
     """
 
     # TODO: Consider making the proxy work multidimensional. (Only single-dimensional right now.)
@@ -76,6 +79,7 @@ class ProxyArray(BaseProxyArray):
     def __init__(
         self,
         proxies: Iterable[BaseProxyArray] | None = None,
+        axis: int = 0,
         mode: str = "a",
         update: bool = True,
         *args: Any,
@@ -99,7 +103,7 @@ class ProxyArray(BaseProxyArray):
 
         # Object Construction #
         if init:
-            self.construct(proxies=proxies, mode=mode, update=update)
+            self.construct(proxies=proxies, axis=axis, mode=mode, update=update, **kwargs)
 
     @property
     def shapes(self) -> tuple[tuple[int]]:
@@ -214,16 +218,23 @@ class ProxyArray(BaseProxyArray):
     def construct(
         self,
         proxies: Iterable[BaseProxyArray] = None,
+        axis: int | None = None,
         mode: str | None = None,
         update: bool | None = None,
+        **kwargs: Any,
     ) -> None:
         """Constructs this object.
 
         Args:
             proxies: An iterable holding proxies/objects to store in this proxy.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             mode: Determines if the contents of this proxy are editable or not.
             update: Determines if this proxy will start updating or not.
+            **kwargs: Keyword arguments for inheritance.
         """
+        if axis is not None:
+            self.axis = axis
+
         if update is not None:
             self._is_updating = update
             if update:
@@ -237,6 +248,8 @@ class ProxyArray(BaseProxyArray):
 
         if mode is not None:
             self.mode = mode
+
+        super().construct(**kwargs)
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
