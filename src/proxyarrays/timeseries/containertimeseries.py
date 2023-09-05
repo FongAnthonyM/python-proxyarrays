@@ -21,6 +21,7 @@ from typing import Any, Callable
 
 # Third-Party Packages #
 from baseobjects.typing import AnyCallable
+from baseobjects.functions import MethodMultiplexer
 from dspobjects import Resample
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array
@@ -76,6 +77,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         shape: Iterable[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
+        axis: int = 0,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
@@ -102,7 +104,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
         # Method Assignment
         self.blank_generator = nan_array
-        self._tail_correction = self.default_tail_correction.__func__
+        self.tail_correction: MethodMultiplexer = MethodMultiplexer(instance=self, select="default_tail_correction")
 
         # Containers
         self.time_axis: BaseTimeAxis | None = None
@@ -115,6 +117,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
                 shape=shape,
                 sample_rate=sample_rate,
                 sample_period=sample_period,
+                axis=axis,
                 precise=precise,
                 tzinfo=tzinfo,
                 mode=mode,
@@ -227,11 +230,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
     def resampler(self, value: Resample) -> None:
         self._resampler = value
 
-    @property
-    def tail_correction(self) -> AnyCallable | None:
-        """The correction method for data to be appended."""
-        return self._tail_correction.__get__(self, self.__class__) if self._tail_correction is not None else None
-
     # Instance Methods #
     # Constructors/Destructors
     def construct(
@@ -241,6 +239,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         shape: Iterable[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
+        axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str | None = None,
@@ -254,6 +253,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             shape: The shape that proxy should be and if resized the shape it will default to.
             sample_rate: The sample rate of the data.
             sample_period: The sample period of this proxy.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             mode: Determines if the contents of this proxy are editable or not.
@@ -285,7 +285,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             if tzinfo is not None:
                 self.time_axis.set_tzinfo(tzinfo)
 
-        super().construct(data=data, shape=shape, mode=mode, **kwargs)
+        super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
     def construct_resampler(self) -> Resample:
         """Constructs the resampler for this proxy.
