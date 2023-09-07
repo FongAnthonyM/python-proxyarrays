@@ -164,6 +164,27 @@ class DirectoryTimeSeriesProxy(TimeSeriesProxy, BaseDirectoryTimeSeries):
             else:
                 raise IOError(f"{self.path.as_posix()} does not exist.")
 
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "DirectoryTimeSeriesProxy":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._path = self._path
+
+        new_copy.glob_condition = self.glob_condition
+
+        new_copy.proxy_type = self.proxy_type
+        new_copy.proxy_paths = self.proxy_paths
+
+        return new_copy
+
     def construct_proxies(self, open_=False, **kwargs) -> None:
         """Constructs the proxies for this object.
 

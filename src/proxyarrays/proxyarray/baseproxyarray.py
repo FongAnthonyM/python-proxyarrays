@@ -91,6 +91,22 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
 
     # Instance Methods #
     # Constructors/Destructors
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BaseProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = self.__class__(*args, **kwargs)
+        new_copy._is_updating = self._is_updating
+        new_copy.returns_proxy = self.returns_proxy
+        new_copy.mode = self.mode
+        return new_copy
+
     # Editable Copy Methods
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
         """Creates an editable copy of this proxy.

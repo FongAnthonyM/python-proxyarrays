@@ -317,6 +317,28 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if tzinfo is not None:
             self.set_tzinfo(tzinfo)
 
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "TimeProxy":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._precise = self._precise
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.get_data.select(self.get_data.selected)
+
+        new_copy.fill_type = self.fill_type
+        return new_copy
+
     # Sorting
     def proxy_sort_key(self, proxy: Any) -> Any:
         """The key to be used in sorting with the proxy as the sort basis.

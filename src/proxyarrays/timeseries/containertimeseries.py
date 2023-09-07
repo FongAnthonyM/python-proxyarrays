@@ -51,8 +51,8 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         interpolate_type: The interpolation type for realigning data for correct times.
         interpolate_fill_value: The fill type for the missing values.
         _resampler: The object that will be used for resampling the data.
-        blank_generator: The method for creating blank data.
         tail_correction: The method for correcting the tails of the data.
+        blank_generator: The method for creating blank data.
         time_axis: The timestamps of each sample of the data.
 
     Args:
@@ -103,8 +103,12 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         self._resampler: Resample | None = None
 
         # Method Assignment
-        self.blank_generator = nan_array
         self.tail_correction: MethodMultiplexer = MethodMultiplexer(instance=self, select="default_tail_correction")
+        self.blank_generator: CallableMultiplexer = CallableMultiplexer(
+            register=self.blank_generation_functions,
+            instance=self,
+            select="nan_array",
+        )
 
         # Containers
         self.time_axis: BaseTimeAxis | None = None
@@ -295,6 +299,33 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         """
         self.resampler = Resample(old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis)
         return self.resampler
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerTimeSeries":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy.switch_algorithm_size = self.switch_algorithm_size
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+
+        new_copy.interpolate_type = self.interpolate_type
+        new_copy.interpolate_fill_value = self.interpolate_fill_value
+
+        # Maybe match the resampler settings too.
+
+        new_copy.tail_correction.select(self.tail_correction.selected)
+        new_copy.blank_generator.select(self.blank_generator.selected)
+
+        new_copy.time_axis = self.time_axis.empty_copy()
+        return new_copy
 
     # Getters and Setters
     def get_sample_rate(self) -> float:

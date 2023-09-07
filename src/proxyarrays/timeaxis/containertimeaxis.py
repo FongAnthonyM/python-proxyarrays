@@ -47,8 +47,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         _sample_rate: The sample rate of the data.
         tzinfo: The time zone of the timestamps.
         get_data: The method for getting the correct data.
-        blank_generator: The method for creating blank data.
         tail_correction: The method for correcting the tails of the data.
+        blank_generator: The method for creating blank data.
         _nanostamps: The nanosecond timestamps of this proxy.
         _timestamps: The timestamps of this proxy.
 
@@ -66,14 +66,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
     """
-
-    blank_generation_functions: FunctionRegister = FunctionRegister({
-        "nan_array": nan_array,
-        "empty": np.empty,
-        "zeros": np.zeros,
-        "ones": np.ones,
-        "full": np.full,
-    })
 
     # Magic Methods #
     # Construction/Destruction
@@ -270,6 +262,30 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     def sample_period_decimal(self) -> Decimal:
         """The sample period as Decimal object"""
         return self.get_sample_period_decimal()
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy.switch_algorithm_size = self.switch_algorithm_size
+        new_copy._precise = self._precise
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+        new_copy._sample_rate = self._sample_rate
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.get_data.select(self.get_data.selected)
+        new_copy.tail_correction.select(self.tail_correction.selected)
+        new_copy.blank_generator.select(self.blank_generator.selected)
+        return new_copy
 
     # Instance Methods #
     # Constructors/Destructors

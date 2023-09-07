@@ -44,6 +44,14 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         **kwargs: Keyword arguments for creating a new numpy array.
     """
 
+    blank_generation_functions: FunctionRegister = FunctionRegister({
+        "nan_array": nan_array,
+        "empty": np.empty,
+        "zeros": np.zeros,
+        "ones": np.ones,
+        "full": np.full,
+    })
+
     # Magic Methods #
     # Construction/Destruction
     def __init__(
@@ -125,6 +133,22 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         if mode is not None:
             self.mode = mode
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy.target_shape = self.target_shape
+        new_copy.is_truncate = self.is_truncate
+        new_copy.axis = self.axis
+        return new_copy
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
@@ -367,6 +391,14 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         slices[axis] = slice(start=start, stop=stop, step=step)
 
         self.data[tuple(slices)] = data
+
+    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return (self,)
 
     # Get Index
     def get_from_index(

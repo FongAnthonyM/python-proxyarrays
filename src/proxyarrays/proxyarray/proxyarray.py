@@ -13,8 +13,9 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from bisect import bisect_right
+from itertools import chain
 from typing import Any, NamedTuple
 from warnings import warn
 
@@ -250,6 +251,23 @@ class ProxyArray(BaseProxyArray):
             self.mode = mode
 
         super().construct(**kwargs)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy.target_shape = self.target_shape
+        new_copy.axis = self.axis
+        new_copy.combine_type = self.default_combine_type
+        new_copy.return_proxy_type = self.default_return_proxy_type
+        return new_copy
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
@@ -547,7 +565,7 @@ class ProxyArray(BaseProxyArray):
             if not proxy.validate_shape() or proxy.shape != shape:
                 proxy.change_size(shape, **kwargs)
 
-    # proxies
+    # Proxies
     def proxy_sort_key(self, proxy: Any) -> Any:
         """The key to be used in sorting with the proxy as the sort basis.
 
@@ -612,7 +630,10 @@ class ProxyArray(BaseProxyArray):
         self.proxies.append(item)
 
     def combine_proxies(
-        self, start: int | None = None, stop: int | None = None, step: int | None = None
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None
     ) -> BaseProxyArray:
         """Combines a range of proxies into a single proxy.
 
@@ -625,6 +646,24 @@ class ProxyArray(BaseProxyArray):
             A single combined proxy.
         """
         return self.combine_type(proxies=self.proxies[start:stop:step])
+
+    def flat_iterator(self) -> Iterator[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return chain.from_iterable((p.flat_iterator() for p in self.proxies))
+
+    def as_flattened(self) -> "ProxyArray":
+        """Creates a flattened (proxy depth one) copy of this object.
+
+        Returns:
+            The flat copy of this object.
+        """
+        new_copy = self.empty_copy()
+        new_copy.proxies.extend(self.flat_iterator())
+        return new_copy
 
     # Get proxy within by Index
     @singlekwargdispatch("indices")

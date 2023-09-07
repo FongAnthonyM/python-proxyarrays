@@ -139,6 +139,22 @@ class BlankProxyArray(BaseProxyArray):
 
         super().construct(**kwargs)
 
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BlankProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy._shape = self._shape
+        new_copy.axis = self.axis
+        new_copy.generate_data.select(self.generate_data.selected)
+        return new_copy
+
     # Getters
     def get_shape(self) -> tuple[int]:
         """Get the shape of this proxy from the contained proxies/objects.
@@ -330,6 +346,14 @@ class BlankProxyArray(BaseProxyArray):
             The requested range.
         """
         return self.create_data_range(start=start, stop=stop, step=step, proxy=proxy)
+
+    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return (self,)
 
     # Get Index
     def get_from_index(self, indices: Sized | int, reverse: bool = False, proxy: bool | None = None) -> Any:

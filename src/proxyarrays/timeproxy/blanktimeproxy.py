@@ -309,6 +309,36 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
         self.refresh()
 
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BlankTimeProxy":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._assigned_length = self._assigned_length
+
+        new_copy._true_start = self._true_start
+        new_copy._assigned_start = self._assigned_start
+
+        new_copy._true_end = self._true_end
+        new_copy._assigned_end = self._assigned_end
+
+        new_copy._sample_rate = self._sample_rate
+        new_copy._precise = self._precise
+
+        new_copy._create_method.select(self._create_method.selected)
+
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.is_infinite = self.is_infinite
+        return new_copy
+
     # Updating
     def refresh(self) -> None:
         """Resets the true end timestamp by calling get_length."""
