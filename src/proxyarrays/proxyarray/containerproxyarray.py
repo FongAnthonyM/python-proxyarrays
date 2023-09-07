@@ -18,6 +18,7 @@ from typing import Any, Union
 
 # Third-Party Packages #
 from baseobjects.functions import FunctionRegister
+from dspobjects.operations import nan_array
 import numpy as np
 
 # Local Packages #
