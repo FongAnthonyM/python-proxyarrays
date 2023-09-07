@@ -21,7 +21,7 @@ from typing import Any, Callable
 
 # Third-Party Packages #
 from baseobjects.typing import AnyCallable
-from baseobjects.functions import MethodMultiplexer
+from baseobjects.functions import CallableMultiplexer, MethodMultiplexer
 from dspobjects import Resample
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array

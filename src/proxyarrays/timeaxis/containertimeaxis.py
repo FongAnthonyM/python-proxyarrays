@@ -22,7 +22,7 @@ from typing import Any, Callable
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
 from baseobjects.typing import AnyCallable
-from baseobjects.functions import FunctionRegister, CallableMultiplexer, MethodMultiplexer
+from baseobjects.functions import CallableMultiplexer, MethodMultiplexer
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array
 from dspobjects.time import Timestamp, nanostamp
