@@ -17,7 +17,7 @@ from collections.abc import Iterable
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects.function import FunctionRegister
+from baseobjects.functions import FunctionRegister
 import numpy as np
 
 # Local Packages #
