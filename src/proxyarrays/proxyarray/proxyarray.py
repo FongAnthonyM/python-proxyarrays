@@ -269,6 +269,16 @@ class ProxyArray(BaseProxyArray):
         new_copy.return_proxy_type = self.default_return_proxy_type
         return new_copy
 
+    def flat_copy(self) -> "ProxyArray":
+        """Creates a flattened (proxy depth one) copy of this object.
+
+        Returns:
+            The flat copy of this object.
+        """
+        new_copy = self.empty_copy()
+        new_copy.proxies.extend(self.flat_iterator())
+        return new_copy
+
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
         """The default method for creating an editable version of this proxy.
@@ -655,15 +665,20 @@ class ProxyArray(BaseProxyArray):
         """
         return chain.from_iterable((p.flat_iterator() for p in self.proxies))
 
-    def as_flattened(self) -> "ProxyArray":
-        """Creates a flattened (proxy depth one) copy of this object.
+    def as_flattened(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a proxy array which contains flattened (proxy depth one) contents of this object.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
             The flat copy of this object.
         """
-        new_copy = self.empty_copy()
-        new_copy.proxies.extend(self.flat_iterator())
-        return new_copy
+        kwargs = {"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs
+        new_proxy = self.return_proxy_type(**kwargs) if type_ is None else type_(**kwargs)
+        new_proxy.proxies.extend(self.flat_iterator())
+        return new_proxy
 
     # Get proxy within by Index
     @singlekwargdispatch("indices")
