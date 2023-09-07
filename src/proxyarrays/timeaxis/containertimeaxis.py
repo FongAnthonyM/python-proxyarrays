@@ -107,7 +107,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         self._timestamps: np.ndarray | None = None
 
         # Parent Attributes #
-        super().__init__(*args, init=False)
+        super().__init__(init=False)
 
         # Object Construction #
         if init:

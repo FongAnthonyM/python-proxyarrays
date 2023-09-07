@@ -84,9 +84,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
         # System
         self.switch_algorithm_size = 10000000  # Consider chunking rather than switching
@@ -112,6 +109,9 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
         # Containers
         self.time_axis: BaseTimeAxis | None = None
+
+        # Parent Attributes #
+        super().__init__(init=False)
 
         # Object Construction #
         if init:
