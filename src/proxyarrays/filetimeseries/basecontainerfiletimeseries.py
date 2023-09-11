@@ -224,7 +224,10 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         """
         if mode is None:
             mode = self.mode
-        self.file.open(mode, **kwargs)
+        if self._file is None:
+            self._file = self.file_type(self._path, mode=self.mode, **self.file_kwargs)
+        else:
+            self._file.open(mode, **kwargs)
         return self
 
     def close(self) -> None:
