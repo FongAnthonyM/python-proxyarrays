@@ -1069,6 +1069,49 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         return IndexDateTime(super_index, true_datetime)
 
+    def where_missing(self) -> tuple[int, ...]:
+        """Gets the indices of where gaps in time between proxies."""
+        n_proxies = len(self.proxies)
+        if n_proxies <= 1:
+            return ()
+        else:
+            starts = np.fromiter(self.start_nanostamps)
+            max_starts = np.fromiter(
+                iter=(p.end_nanostamp + (p.sample_period + p.time_tolerence) * 10**-9 for p in self.proxies),
+                dtype=np.uint64,
+            )
+            return tuple(np.where(starts[1:] > max_starts[:-1]))
+
+    def insert_missing(self, type_: type[BaseTimeProxy] | None = None, recursive: bool = False, **kwargs: Any) -> None:
+        """Inserts blanks proxies in missing proxy segments.
+
+        Args:
+            type_: The type of proxy to insert into the missing regions of the timeseries.
+            recursive: Determines if blank proxies will be inserted into the contained proxies.
+            **kwargs: The keyword arguments for creating the blank proxies.
+        """
+        if recursive:
+            for proxy in self.proxies:
+                proxy.insert_missing(type_=type_, recursive=recursive, **kwargs)
+
+        f_type = self.fill_type if type_ is None else None
+        for i in reversed(self.where_missing()):
+            previous_proxy = self.proxies[i]
+            previous_period = previous_proxy.sample_period
+            next_proxy = self.proxies[i + 1]
+            shape = list(previous_proxy.shape)
+            shape[previous_proxy.axis] = 0
+            b_kwargs = {
+                "start": previous_proxy.end_timestamp + previous_period,
+                "end": next_proxy.start_timestamp - previous_period,
+                "sample_rate": previous_proxy.sample_rate,
+                "shape": shape,
+                "axis": previous_proxy.axis,
+                "precise": previous_proxy.precise,
+                "tzinfo": previous_proxy.tzinfo,
+            }
+            self.proxies.insert(i, f_type(**(b_kwargs | kwargs)))
+
 
 # Assign Cyclic Definitions
 TimeProxy.default_return_proxy_type = TimeProxy

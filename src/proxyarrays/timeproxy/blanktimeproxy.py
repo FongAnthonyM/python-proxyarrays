@@ -293,9 +293,6 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         if tzinfo is not None:
             self.tzinfo = tzinfo
 
-        if shape is not None:
-            self._assigned_length = shape[self.axis]
-
         if sample_period is not None:
             self.sample_period = sample_period
 
@@ -306,6 +303,9 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             self.is_infinite = is_infinite
 
         super().construct(shape=shape, dtype=dtype, axis=axis, **kwargs)
+
+        if shape is not None and (a_len := shape[self.axis]) > 0:
+            self._assigned_length = a_len
 
         self.refresh()
 
