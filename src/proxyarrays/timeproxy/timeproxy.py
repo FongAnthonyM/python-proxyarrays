@@ -1075,7 +1075,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if n_proxies <= 1:
             return ()
         else:
-            starts = np.fromiter(self.start_nanostamps)
+            starts = np.fromiter(self.start_nanostamps, dtype=np.uint64)
             max_starts = np.fromiter(
                 iter=(p.end_nanostamp + (p.sample_period + p.time_tolerence) * 10**-9 for p in self.proxies),
                 dtype=np.uint64,
