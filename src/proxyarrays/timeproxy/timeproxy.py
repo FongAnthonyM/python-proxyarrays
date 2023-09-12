@@ -1111,6 +1111,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                 "tzinfo": previous_proxy.tzinfo,
             }
             self.proxies.insert(i, f_type(**(b_kwargs | kwargs)))
+            self.clear_caches()
 
 
 # Assign Cyclic Definitions

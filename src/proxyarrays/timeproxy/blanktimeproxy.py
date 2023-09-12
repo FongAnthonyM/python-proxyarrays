@@ -173,7 +173,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def start_nanostamp(self) -> np.uint64 | None:
         """The start nanosecond timestamp of this proxy."""
-        return np.uint64(self._true_start)
+        return np.uint64(int(self._true_start))
 
     @property
     def start_timestamp(self) -> float | None:
@@ -208,7 +208,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def end_nanostamp(self) -> np.uint64 | None:
         """The end nanosecond timestamp of this proxy."""
-        return np.uint64(self._true_end)
+        return np.uint64(int(self._true_end))
 
     @property
     def end_timestamp(self) -> float | None:
