@@ -1080,7 +1080,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                 iter=(p.end_nanostamp + (p.sample_period + p.time_tolerance) * 10**9 for p in self.proxies),
                 dtype=np.uint64,
             )
-            return tuple(np.where(starts[1:] > max_starts[:-1])[0])
+            return tuple(np.where(starts[1:] > max_starts[:-1])[0] + 1)
 
     def insert_missing(self, type_: type[BaseTimeProxy] | None = None, recursive: bool = False, **kwargs: Any) -> None:
         """Inserts blanks proxies in missing proxy segments.
@@ -1096,9 +1096,9 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         f_type = self.fill_type if type_ is None else None
         for i in reversed(self.where_missing()):
-            previous_proxy = self.proxies[i]
+            previous_proxy = self.proxies[i - 1]
             previous_period = previous_proxy.sample_period
-            next_proxy = self.proxies[i + 1]
+            next_proxy = self.proxies[i]
             shape = list(previous_proxy.shape)
             shape[previous_proxy.axis] = 0
             b_kwargs = {
@@ -1111,7 +1111,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                 "tzinfo": previous_proxy.tzinfo,
             }
             self.proxies.insert(i, f_type(**(b_kwargs | kwargs)))
-            self.clear_caches()
+        self.clear_caches()
 
 
 # Assign Cyclic Definitions
