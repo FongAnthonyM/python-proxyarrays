@@ -98,7 +98,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self._sample_rate: Decimal | None = None
         self._precise: bool = False
 
-        self._create_method: MethodMultiplexer = MethodMultiplexer(instance=self, select="creat_timestamp_range")
+        self._create_method: MethodMultiplexer = MethodMultiplexer(instance=self, select="create_timestamp_range")
 
         self.tzinfo: datetime.tzinfo | None = None
 
