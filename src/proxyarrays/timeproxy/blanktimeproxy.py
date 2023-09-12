@@ -47,7 +47,9 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         _sample_rate: The sample rate of this proxy.
         _create_method: The method used to create timestamps for the create data methods.
         _precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
+        _create_method: The method to create time information.
         tzinfo: The time zone of the timestamps.
+        time_tolerance: The allowed deviation a sample can be away from the sample period.
         is_infinite: Determines if this blank proxy is infinite.
 
     Args:
@@ -100,6 +102,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
         self._create_method: MethodMultiplexer = MethodMultiplexer(instance=self, select="create_timestamp_range")
 
+        self.time_tolerance: float = 0.000001
         self.tzinfo: datetime.tzinfo | None = None
 
         self.is_infinite: bool = False
