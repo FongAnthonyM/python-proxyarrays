@@ -74,8 +74,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     # Construction/Destruction
     def __init__(
         self,
-        start: datetime.datetime | float | None = None,
-        end: datetime.datetime | float | None = None,
+        start: datetime.datetime | float | np.uint64 | None = None,
+        end: datetime.datetime | float | np.uint64 | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
         shape: tuple[int] | None = None,
@@ -173,7 +173,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def start_nanostamp(self) -> np.uint64 | None:
         """The start nanosecond timestamp of this proxy."""
-        return np.uint64(int(self._true_start))
+        return self._true_start
 
     @property
     def start_timestamp(self) -> float | None:
@@ -208,7 +208,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def end_nanostamp(self) -> np.uint64 | None:
         """The end nanosecond timestamp of this proxy."""
-        return np.uint64(int(self._true_end))
+        return self._true_end
 
     @property
     def end_timestamp(self) -> float | None:
@@ -253,8 +253,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     # Constructors/Destructors
     def construct(
         self,
-        start: datetime.datetime | float | None = None,
-        end: datetime.datetime | float | None = None,
+        start: datetime.datetime | float | np.uint64 | None = None,
+        end: datetime.datetime | float | np.uint64 | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
         shape: tuple[int] | None = None,
@@ -369,6 +369,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             return 0
 
         if length is None:
+            if start is None or end is None or self._sample_rate is None:
+                raise ValueError("start, end, and sample_rate must be assigned if length is unknown")
             length = int((end - start) * self._sample_rate / NANO_SCALE)
         elif self._sample_rate is None:
             if end < start:
@@ -377,10 +379,9 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
         if length < 0:
             raise ValueError("assigned length must be positive")
-        if start is not None:
+        elif start is not None:
             end = start + np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
-        if end is not None:
-            end = Decimal(str(end))
+        elif end is not None:
             start = end - np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
         else:
             raise ValueError("Either start or end must be assigned.")
@@ -404,8 +405,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             value: The value to assign as the start.
             is_nano: Determines if the input is in nanoseconds.
         """
-        if value is None:
-            self._assigned_end = None
+        if value is None or isinstance(value, np.uint64):
+            self._assigned_start = value
         else:
             self._assigned_start = nanostamp(value=value, is_nano=is_nano)
 
@@ -430,8 +431,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             value: The value to assign as the end.
             is_nano: Determines if the input is in nanoseconds.
         """
-        if value is None:
-            self._assigned_end = None
+        if value is None or isinstance(value, np.uint64):
+            self._assigned_end = value
         else:
             self._assigned_end = nanostamp(value=value, is_nano=is_nano)
 
