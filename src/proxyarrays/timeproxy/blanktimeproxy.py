@@ -380,9 +380,9 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         if length < 0:
             raise ValueError("assigned length must be positive")
         elif start is not None:
-            end = start + np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
+            end = start + np.uint64(length * (self.sample_period_decimal * NANO_SCALE))
         elif end is not None:
-            start = end - np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
+            start = end - np.uint64(length * (self.sample_period_decimal * NANO_SCALE))
         else:
             raise ValueError("Either start or end must be assigned.")
 
