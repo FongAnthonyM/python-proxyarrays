@@ -339,8 +339,8 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         new_copy.fill_type = self.fill_type
         return new_copy
 
-    def as_flattened(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
-        """Creates a proxy array which contains flattened (proxy depth one) contents of this object.
+    def create_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
             type_: The type of proxy array to create.
@@ -351,7 +351,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         """
         if type_ is None or isinstance(type_, TimeProxy):
             kwargs = {"precise": self._precise, "tzinfo": self.tzinfo} | kwargs
-        return super().as_flattened(type_=type_, **kwargs)
+        return super().create_proxy(type_=type_, **kwargs)
 
     # Sorting
     def proxy_sort_key(self, proxy: Any) -> Any:

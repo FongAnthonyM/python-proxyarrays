@@ -279,6 +279,20 @@ class ProxyArray(BaseProxyArray):
         new_copy.proxies.extend(self.flat_iterator())
         return new_copy
 
+    def create_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The flat copy of this object.
+        """
+        kwargs = {"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs
+        new_proxy = self.return_proxy_type(**kwargs) if type_ is None else type_(**kwargs)
+        return new_proxy
+
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
         """The default method for creating an editable version of this proxy.
@@ -566,9 +580,23 @@ class ProxyArray(BaseProxyArray):
             raise ValueError("either a shape must be given or target shape must be set")
         shapes = np.asarray(self.shapes)
         if exclude_axis:
-            return tuple(np.where(np.delete(shapes, self.axis, 1) != np.delete(shape, self.axis, 1))[0])
+            return tuple(np.where(np.delete(shapes, self.axis, 1) != np.delete(shape, self.axis, 0))[0])
         else:
             return tuple(np.where(shapes != shape)[0])
+
+    def where_shape_changes(self, exclude_axis: bool = True) -> tuple[int, ...]:
+        """Gets the indices of the proxies where the shape does not match the previous shape.
+
+        Args:
+            exclude_axis: Determines if the main axis will be excluded in the shape check.
+
+        Returns:
+            The indices of the proxies that have different shapes than the previous.
+        """
+        shapes = np.delete(self.shapes, self.axis, 1) if exclude_axis else np.asarray(self.shapes)
+        p_shapes = np.delete(shapes, -1, 0)
+        n_shapes = np.delete(shapes, 0, 0)
+        return tuple(np.where((p_shapes != n_shapes).all(axis=1))[0])
 
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
@@ -697,8 +725,7 @@ class ProxyArray(BaseProxyArray):
         Returns:
             The flat copy of this object.
         """
-        kwargs = {"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs
-        new_proxy = self.return_proxy_type(**kwargs) if type_ is None else type_(**kwargs)
+        new_proxy = self.create_proxy(type_=type_, **kwargs)
         new_proxy.proxies.extend(self.flat_iterator())
         return new_proxy
 
