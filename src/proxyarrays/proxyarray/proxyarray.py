@@ -548,6 +548,28 @@ class ProxyArray(BaseProxyArray):
         return self.get_proxy(item)
 
     # Shape
+    def where_misshapen(self, shape: Iterable[int, ...] | None = None, exclude_axis: bool = True) -> tuple[int, ...]:
+        """Gets the indices of the proxies which do not have matching shapes.
+
+        Args:
+            shape: The shape which all proxies must conform to.
+            exclude_axis: Determines if the main axis will be excluded in the shape check.
+
+        Returns:
+            The indices of the misshapen proxies.
+        """
+        if shape is not None:
+            shape = np.asarray(shape)
+        elif self.target_shape is not None:
+            shape = np.asarray(self.target_shape)
+        else:
+            raise ValueError("either a shape must be given or target shape must be set")
+        shapes = np.asarray(self.shapes)
+        if exclude_axis:
+            return tuple(np.where(np.delete(shapes, self.axis, 1) != np.delete(shape, self.axis, 1))[0])
+        else:
+            return tuple(np.where(shapes != shape)[0])
+
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
 
