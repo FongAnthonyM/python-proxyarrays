@@ -596,7 +596,7 @@ class ProxyArray(BaseProxyArray):
         shapes = np.delete(self.shapes, self.axis, 1) if exclude_axis else np.asarray(self.shapes)
         p_shapes = np.delete(shapes, -1, 0)
         n_shapes = np.delete(shapes, 0, 0)
-        return tuple(np.where((p_shapes != n_shapes).all(axis=1))[0])
+        return tuple(np.where((p_shapes != n_shapes).any(axis=1))[0])
 
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
