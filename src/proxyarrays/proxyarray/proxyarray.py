@@ -584,7 +584,7 @@ class ProxyArray(BaseProxyArray):
         else:
             return tuple(np.where(shapes != shape)[0])
 
-    def where_shape_changes(self, exclude_axis: bool = True) -> tuple[int, ...]:
+    def where_shapes_change(self, exclude_axis: bool = True) -> tuple[int, ...]:
         """Gets the indices of the proxies where the shape does not match the previous shape.
 
         Args:
@@ -596,7 +596,7 @@ class ProxyArray(BaseProxyArray):
         shapes = np.delete(self.shapes, self.axis, 1) if exclude_axis else np.asarray(self.shapes)
         p_shapes = np.delete(shapes, -1, 0)
         n_shapes = np.delete(shapes, 0, 0)
-        return tuple(np.where((p_shapes != n_shapes).any(axis=1))[0])
+        return tuple(np.where((p_shapes != n_shapes).any(axis=1))[0] + 1)
 
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
