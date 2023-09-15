@@ -176,8 +176,9 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @property
     def start_datetime(self) -> Timestamp | None:
         """The start datetime of this proxy."""
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[0], tz=self.tzinfo) if nanostamps is not None else None
+        return Timestamp.fromnanostamp(nanostamps[0], tz=tz) if nanostamps is not None else None
 
     @property
     def start_date(self) -> datetime.date | None:
@@ -200,8 +201,9 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end datetime of this proxy."""
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[-1], tz=self.tzinfo) if nanostamps is not None else None
+        return Timestamp.fromnanostamp(nanostamps[-1], tz=tz) if nanostamps is not None else None
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -677,7 +679,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.get_nanostamps())
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.get_nanostamps())
 
     def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this proxy base on the index.
@@ -688,7 +691,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return Timestamp.fromnanostamp(self.nanostamps[index], tz=self.tzinfo)
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return Timestamp.fromnanostamp(self.nanostamps[index], tz=tz)
 
     def get_datetime_range(
         self,
@@ -718,7 +722,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
                 mode=self.mode,
             )
         else:
-            return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in ns)
+            tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+            return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in ns)
 
     def fill_datetime_array(
         self,
@@ -736,7 +741,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The original array but filled.
         """
-        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.nanostamps[slice_])
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.nanostamps[slice_])
         return data_array
 
     # For Other Data
@@ -996,7 +1002,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             index = int(np.searchsorted(self.nanostamps, nano_ts, side="right") - 1)
             true_timestamp = self.nanostamps[index]
             if approx or nano_ts == true_timestamp:
-                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
+                tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=tz))
 
         raise IndexError("Timestamp out of range.")
 
@@ -1016,22 +1023,23 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The requested closest index and the value at that index.
         """
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         nano_ts = nanostamp(timestamp)
 
         samples = self.get_length()
         if nano_ts < self.day_nanostamps[0]:
             if tails:
-                return IndexDateTime(0, Timestamp.fromnanostamp(self.day_nanostamps[0], tz=self.tzinfo))
+                return IndexDateTime(0, Timestamp.fromnanostamp(self.day_nanostamps[0], tz=tz))
         elif nano_ts > self.day_nanostamps[-1]:
             if tails:
                 return IndexDateTime(
                     samples,
-                    Timestamp.fromnanostamp(self.day_nanostamps[-1], tz=self.tzinfo),
+                    Timestamp.fromnanostamp(self.day_nanostamps[-1], tz=tz),
                 )
         else:
             index = int(np.searchsorted(self.day_nanostamps, nano_ts, side="right") - 1)
             true_timestamp = self.day_nanostamps[index]
             if approx or nano_ts == true_timestamp:
-                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=self.tzinfo))
+                return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=tz))
 
         raise IndexError("Timestamp out of range.")
