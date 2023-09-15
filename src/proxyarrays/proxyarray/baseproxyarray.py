@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects.functions import singlekwargdispatch
+from baseobjects.functions import singlekwargdispatch, MethodMultiplexer, CallableMultiplexObject
 from baseobjects.typing import AnyCallable
 from baseobjects.cachingtools import CachingObject
 import numpy as np
@@ -29,14 +29,16 @@ import numpy as np
 # Definitions #
 # Classes #
 # Todo: Create a file/edit mode base object to inherit from
-class BaseProxyArray(CachingObject):
+class BaseProxyArray(CallableMultiplexObject, CachingObject):
     """A base which outlines the basis for a proxy array.
 
     Attributes:
         _is_updating: Determines if this proxy is updating or not.
-        _spawn_editable: The method to create an editable version of this proxy.
+        spawn_editable: The method to create an editable version of this proxy.
         returns_proxy: Determines if methods will return proxies or numpy arrays.
         mode: Determines if this proxy is editable or read only.
+        *args: Arguments for inheritance.
+        **kwargs: Keyword arguments for inheritance.
     """
 
     # Magic Methods #
@@ -44,20 +46,13 @@ class BaseProxyArray(CachingObject):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # New Attributes #
         self._is_updating: bool = False
-
-        self._spawn_editable: AnyCallable = self._default_spawn_editable.__func__
-
-        self.returns_proxy: bool = False
-
+        self.returns_proxy: bool = True
         self.mode: str = "a"
+
+        self.spawn_editable: MethodMultiplexer = MethodMultiplexer(instance=self, select="_default_spawn_editable")
 
         # Parent Attributes #
         super().__init__(*args, **kwargs)
-
-    @property
-    def spawn_editable(self) -> AnyCallable:
-        """The method used to create an editable version of this proxy."""
-        return self._spawn_editable.__get__(self, self.__class__)
 
     # Container Methods
     def __len__(self) -> int:
@@ -96,6 +91,22 @@ class BaseProxyArray(CachingObject):
 
     # Instance Methods #
     # Constructors/Destructors
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BaseProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = self.__class__(*args, **kwargs)
+        new_copy._is_updating = self._is_updating
+        new_copy.returns_proxy = self.returns_proxy
+        new_copy.mode = self.mode
+        return new_copy
+
     # Editable Copy Methods
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
         """Creates an editable copy of this proxy.
@@ -122,33 +133,6 @@ class BaseProxyArray(CachingObject):
         new_proxy = self.copy()
         new_proxy.mode = "a"
         return new_proxy
-
-    @singlekwargdispatch("method")
-    def set_spawn_editable(self, method: AnyCallable | str) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The function or method name to set the _spawn_editable method to.
-        """
-        raise TypeError(f"A {type(method)} cannot be used to set a {type(self)} _spawn_editable.")
-
-    @set_spawn_editable.register(Callable)
-    def _(self, method: AnyCallable) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The function to set the _spawn_editable method to.
-        """
-        self._spawn_editable = method
-
-    @set_spawn_editable.register
-    def _(self, method: str) -> None:
-        """Sets the _spawn_editable method to another function or a method within this object can be given to select it.
-
-        Args:
-            method: The method name to set the _spawn_editable method to.
-        """
-        self._spawn_editable = getattr(self, method).__func__
 
     # Caching
     def clear_all_caches(self) -> None:

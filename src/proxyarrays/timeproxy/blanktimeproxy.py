@@ -21,6 +21,7 @@ from typing import Any
 
 # Third-Party Packages #
 from baseobjects.typing import AnyCallable
+from baseobjects.functions import MethodMultiplexer
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.time import Timestamp, NANO_SCALE, nanostamp
 import numpy as np
@@ -44,9 +45,11 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         _true_end: The true end timestamp of this proxy.
         _assigned_end: The assigned end timestamp of this proxy.
         _sample_rate: The sample rate of this proxy.
-        _create_method_: The method used to create timestamps for the create data methods.
+        _create_method: The method used to create timestamps for the create data methods.
         _precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
+        _create_method: The method to create time information.
         tzinfo: The time zone of the timestamps.
+        time_tolerance: The allowed deviation a sample can be away from the sample period.
         is_infinite: Determines if this blank proxy is infinite.
 
     Args:
@@ -56,10 +59,13 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         sample_period: The sample period of this proxy.
         shape: The assigned shape that this proxy will be.
         dtype: The data type of the generated data.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
         tzinfo: The time zone of the timestamps.
         is_infinite: Determines if this blank proxy is infinite.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
+        **kwargs: Keyword arguments for inheritance.
     """
 
     time_axis_type = None
@@ -68,16 +74,19 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     # Construction/Destruction
     def __init__(
         self,
-        start: datetime.datetime | float | None = None,
-        end: datetime.datetime | float | None = None,
+        start: datetime.datetime | float | np.uint64 | None = None,
+        end: datetime.datetime | float | np.uint64 | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
+        axis: int = 0,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         is_infinite: bool | None = None,
+        *args: Any,
         init: bool = True,
+        **kwargs: Any,
     ) -> None:
         # New Attributes #
         self._assigned_length: int | None = None
@@ -89,16 +98,17 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self._assigned_end: np.uint64 | None = None
 
         self._sample_rate: Decimal | None = None
-
-        self._create_method_: AnyCallable = self.create_timestamp_range.__func__
         self._precise: bool = False
 
+        self._create_method: MethodMultiplexer = MethodMultiplexer(instance=self, select="create_timestamp_range")
+
+        self.time_tolerance: float = 0.000001
         self.tzinfo: datetime.tzinfo | None = None
 
         self.is_infinite: bool = False
 
         # Parent Attributes #
-        super().__init__(init=False)
+        super().__init__(*args, init=False)
 
         # Construct Object #
         if init:
@@ -109,9 +119,11 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
                 sample_period=sample_period,
                 shape=shape,
                 dtype=dtype,
+                axis=axis,
                 precise=precise,
                 tzinfo=tzinfo,
                 is_infinite=is_infinite,
+                **kwargs,
             )
 
     @property
@@ -240,24 +252,21 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         """The sample period as Decimal object"""
         return self.get_sample_period_decimal()
 
-    @property
-    def _create_method(self):
-        """The selected method for creating timestamps"""
-        return self._create_method_.__get__(self, self.__class__)
-
     # Instance Methods #
     # Constructors/Destructors
     def construct(
         self,
-        start: datetime.datetime | float | None = None,
-        end: datetime.datetime | float | None = None,
+        start: datetime.datetime | float | np.uint64 | None = None,
+        end: datetime.datetime | float | np.uint64 | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
+        axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         is_infinite: bool | None = False,
+        **kwargs: Any,
     ) -> None:
         """Construct this object
 
@@ -268,9 +277,11 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             sample_period: The sample period of this proxy.
             shape: The assigned shape that this proxy will be.
             dtype: The data type of the generated data.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             is_infinite: Determines if this blank proxy is infinite.
+            **kwargs: Keyword arguments for generating data.
         """
         if precise is not None:
             self.set_precision(precise)
@@ -288,9 +299,6 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         if tzinfo is not None:
             self.tzinfo = tzinfo
 
-        if shape is not None:
-            self._assigned_length = shape[self.axis]
-
         if sample_period is not None:
             self.sample_period = sample_period
 
@@ -300,9 +308,42 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         if is_infinite is not None:
             self.is_infinite = is_infinite
 
-        super().construct(shape=shape, dtype=dtype)
+        super().construct(shape=shape, dtype=dtype, axis=axis, **kwargs)
+
+        if shape is not None and (a_len := shape[self.axis]) > 0:
+            self._assigned_length = a_len
 
         self.refresh()
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BlankTimeProxy":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._assigned_length = self._assigned_length
+
+        new_copy._true_start = self._true_start
+        new_copy._assigned_start = self._assigned_start
+
+        new_copy._true_end = self._true_end
+        new_copy._assigned_end = self._assigned_end
+
+        new_copy._sample_rate = self._sample_rate
+        new_copy._precise = self._precise
+
+        new_copy._create_method.select(self._create_method.selected)
+
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.is_infinite = self.is_infinite
+        return new_copy
 
     # Updating
     def refresh(self) -> None:
@@ -331,6 +372,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             return 0
 
         if length is None:
+            if start is None or end is None or self._sample_rate is None:
+                raise ValueError("start, end, and sample_rate must be assigned if length is unknown")
             length = int((end - start) * self._sample_rate / NANO_SCALE)
         elif self._sample_rate is None:
             if end < start:
@@ -339,11 +382,10 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
         if length < 0:
             raise ValueError("assigned length must be positive")
-        if start is not None:
-            end = start + np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
-        if end is not None:
-            end = Decimal(str(end))
-            start = end - np.uint64(length) * np.uint64(self.sample_period_decimal * NANO_SCALE)
+        elif start is not None:
+            end = start + np.uint64(length * (self.sample_period_decimal * NANO_SCALE))
+        elif end is not None:
+            start = end - np.uint64(length * (self.sample_period_decimal * NANO_SCALE))
         else:
             raise ValueError("Either start or end must be assigned.")
 
@@ -366,8 +408,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             value: The value to assign as the start.
             is_nano: Determines if the input is in nanoseconds.
         """
-        if value is None:
-            self._assigned_end = None
+        if value is None or isinstance(value, np.uint64):
+            self._assigned_start = value
         else:
             self._assigned_start = nanostamp(value=value, is_nano=is_nano)
 
@@ -392,8 +434,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             value: The value to assign as the end.
             is_nano: Determines if the input is in nanoseconds.
         """
-        if value is None:
-            self._assigned_end = None
+        if value is None or isinstance(value, np.uint64):
+            self._assigned_end = value
         else:
             self._assigned_end = nanostamp(value=value, is_nano=is_nano)
 
@@ -447,10 +489,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Args:
             nano: Determines if this proxy returns nanostamps (True) or timestamps (False).
         """
-        if nano:
-            self._create_method_ = self.create_nanostamp_range.__func__
-        else:
-            self._create_method_ = self.create_timestamp_range.__func__
+        self._create_method.select("create_nanostamp_range" if nano else "create_timestamp_range")
         self._precise = nano
 
     def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:

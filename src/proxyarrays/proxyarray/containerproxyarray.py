@@ -17,6 +17,8 @@ from collections.abc import Iterable
 from typing import Any, Union
 
 # Third-Party Packages #
+from baseobjects.functions import FunctionRegister
+from dspobjects.operations import nan_array
 import numpy as np
 
 # Local Packages #
@@ -37,10 +39,20 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
     Args:
         data: The numpy array for this proxy to wrap.
         shape: The shape that proxy should be and if resized the shape it will default to.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         mode: Determines if the contents of this proxy are editable or not.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
     """
+
+    blank_generation_functions: FunctionRegister = FunctionRegister({
+        "nan_array": nan_array,
+        "empty": np.empty,
+        "zeros": np.zeros,
+        "ones": np.ones,
+        "full": np.full,
+    })
 
     # Magic Methods #
     # Construction/Destruction
@@ -48,14 +60,12 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         self,
         data: np.ndarray | None = None,
         shape: Iterable[int] | None = None,
+        axis: int = 0,
         mode: str = "a",
-        init: bool = True,
         *args: Any,
+        init: bool = True,
         **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(*args, int=init, **kwargs)
-
         # Descriptors #
         self.target_shape: tuple[int] | None = None
         self.is_truncate: bool = False
@@ -63,9 +73,12 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         self.data: np.ndarray | None = None
 
+        # Parent Attributes #
+        super().__init__(*args, init=False)
+
         # Object Construction #
         if init:
-            self.construct(data=data, shape=shape, mode=mode, **kwargs)
+            self.construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
     @property
     def shape(self):
@@ -95,6 +108,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         self,
         data: np.ndarray | None = None,
         shape: Iterable[int] | None = None,
+        axis: int | None = None,
         mode: str | None = None,
         **kwargs: Any,
     ) -> None:
@@ -103,6 +117,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         Args:
             data: The numpy array for this proxy to wrap.
             shape: The shape that proxy should be and if resized the shape it will default to.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             mode: Determines if the contents of this proxy are editable or not.
             **kwargs: Keyword arguments for creating a new numpy array.
         """
@@ -115,8 +130,27 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         if data is not None:
             self.data = data
 
+        if axis is not None:
+            self.axis = axis
+
         if mode is not None:
             self.mode = mode
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy.target_shape = self.target_shape
+        new_copy.is_truncate = self.is_truncate
+        new_copy.axis = self.axis
+        return new_copy
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
@@ -359,6 +393,14 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         slices[axis] = slice(start=start, stop=stop, step=step)
 
         self.data[tuple(slices)] = data
+
+    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return (self,)
 
     # Get Index
     def get_from_index(

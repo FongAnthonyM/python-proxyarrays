@@ -22,6 +22,7 @@ from typing import Any, Callable
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
 from baseobjects.typing import AnyCallable
+from baseobjects.functions import CallableMultiplexer, MethodMultiplexer
 from dspobjects.dataclasses import IndexDateTime
 from dspobjects.operations import nan_array
 from dspobjects.time import Timestamp, nanostamp
@@ -45,9 +46,9 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         _precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
         _sample_rate: The sample rate of the data.
         tzinfo: The time zone of the timestamps.
-        _data_method: The method for getting the correct data.
-        _blank_generator: The method for creating blank data.
-        _tail_correction: The method for correcting the tails of the data.
+        get_data: The method for getting the correct data.
+        tail_correction: The method for correcting the tails of the data.
+        blank_generator: The method for creating blank data.
         _nanostamps: The nanosecond timestamps of this proxy.
         _timestamps: The timestamps of this proxy.
 
@@ -57,9 +58,11 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         shape: The shape that proxy should be and if resized the shape it will default to.
         sample_rate: The sample rate of the data.
         sample_period: The sample period of this proxy.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
         tzinfo: The time zone of the timestamps.
         mode: Determines if the contents of this proxy are editable or not.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
     """
@@ -72,6 +75,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         shape: Iterable[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
+        axis: int = 0,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
@@ -90,9 +94,13 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         self.tzinfo: datetime.tzinfo | None = None
 
         # Method Assignment #
-        self._data_method: AnyCallable = self._get_timestamps.__func__
-        self._blank_generator = nan_array
-        self._tail_correction = self.default_tail_correction.__func__
+        self.get_data: MethodMultiplexer = MethodMultiplexer(instance=self, select="_get_nanostamps")
+        self.tail_correction: MethodMultiplexer = MethodMultiplexer(instance=self, select="default_tail_correction")
+        self.blank_generator: CallableMultiplexer = CallableMultiplexer(
+            register=self.blank_generation_functions,
+            instance=self,
+            select="nan_array",
+        )
 
         # Containers #
         self._nanostamps: np.ndarray | None = None
@@ -108,6 +116,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
                 shape=shape,
                 sample_rate=sample_rate,
                 sample_period=sample_period,
+                axis=axis,
                 precise=precise,
                 tzinfo=tzinfo,
                 mode=mode,
@@ -164,7 +173,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @property
     def data(self) -> np.ndarray:
         """Returns the time stamp type based on the precision."""
-        return self._data_method.__get__(self, self.__class__)()
+        return self.get_data()
 
     @data.setter
     def data(self, value: np.ndarray) -> None:
@@ -256,10 +265,29 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """The sample period as Decimal object"""
         return self.get_sample_period_decimal()
 
-    @property
-    def tail_correction(self) -> AnyCallable | None:
-        """The correction method for data to be appended."""
-        return self._tail_correction.__get__(self, self.__class__) if self._tail_correction is not None else None
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy.switch_algorithm_size = self.switch_algorithm_size
+        new_copy._precise = self._precise
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+        new_copy._sample_rate = self._sample_rate
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.get_data.select(self.get_data.selected)
+        new_copy.tail_correction.select(self.tail_correction.selected)
+        new_copy.blank_generator.select(self.blank_generator.selected)
+        return new_copy
 
     # Instance Methods #
     # Constructors/Destructors
@@ -269,6 +297,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         shape: tuple[int] | None = None,
         sample_rate: float | str | Decimal | None = None,
         sample_period: float | str | Decimal | None = None,
+        axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str | None = None,
@@ -281,6 +310,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             shape: The shape that proxy should be and if resized the shape it will default to.
             sample_rate: The sample rate of the data.
             sample_period: The sample period of this proxy.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             mode: Determines if the contents of this proxy are editable or not.
@@ -301,7 +331,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         if data is not None and data.dtype == np.uint64:
             self.set_precision(True)
 
-        super().construct(data=data, shape=shape, mode=mode, **kwargs)
+        super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
     # Getters and Setters
     def get_sample_rate(self) -> float | None:
@@ -347,10 +377,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Args:
             nano: Determines if this proxy returns nanostamps (True) or timestamps (False).
         """
-        if nano:
-            self._data_method = self._get_nanostamps.__func__
-        else:
-            self._data_method = self._get_timestamps.__func__
+        self.get_data.select("_get_nanostamps" if nano else "_get_timestamps")
         self._precise = nano
 
     def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
@@ -360,41 +387,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             tzinfo: The time zone to set.
         """
         self.tzinfo = tzinfo
-
-    def get_correction(self, name) -> Callable | None:
-        name.lower()
-        if name == "none":
-            return None
-        elif name == "tail":
-            return self.tail_correction
-        elif name == "default tail":
-            return self.default_tail_correction
-        elif name == "nearest end":
-            return self.shift_to_nearest_sample_end
-        elif name == "end":
-            return self.shift_to_the_end
-
-    def set_tail_correction(self, obj):
-        if isinstance(obj, str):
-            self._tail_correction = self.get_correction(obj).__func__
-        else:
-            self._tail_correction = obj
-
-    def set_blank_generator(self, obj: AnyCallable) -> None:
-        if isinstance(obj, str):
-            obj = obj.lower()
-            if obj == "nan":
-                self.blank_generator = nan_array
-            elif obj == "empty":
-                self.blank_generator = np.empty
-            elif obj == "zeros":
-                self.blank_generator = np.zeros
-            elif obj == "ones":
-                self.blank_generator = np.ones
-            elif obj == "full":
-                self.blank_generator = np.full
-        else:
-            self.blank_generator = obj
 
     # Sample Rate
     def validate_sample_rate(self) -> bool:

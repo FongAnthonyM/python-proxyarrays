@@ -17,6 +17,7 @@ from collections.abc import Iterable, Sized
 from typing import Any, Callable
 
 # Third-Party Packages #
+from baseobjects.functions import FunctionRegister, CallableMultiplexer
 from dspobjects.operations import nan_array
 import numpy as np
 
@@ -33,15 +34,26 @@ class BlankProxyArray(BaseProxyArray):
 
     Attributes:
         _shape: The assigned shape that this proxy will be.
-        axis: The main axis of this proxy.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         dtype: The data type of that the data will be.
         generate_data: The method for generating data.
 
     Args:
         shape: The assigned shape that this proxy will be.
         dtype: The data type of the generated data.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
+        **kwargs: Keyword arguments for inheritance.
     """
+
+    generation_functions: FunctionRegister = FunctionRegister({
+        "nan_array": nan_array,
+        "empty": np.empty,
+        "zeros": np.zeros,
+        "ones": np.ones,
+        "full": np.full,
+    })
 
     # Magic Methods #
     # Construction/Destruction
@@ -49,8 +61,9 @@ class BlankProxyArray(BaseProxyArray):
         self,
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
-        init: bool = True,
+        axis: int = 0,
         *args: Any,
+        init: bool = True,
         **kwargs: Any,
     ) -> None:
         # New Attributes #
@@ -62,14 +75,18 @@ class BlankProxyArray(BaseProxyArray):
         self.dtype: np.dtype | str = "f4"
 
         # Assign Methods #
-        self._generate_method: Callable[[tuple[int], Any], np.ndarray] = self.create_nans.__func__
+        self.generate_data: CallableMultiplexer = CallableMultiplexer(
+            register=self.generation_functions,
+            instance=self,
+            select="nan_array",
+        )
 
         # Parent Attributes #
         super().__init__(*args, int=init, **kwargs)
 
         # Construct Object #
         if init:
-            self.construct(shape=shape, dtype=dtype)
+            self.construct(shape=shape, axis=axis, dtype=dtype, **kwargs)
 
     @property
     def shape(self) -> tuple[int]:
@@ -79,11 +96,6 @@ class BlankProxyArray(BaseProxyArray):
     @shape.setter
     def shape(self, value: tuple[int]) -> None:
         self._shape = value
-
-    @property
-    def generate_data(self):
-        """The selected method for creating timestamps"""
-        return self._generate_method.__get__(self, self.__class__)
 
     # Numpy ndarray Methods
     def __array__(self, dtype: Any = None) -> np.ndarray:
@@ -101,18 +113,47 @@ class BlankProxyArray(BaseProxyArray):
 
     # Instance Methods #
     # Constructors/Destructors
-    def construct(self, shape: tuple[int] | None = None, dtype: np.dtype | str | None = None) -> None:
+    def construct(
+        self,
+        shape: tuple[int] | None = None,
+        axis: int | None = None,
+        dtype: np.dtype | str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Constructs this object.
 
         Args:
             shape: The assigned shape that this proxy will be.
             dtype: The data type of the generated data.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
+            **kwargs: Keyword arguments for inheritance.
         """
         if shape is not None:
             self._shape = shape
 
         if dtype is not None:
             self.dtype = dtype
+
+        if axis is not None:
+            self.axis = axis
+
+        super().construct(**kwargs)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BlankProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy._shape = self._shape
+        new_copy.axis = self.axis
+        new_copy.generate_data.select(self.generate_data.selected)
+        return new_copy
 
     # Getters
     def get_shape(self) -> tuple[int]:
@@ -147,28 +188,6 @@ class BlankProxyArray(BaseProxyArray):
         elif isinstance(item, ...):
             return self.create_data_range()
 
-    # Setters
-    def set_data_generator(self, generator: str | Callable[[tuple[int], Any], np.ndarray]) -> None:
-        """Sets this proxy's data generator to either numpy array creator or a function that will create data.
-
-        Args:
-            generator: Either the string of the type of data to generate or a function to generate data.
-        """
-        if isinstance(generator, str):
-            generator = generator.lower()
-            if generator == "nan":
-                self._generate_data = nan_array
-            elif generator == "empty":
-                self._generate_data = np.empty
-            elif generator == "zeros":
-                self._generate_data = np.zeros
-            elif generator == "ones":
-                self._generate_data = np.ones
-            elif generator == "full":
-                self._generate_data = np.full
-        else:
-            self._generate_data = generator
-
     # Shape
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
@@ -189,25 +208,7 @@ class BlankProxyArray(BaseProxyArray):
             raise IOError("not writable")
         self.shape = shape
 
-    # Create Data
-    def create_nans(
-        self,
-        shape: int | Iterable | tuple[int],
-        dtype: object | None = None,
-        **kwargs: Any,
-    ) -> np.ndarray:
-        """Creates an array of NaNs.
-
-        Args:
-            shape: The shape of the array to create.
-            dtype: The data type of the array.
-            **kwargs: The other numpy keyword arguments for creating an array.
-
-        Returns:
-            The array of NaNs.
-        """
-        return nan_array(shape=shape, dtype=dtype, **kwargs)
-
+    # Create Date
     def create_data_range(
         self,
         start: int | None = None,
@@ -345,6 +346,14 @@ class BlankProxyArray(BaseProxyArray):
             The requested range.
         """
         return self.create_data_range(start=start, stop=stop, step=step, proxy=proxy)
+
+    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return (self,)
 
     # Get Index
     def get_from_index(self, indices: Sized | int, reverse: bool = False, proxy: bool | None = None) -> Any:

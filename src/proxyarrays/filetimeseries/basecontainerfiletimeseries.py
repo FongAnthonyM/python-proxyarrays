@@ -164,6 +164,25 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         # Parent Construction
         super().construct(mode=mode)
 
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BaseContainerFileTimeSeries":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._path = self._path
+
+        new_copy.remain_open = self.remain_open
+        new_copy.file_kwargs = self.file_kwargs
+
+        return new_copy
+
     # Cache and Memory
     def refresh(self) -> None:
         """Refreshes this proxy."""
@@ -205,7 +224,10 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         """
         if mode is None:
             mode = self.mode
-        self.file.open(mode, **kwargs)
+        if self._file is None:
+            self._file = self.file_type(self._path, mode=self.mode, **self.file_kwargs)
+        else:
+            self._file.open(mode, **kwargs)
         return self
 
     def close(self) -> None:

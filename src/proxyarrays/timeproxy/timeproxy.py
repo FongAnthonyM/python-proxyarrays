@@ -21,6 +21,7 @@ from warnings import warn
 
 # Third-Party Packages #
 from baseobjects.cachingtools import timed_keyless_cache
+from baseobjects.functions import MethodMultiplexer
 from baseobjects.typing import AnyCallable
 from dspobjects.dataclasses import IndexValue, IndexDateTime
 from dspobjects.operations import nan_array
@@ -36,7 +37,7 @@ from .blanktimeproxy import BlankTimeProxy
 # Definitions #
 # Classes #
 class TimeProxy(ProxyArray, BaseTimeProxy):
-    """An ProxyArray that has been expanded to handle time data.
+    """A ProxyArray that has been expanded to handle time data.
 
     Class Attributes:
         default_fill_type: The default type to fill discontinuous data.
@@ -49,11 +50,14 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     Args:
         proxies: An iterable holding proxies/objects to store in this proxy.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
         tzinfo: The time zone of the timestamps.
         mode: Determines if the contents of this proxy are editable or not.
-        update: Determines if this proxy will start_timestamp updating or not.
+        update: Determines if this proxy will start updating or not.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
+        **kwargs: Keyword arguments for inheritance.
     """
 
     default_fill_type = BlankTimeProxy
@@ -64,27 +68,39 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
     def __init__(
         self,
         proxies: Iterable[BaseTimeProxy] | None = None,
-        precise: bool | None = None,
+        axis: int = 0,
+        precise: bool = True,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
         update: bool = True,
+        *args: Any,
         init: bool = True,
+        **kwargs: Any,
     ) -> None:
-        # Parent Attributes #
-        super().__init__(init=False)
-
         # New Attributes #
+        self._precise: bool = True
         self.target_sample_rate: float | None = None
         self.time_tolerance: float = 0.000001
         self.tzinfo: datetime.tzinfo | None = None
 
-        self._data_method: AnyCallable = self._get_timestamps.__func__
+        self.get_data: MethodMultiplexer = MethodMultiplexer(instance=self, select="_get_nanostamps")
 
         self.fill_type: type = self.default_fill_type
 
+        # Parent Attributes #
+        super().__init__(*args, init=False)
+
         # Object Construction #
         if init:
-            self.construct(proxies=proxies, precise=precise, tzinfo=tzinfo, mode=mode, update=update)
+            self.construct(
+                proxies=proxies,
+                axis=axis,
+                precise=precise,
+                tzinfo=tzinfo,
+                mode=mode,
+                update=update,
+                **kwargs,
+            )
 
     @property
     def precise(self) -> bool:
@@ -114,7 +130,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
     @property
     def data(self) -> np.ndarray:
         """Returns the time stamp type based on the precision."""
-        return self._data_method.__get__(self, self.__class__)()
+        return self.get_data()
 
     @property
     def start_datetimes(self) -> tuple[Timestamp | None]:
@@ -275,27 +291,67 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
     def construct(
         self,
         proxies: Iterable[BaseProxyArray] = None,
+        axis: int | None = None,
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str | None = None,
         update: bool | None = None,
+        **kwargs: Any,
     ) -> None:
         """Constructs this object.
 
         Args:
             proxies: An iterable holding proxies/objects to store in this proxy.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             mode: Determines if the contents of this proxy are editable or not.
             update: Determines if this proxy will start updating or not.
+            **kwargs: Keyword arguments for inheritance.
         """
-        super().construct(proxies=proxies, mode=mode, update=update)
+        super().construct(proxies=proxies, axis=axis, mode=mode, update=update)
 
         if precise is not None:
             self.set_precision(precise)
 
         if tzinfo is not None:
             self.set_tzinfo(tzinfo)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "TimeProxy":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy._precise = self._precise
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.get_data.select(self.get_data.selected)
+
+        new_copy.fill_type = self.fill_type
+        return new_copy
+
+    def create_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The flat copy of this object.
+        """
+        if type_ is None or isinstance(type_, TimeProxy):
+            kwargs = {"precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(type_=type_, **kwargs)
 
     # Sorting
     def proxy_sort_key(self, proxy: Any) -> Any:
@@ -319,10 +375,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
     # Getters and Setters
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_datetimes(self) -> tuple[Timestamp | None]:
-        """Get the start_timestamp datetimes of all contained proxies.
+        """Get the start datetimes of all contained proxies.
 
         Returns:
-            All the start_timestamp datetimes.
+            All the start datetimes.
         """
         starts = [None] * len(self.proxies)
         for index, proxy in enumerate(self.proxies):
@@ -331,10 +387,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_nanostamps(self) -> np.ndarray:
-        """Get the start_nanostamp nanostamps of all contained proxies.
+        """Get the start nanostamps of all contained proxies.
 
         Returns:
-            All the start_nanostamp nanostamps.
+            All the start nanostamps.
         """
         starts = nan_array(len(self.proxies), dtype="u8")
         for index, proxy in enumerate(self.proxies):
@@ -345,10 +401,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_timestamps(self) -> np.ndarray:
-        """Get the start_timestamp timestamps of all contained proxies.
+        """Get the start timestamps of all contained proxies.
 
         Returns:
-            All the start_timestamp timestamps.
+            All the start timestamps.
         """
         starts = nan_array(len(self.proxies), dtype="f8")
         for index, proxy in enumerate(self.proxies):
@@ -359,10 +415,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_datetimes(self) -> tuple[Timestamp | None]:
-        """Get the end_timestamp datetimes of all contained proxies.
+        """Get the end datetimes of all contained proxies.
 
         Returns:
-            All the end_timestamp datetimes.
+            All the end datetimes.
         """
         ends = [None] * len(self.proxies)
         for index, proxy in enumerate(self.proxies):
@@ -371,10 +427,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_nanostamps(self) -> np.ndarray:
-        """Get the end_nanostamp nanostamps of all contained proxies.
+        """Get the end nanostamps of all contained proxies.
 
         Returns:
-            All the end_nanostamp nanostamps.
+            All the end nanostamps.
         """
         ends = nan_array(len(self.proxies), dtype="u8")
         for index, proxy in enumerate(self.proxies):
@@ -385,10 +441,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_end_timestamps(self) -> np.ndarray:
-        """Get the end_timestamp timestamps of all contained proxies.
+        """Get the end timestamps of all contained proxies.
 
         Returns:
-            All the end_timestamp timestamps.
+            All the end timestamps.
         """
         ends = nan_array(len(self.proxies), dtype="f8")
         for index, proxy in enumerate(self.proxies):
@@ -506,11 +562,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         for proxy in self.proxies:
             proxy.set_precision(nano)
 
-        if nano:
-            self._data_method = self._get_nanostamps.__func__
-        else:
-            self._data_method = self._get_timestamps.__func__
-
+        self.get_data.select("_get_nanostamps" if nano else "_get_timestamps")
         self._precise = nano
 
     def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
@@ -690,7 +742,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         start: int | None = None,
         stop: int | None = None,
         step: int | None = None,
-        proxy: bool = True,
+        proxy: bool | None = None,
     ) -> Union["BaseTimeProxy", np.ndarray]:
         """Get a range of nanostamps with indices.
 
@@ -712,7 +764,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         nanostamps = nan_array(length, dtype="u8")
 
         ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
-        if proxy:
+        if (proxy is None and self.returns_proxy) or proxy:
             return self.time_axis_type(
                 ts,
                 sample_rate=self.sample_rate_decimal,
@@ -831,7 +883,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         start: int | None = None,
         stop: int | None = None,
         step: int | None = None,
-        proxy: bool = True,
+        proxy: bool | None = None,
     ) -> np.ndarray | BaseTimeProxy:
         """Gets a range of timestamps along an axis.
 
@@ -839,7 +891,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             start: The first super index of the range to get.
             stop: The length of the range to get.
             step: The interval to get the timestamps of the range.
-            proxy: proxy: Determines if the returned object will be a proxy.
+            proxy: Determines if the returned object will be a proxy.
 
         Returns:
             The requested range.
@@ -853,7 +905,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         timestamps = nan_array(length)
 
         ts = self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
-        if proxy:
+        if (proxy is None and self.returns_proxy) or proxy:
             return self.time_axis_type(
                 ts,
                 sample_rate=self.sample_rate_decimal,
@@ -954,7 +1006,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             datetimes.extend(proxy.get_datetimes())
         return tuple(datetimes)
 
-    # Find TimeProxy
+    # Find Proxy
     def find_proxy(self, timestamp: datetime.datetime | float, tails: bool = False) -> IndexValue:
         """Finds a proxy with a given timestamp in its range
 
@@ -1016,6 +1068,50 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             super_index = self.proxy_start_indices[index] + location
 
         return IndexDateTime(super_index, true_datetime)
+
+    def where_missing(self) -> tuple[int, ...]:
+        """Gets the indices of where gaps in time between proxies."""
+        n_proxies = len(self.proxies)
+        if n_proxies <= 1:
+            return ()
+        else:
+            starts = np.fromiter(self.start_nanostamps, dtype=np.uint64)
+            max_starts = np.fromiter(
+                iter=(p.end_nanostamp + (p.sample_period + self.time_tolerance) * 10**9 for p in self.proxies),
+                dtype=np.uint64,
+            )
+            return tuple(np.where(starts[1:] > max_starts[:-1])[0] + 1)
+
+    def insert_missing(self, type_: type[BaseTimeProxy] | None = None, recursive: bool = False, **kwargs: Any) -> None:
+        """Inserts blanks proxies in missing proxy segments.
+
+        Args:
+            type_: The type of proxy to insert into the missing regions of the timeseries.
+            recursive: Determines if blank proxies will be inserted into the contained proxies.
+            **kwargs: The keyword arguments for creating the blank proxies.
+        """
+        if recursive:
+            for proxy in self.proxies:
+                proxy.insert_missing(type_=type_, recursive=recursive, **kwargs)
+
+        f_type = self.fill_type if type_ is None else None
+        for i in reversed(self.where_missing()):
+            previous_proxy = self.proxies[i - 1]
+            previous_period = previous_proxy.sample_period
+            next_proxy = self.proxies[i]
+            shape = list(previous_proxy.shape)
+            shape[previous_proxy.axis] = 0
+            b_kwargs = {
+                "start": previous_proxy.end_timestamp + previous_period,
+                "end": next_proxy.start_timestamp - previous_period,
+                "sample_rate": previous_proxy.sample_rate,
+                "shape": shape,
+                "axis": previous_proxy.axis,
+                "precise": previous_proxy.precise,
+                "tzinfo": previous_proxy.tzinfo,
+            }
+            self.proxies.insert(i, f_type(**(b_kwargs | kwargs)))
+        self.clear_caches()
 
 
 # Assign Cyclic Definitions

@@ -13,8 +13,9 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from bisect import bisect_right
+from itertools import chain
 from typing import Any, NamedTuple
 from warnings import warn
 
@@ -62,9 +63,12 @@ class ProxyArray(BaseProxyArray):
 
     Args:
         proxies: An iterable holding proxies/objects to store in this proxy.
+        axis: The axis of the data which this proxy extends for the contained data proxies.
         mode: Determines if the contents of this proxy are editable or not.
         update: Determines if this proxy will start updating or not.
+        *args: Arguments for inheritance.
         init: Determines if this object will construct.
+        **kwargs: Keyword arguments for inheritance.
     """
 
     # TODO: Consider making the proxy work multidimensional. (Only single-dimensional right now.)
@@ -76,6 +80,7 @@ class ProxyArray(BaseProxyArray):
     def __init__(
         self,
         proxies: Iterable[BaseProxyArray] | None = None,
+        axis: int = 0,
         mode: str = "a",
         update: bool = True,
         *args: Any,
@@ -99,7 +104,7 @@ class ProxyArray(BaseProxyArray):
 
         # Object Construction #
         if init:
-            self.construct(proxies=proxies, mode=mode, update=update)
+            self.construct(proxies=proxies, axis=axis, mode=mode, update=update, **kwargs)
 
     @property
     def shapes(self) -> tuple[tuple[int]]:
@@ -214,16 +219,23 @@ class ProxyArray(BaseProxyArray):
     def construct(
         self,
         proxies: Iterable[BaseProxyArray] = None,
+        axis: int | None = None,
         mode: str | None = None,
         update: bool | None = None,
+        **kwargs: Any,
     ) -> None:
         """Constructs this object.
 
         Args:
             proxies: An iterable holding proxies/objects to store in this proxy.
+            axis: The axis of the data which this proxy extends for the contained data proxies.
             mode: Determines if the contents of this proxy are editable or not.
             update: Determines if this proxy will start updating or not.
+            **kwargs: Keyword arguments for inheritance.
         """
+        if axis is not None:
+            self.axis = axis
+
         if update is not None:
             self._is_updating = update
             if update:
@@ -237,6 +249,49 @@ class ProxyArray(BaseProxyArray):
 
         if mode is not None:
             self.mode = mode
+
+        super().construct(**kwargs)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+        new_copy.target_shape = self.target_shape
+        new_copy.axis = self.axis
+        new_copy.combine_type = self.default_combine_type
+        new_copy.return_proxy_type = self.default_return_proxy_type
+        return new_copy
+
+    def flat_copy(self) -> "ProxyArray":
+        """Creates a flattened (proxy depth one) copy of this object.
+
+        Returns:
+            The flat copy of this object.
+        """
+        new_copy = self.empty_copy()
+        new_copy.proxies.extend(self.flat_iterator())
+        return new_copy
+
+    def create_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The flat copy of this object.
+        """
+        kwargs = {"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs
+        new_proxy = self.return_proxy_type(**kwargs) if type_ is None else type_(**kwargs)
+        return new_proxy
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
@@ -507,6 +562,42 @@ class ProxyArray(BaseProxyArray):
         return self.get_proxy(item)
 
     # Shape
+    def where_misshapen(self, shape: Iterable[int, ...] | None = None, exclude_axis: bool = True) -> tuple[int, ...]:
+        """Gets the indices of the proxies which do not have matching shapes.
+
+        Args:
+            shape: The shape which all proxies must conform to.
+            exclude_axis: Determines if the main axis will be excluded in the shape check.
+
+        Returns:
+            The indices of the misshapen proxies.
+        """
+        if shape is not None:
+            shape = np.asarray(shape)
+        elif self.target_shape is not None:
+            shape = np.asarray(self.target_shape)
+        else:
+            raise ValueError("either a shape must be given or target shape must be set")
+        shapes = np.asarray(self.shapes)
+        if exclude_axis:
+            return tuple(np.where(np.delete(shapes, self.axis, 1) != np.delete(shape, self.axis, 0))[0])
+        else:
+            return tuple(np.where(shapes != shape)[0])
+
+    def where_shapes_change(self, exclude_axis: bool = True) -> tuple[int, ...]:
+        """Gets the indices of the proxies where the shape does not match the previous shape.
+
+        Args:
+            exclude_axis: Determines if the main axis will be excluded in the shape check.
+
+        Returns:
+            The indices of the proxies that have different shapes than the previous.
+        """
+        shapes = np.delete(self.shapes, self.axis, 1) if exclude_axis else np.asarray(self.shapes)
+        p_shapes = np.delete(shapes, -1, 0)
+        n_shapes = np.delete(shapes, 0, 0)
+        return tuple(np.where((p_shapes != n_shapes).any(axis=1))[0] + 1)
+
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
 
@@ -534,7 +625,7 @@ class ProxyArray(BaseProxyArray):
             if not proxy.validate_shape() or proxy.shape != shape:
                 proxy.change_size(shape, **kwargs)
 
-    # proxies
+    # Proxies
     def proxy_sort_key(self, proxy: Any) -> Any:
         """The key to be used in sorting with the proxy as the sort basis.
 
@@ -599,7 +690,10 @@ class ProxyArray(BaseProxyArray):
         self.proxies.append(item)
 
     def combine_proxies(
-        self, start: int | None = None, stop: int | None = None, step: int | None = None
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None
     ) -> BaseProxyArray:
         """Combines a range of proxies into a single proxy.
 
@@ -612,6 +706,28 @@ class ProxyArray(BaseProxyArray):
             A single combined proxy.
         """
         return self.combine_type(proxies=self.proxies[start:stop:step])
+
+    def flat_iterator(self) -> Iterator[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return chain.from_iterable((p.flat_iterator() for p in self.proxies))
+
+    def as_flattened(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a proxy array which contains flattened (proxy depth one) contents of this object.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The flat copy of this object.
+        """
+        new_proxy = self.create_proxy(type_=type_, **kwargs)
+        new_proxy.proxies.extend(self.flat_iterator())
+        return new_proxy
 
     # Get proxy within by Index
     @singlekwargdispatch("indices")
