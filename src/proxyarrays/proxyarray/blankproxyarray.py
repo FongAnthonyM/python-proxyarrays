@@ -42,7 +42,8 @@ class BlankProxyArray(BaseProxyArray):
         shape: The assigned shape that this proxy will be.
         dtype: The data type of the generated data.
         axis: The axis of the data which this proxy extends for the contained data proxies.
-        fill_value: The name or the function used to create the blank data.
+        fill_method: The name or the function used to create the blank data.
+        fill_kwargs: The keyword arguments for the fill method.
         *args: Arguments for inheritance.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
@@ -63,7 +64,8 @@ class BlankProxyArray(BaseProxyArray):
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
         axis: int = 0,
-        fill_value: str | Callable = "nans",
+        fill_method: str | Callable = "nans",
+        fill_kwargs: dict[str, Any] | None = None,
         *args: Any,
         init: bool = True,
         **kwargs: Any,
@@ -75,6 +77,7 @@ class BlankProxyArray(BaseProxyArray):
 
         # Data Type
         self.dtype: np.dtype | str = "f4"
+        self.fill_kwargs: dict[str, Any] = {}
 
         # Assign Methods #
         self.generate_data: CallableMultiplexer = CallableMultiplexer(
@@ -88,7 +91,14 @@ class BlankProxyArray(BaseProxyArray):
 
         # Construct Object #
         if init:
-            self.construct(fill_value=fill_value, shape=shape, axis=axis, dtype=dtype, **kwargs)
+            self.construct(
+                shape=shape,
+                axis=axis,
+                dtype=dtype,
+                fill_method=fill_method,
+                fill_kwargs=fill_kwargs,
+                **kwargs,
+            )
 
     @property
     def shape(self) -> tuple[int]:
@@ -117,10 +127,11 @@ class BlankProxyArray(BaseProxyArray):
     # Constructors/Destructors
     def construct(
         self,
-        fill_value: str | Callable | None = None,
         shape: tuple[int] | None = None,
         axis: int | None = None,
         dtype: np.dtype | str | None = None,
+        fill_method: str | Callable | None = None,
+        fill_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -129,15 +140,10 @@ class BlankProxyArray(BaseProxyArray):
             shape: The assigned shape that this proxy will be.
             dtype: The data type of the generated data.
             axis: The axis of the data which this proxy extends for the contained data proxies.
-            fill_value: The name or the function used to create the blank data.
+            fill_method: The name or the function used to create the blank data.
+            fill_kwargs: The keyword arguments for the fill method.
             **kwargs: Keyword arguments for inheritance.
         """
-        if fill_value is not None:
-            if isinstance(fill_value, str):
-                self.generate_data.select(fill_value)
-            else:
-                self.generate_data.add_select_function(name=fill_value.__name__, func=fill_value)
-
         if shape is not None:
             self._shape = shape
 
@@ -146,6 +152,16 @@ class BlankProxyArray(BaseProxyArray):
 
         if axis is not None:
             self.axis = axis
+
+        if fill_value is not None:
+            if isinstance(fill_value, str):
+                self.generate_data.select(fill_value)
+            else:
+                self.generate_data.add_select_function(name=fill_value.__name__, func=fill_value)
+
+        if fill_kwargs is not None:
+            self.fill_kwargs.clear()
+            self.fill_kwargs.update(fill_kwargs)
 
         super().construct(**kwargs)
 
@@ -273,7 +289,7 @@ class BlankProxyArray(BaseProxyArray):
             new_blank._shape = shape
             return new_blank
         else:
-            return self.generate_data(shape=shape, dtype=dtype, **kwargs)
+            return self.generate_data(shape=shape, dtype=dtype, **(self.fill_kwargs | kwargs))
 
     def create_data_slice(self, slice_: slice, dtype: np.dtype | str | None = None, **kwargs: Any) -> np.ndarray:
         """Creates data from a slice.
@@ -333,7 +349,7 @@ class BlankProxyArray(BaseProxyArray):
                         raise IndexError("start index is greater than stop")
                     shape.append(size // step)
 
-        return self.generate_data(shape, dtype=dtype, **kwargs)
+        return self.generate_data(shape, dtype=dtype, **(self.fill_kwargs | kwargs))
 
     def get_range(
         self,
