@@ -207,7 +207,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
     @property
     def sample_rate_decimal(self) -> Decimal:
         """The sample rate as Decimal object"""
-        return self.time_axis.sample_rate.decimal
+        return self.time_axis.sample_rate_decimal
 
     @property
     def sample_period(self) -> float:
