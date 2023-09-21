@@ -166,7 +166,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def start_datetime(self) -> Timestamp | None:
         """The start timestamp of this proxy."""
-        return Timestamp.fromnanostamp(self._true_start, self.tzinfo) if self._assigned_start is not None else None
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return Timestamp.fromnanostamp(self._true_start, tz) if self._assigned_start is not None else None
 
     @property
     def start_date(self) -> datetime.date | None:
@@ -186,7 +187,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def assigned_end_datetime(self) -> Timestamp | None:
         """The assigned end for this proxy."""
-        return Timestamp.fromnanostamp(self._assigned_end, self.tzinfo) if self._assigned_end is not None else None
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return Timestamp.fromnanostamp(self._assigned_end, tz) if self._assigned_end is not None else None
 
     @property
     def assigned_end_nanostamp(self) -> np.uint64 | None:
@@ -201,7 +203,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
     @property
     def end_datetime(self) -> Timestamp | None:
         """The end timestamp of this proxy."""
-        return Timestamp.fromnanostamp(self._true_end, self.tzinfo) if self._assigned_end is not None else None
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return Timestamp.fromnanostamp(self._true_end, tz) if self._assigned_end is not None else None
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -829,7 +832,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             All the times as a tuple of datetimes.
         """
-        return Timestamp.fromnanostamp(self.create_nanostamp_range(index, index + 1)[0], tz=self.tzinfo)
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return Timestamp.fromnanostamp(self.create_nanostamp_range(index, index + 1)[0], tz=tz)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes as Timestamps of this proxy.
@@ -837,7 +841,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             All the times.
         """
-        return tuple(Timestamp.fromnanostamp(ts, tz=self.tzinfo) for ts in self.create_nanostamp_range())
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.create_nanostamp_range())
 
     # Find
     def find_time_index(
