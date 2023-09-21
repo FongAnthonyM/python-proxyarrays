@@ -153,9 +153,9 @@ class BlankProxyArray(BaseProxyArray):
         if axis is not None:
             self.axis = axis
 
-        if fill_value is not None:
-            if isinstance(fill_value, str):
-                self.generate_data.select(fill_value)
+        if fill_method is not None:
+            if isinstance(fill_method, str):
+                self.generate_data.select(fill_method)
             else:
                 self.generate_data.add_select_function(name=fill_method.__name__, func=fill_method)
 
