@@ -157,7 +157,7 @@ class BlankProxyArray(BaseProxyArray):
             if isinstance(fill_value, str):
                 self.generate_data.select(fill_value)
             else:
-                self.generate_data.add_select_function(name=fill_value.__name__, func=fill_value)
+                self.generate_data.add_select_function(name=fill_method.__name__, func=fill_method)
 
         if fill_kwargs is not None:
             self.fill_kwargs.clear()
