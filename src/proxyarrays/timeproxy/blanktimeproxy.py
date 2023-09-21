@@ -17,7 +17,7 @@ from collections.abc import Iterable
 import datetime
 from decimal import Decimal
 import math
-from typing import Any
+from typing import Any, Callable
 
 # Third-Party Packages #
 from baseobjects.typing import AnyCallable
