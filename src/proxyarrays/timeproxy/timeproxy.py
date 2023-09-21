@@ -763,7 +763,11 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         nanostamps = nan_array(length, dtype="u8")
 
-        ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
+        if nanostamps.shape[0] > 0:
+            ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
+        else:
+            ts = nanostamps
+
         if (proxy is None and self.returns_proxy) or proxy:
             return self.time_axis_type(
                 ts,

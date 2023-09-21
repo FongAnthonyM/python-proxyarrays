@@ -876,14 +876,14 @@ class ProxyArray(BaseProxyArray):
             The start and stop indices as proxyIndex objects in a RangeIndices object.
         """
         if start is not None and stop is not None:
-            start_index, stop_index = self.find_inner_proxy_indices([start, stop-1])
+            start_index, stop_index = self.find_inner_proxy_indices([start, stop - 1 if stop < 1 else stop])
         else:
             if start is not None:
                 start_index = self.find_inner_proxy_index(start)
             else:
                 start_index = proxyIndex(0, 0, 0)
             if stop is not None:
-                stop_index = self.find_inner_proxy_index(stop-1)
+                stop_index = self.find_inner_proxy_index(stop - 1 if stop < 1 else stop)
             else:
                 stop_proxy = len(self.proxies) - 1
                 stop_index = proxyIndex(

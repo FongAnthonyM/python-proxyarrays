@@ -63,6 +63,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
         tzinfo: The time zone of the timestamps.
         is_infinite: Determines if this blank proxy is infinite.
+        fill_value: The name or the function used to create the blank data.
         *args: Arguments for inheritance.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
@@ -84,6 +85,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         is_infinite: bool | None = None,
+        fill_value: str | Callable = "nans",
         *args: Any,
         init: bool = True,
         **kwargs: Any,
@@ -123,6 +125,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
                 precise=precise,
                 tzinfo=tzinfo,
                 is_infinite=is_infinite,
+                fill_value=fill_value,
                 **kwargs,
             )
 
@@ -263,6 +266,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         is_infinite: bool | None = False,
+        fill_value: str | Callable | None = None,
         **kwargs: Any,
     ) -> None:
         """Construct this object
@@ -278,6 +282,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
             tzinfo: The time zone of the timestamps.
             is_infinite: Determines if this blank proxy is infinite.
+            fill_value: The name or the function used to create the blank data.
             **kwargs: Keyword arguments for generating data.
         """
         if precise is not None:
@@ -305,7 +310,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         if is_infinite is not None:
             self.is_infinite = is_infinite
 
-        super().construct(shape=shape, dtype=dtype, axis=axis, **kwargs)
+        super().construct(shape=shape, dtype=dtype, axis=axis, fill_value=fill_value, **kwargs)
 
         if shape is not None and (a_len := shape[self.axis]) > 0:
             self._assigned_length = a_len

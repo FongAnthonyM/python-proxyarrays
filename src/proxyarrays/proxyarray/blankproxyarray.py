@@ -42,13 +42,14 @@ class BlankProxyArray(BaseProxyArray):
         shape: The assigned shape that this proxy will be.
         dtype: The data type of the generated data.
         axis: The axis of the data which this proxy extends for the contained data proxies.
+        fill_value: The name or the function used to create the blank data.
         *args: Arguments for inheritance.
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for inheritance.
     """
 
     generation_functions: FunctionRegister = FunctionRegister({
-        "nan_array": nan_array,
+        "nans": nan_array,
         "empty": np.empty,
         "zeros": np.zeros,
         "ones": np.ones,
@@ -62,6 +63,7 @@ class BlankProxyArray(BaseProxyArray):
         shape: tuple[int] | None = None,
         dtype: np.dtype | str | None = None,
         axis: int = 0,
+        fill_value: str | Callable = "nans",
         *args: Any,
         init: bool = True,
         **kwargs: Any,
@@ -78,7 +80,7 @@ class BlankProxyArray(BaseProxyArray):
         self.generate_data: CallableMultiplexer = CallableMultiplexer(
             register=self.generation_functions,
             instance=self,
-            select="nan_array",
+            select="nans",
         )
 
         # Parent Attributes #
@@ -86,7 +88,7 @@ class BlankProxyArray(BaseProxyArray):
 
         # Construct Object #
         if init:
-            self.construct(shape=shape, axis=axis, dtype=dtype, **kwargs)
+            self.construct(fill_value=fill_value, shape=shape, axis=axis, dtype=dtype, **kwargs)
 
     @property
     def shape(self) -> tuple[int]:
@@ -115,6 +117,7 @@ class BlankProxyArray(BaseProxyArray):
     # Constructors/Destructors
     def construct(
         self,
+        fill_value: str | Callable | None = None,
         shape: tuple[int] | None = None,
         axis: int | None = None,
         dtype: np.dtype | str | None = None,
@@ -126,8 +129,15 @@ class BlankProxyArray(BaseProxyArray):
             shape: The assigned shape that this proxy will be.
             dtype: The data type of the generated data.
             axis: The axis of the data which this proxy extends for the contained data proxies.
+            fill_value: The name or the function used to create the blank data.
             **kwargs: Keyword arguments for inheritance.
         """
+        if fill_value is not None:
+            if isinstance(fill_value, str):
+                self.generate_data.select(fill_value)
+            else:
+                self.generate_data.add_select_function(name=fill_value.__name__, func=fill_value)
+
         if shape is not None:
             self._shape = shape
 
