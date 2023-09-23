@@ -983,7 +983,7 @@ class ProxyArray(BaseProxyArray):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         inner_start = range_proxy_indices.start.inner_index
-        inner_stop = range_proxy_indices.stop.inner_index + 1
+        inner_stop = range_proxy_indices.stop.inner_index
         slices[self.axis] = slice(inner_start, inner_stop, axis_slice.step)
 
         # Get start and stop data array locations
