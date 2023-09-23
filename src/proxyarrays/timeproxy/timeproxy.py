@@ -943,7 +943,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         inner_start = range_proxy_indices.start.inner_index
-        inner_stop = range_proxy_indices.stop.inner_index + 1
+        inner_stop = range_proxy_indices.stop.inner_index
         slice_ = slice(inner_start, inner_stop, slice_.step)
 
         # Get start_timestamp and stop array locations
