@@ -357,6 +357,7 @@ class BlankProxyArray(BaseProxyArray):
         stop: int | None = None,
         step: int | None = None,
         axis: int | None = None,
+        dtype: Any = None,
         proxy: bool | None = None,
     ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
@@ -366,12 +367,13 @@ class BlankProxyArray(BaseProxyArray):
             stop: The length of the range to get.
             step: The interval to get the data of the range.
             axis: The axis to get the data along.
+            dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
         Returns:
             The requested range.
         """
-        return self.create_data_range(start=start, stop=stop, step=step, proxy=proxy)
+        return self.create_data_range(start=start, stop=stop, step=step, dtype=dtype, proxy=proxy)
 
     def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
         """Creates an iterator which iterates over the innermost proxies.
@@ -408,16 +410,17 @@ class BlankProxyArray(BaseProxyArray):
             return self.create_data_range(start=start, stop=start + 1)[0]
 
     # Get Ranges of Data with Slices
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
             slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
 
         Returns:
             The requested range as an array.
         """
-        return self.create_slices_data(slices=slices)
+        return self.create_slices_data(slices=slices, dtype=dtype)
 
     def fill_slices_array(
         self,

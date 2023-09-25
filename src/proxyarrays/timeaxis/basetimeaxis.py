@@ -345,11 +345,12 @@ class BaseTimeAxis(BaseTimeProxy):
 
     # Get Data
     @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None) -> np.ndarray:
+    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
         """Gets a range of data as an array.
 
         Args:
             slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
 
         Returns:
             The requested range as an array.
@@ -382,6 +383,7 @@ class BaseTimeAxis(BaseTimeProxy):
         stop: int | None = None,
         step: int | None = None,
         axis: int | None = None,
+        dtype: Any = None,
         proxy: bool | None = None,
     ) -> BaseProxyArray | np.ndarray:
         """Gets a range of data along an axis.
@@ -391,6 +393,7 @@ class BaseTimeAxis(BaseTimeProxy):
             stop: The length of the range to get.
             step: The interval to get the data of the range.
             axis: The axis to get the data along.
+            dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
         Returns:
