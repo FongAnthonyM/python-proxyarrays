@@ -22,7 +22,7 @@ from dspobjects.operations import nan_array
 import numpy as np
 
 # Local Packages #
-from .baseproxyarray import BaseProxyArray
+from .baseproxyarray import BaseProxyArray, Slice
 
 
 # Definitions #
@@ -241,7 +241,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         self.data = new_ndarray
 
-    # Data
+    # Proxies
     def append(self, data: np.ndarray, axis: int | None = None) -> None:
         """Appends data onto the contained data.
 
@@ -327,22 +327,112 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         for proxy in proxies:
             self.append_proxy(proxy, axis=axis, truncate=truncate)  # Can be rewritten to be faster.
 
-    def get_range(
+    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
+        """Creates an iterator which iterates over the innermost proxies.
+
+        Returns:
+            The innermost proxies.
+        """
+        return (self,)
+
+    def as_flattened(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> BaseProxyArray:
+        """Creates a proxy array which contains flattened (proxy depth one) contents of this object.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The flat copy of this object.
+        """
+        return self.create_return_proxy(type_=type_, data=self.data, **kwargs)
+
+    # Get Index
+    def get_from_index(
         self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
+        indices: Iterable[int | slice | Iterable] | int | slice,
+        reverse: bool = False,
+        proxy: bool | None = True,
+    ) -> Any:
+        """Gets data from this object if given an index which can be in serval formats.
+
+        Args:
+            indices: The indices to find the data from.
+            reverse:  Determines, when using a Iterable of indices, if it will be read in reverse order.
+            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
+
+        Returns:
+            The requested proxy or data.
+        """
+        if isinstance(indices, int):
+            start = indices
+        elif len(indices) == 1:
+            start = indices[0]
+        else:
+            raise IndexError("index out of range")
+
+        return self.slice(start=start, stop=start + 1, proxy=proxy)
+
+    # Data Slicing
+    def fill_slices_array(
+        self,
+        data_array: np.ndarray,
+        array_slices: Iterable[slice] | None = None,
+        slices: Iterable[slice | int | None] | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with values from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slices: The slices to fill within the data_array.
+            slices: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        data_array[tuple(array_slices)] = self.data[tuple(slices)]
+        return data_array
+
+    def slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
+        """Gets a range of data as an array.
+
+        Args:
+            slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
+
+        Returns:
+            The requested range as an array.
+        """
+        if dtype is None:
+            return self.data[slices]
+        else:
+            return self.data[slices].astype(dtype)
+
+    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> BaseProxyArray:
+        """Get data as a new proxy using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested slice as a proxy.
+        """
+        return self.create_return_proxy(data=self.data[tuple(slices)])
+
+    def islices(
+        self,
+        slices: Iterable[slice | int | None] | None = None,
+        islice: slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
     ) -> Union["ContainerProxyArray", np.ndarray]:
-        """Gets a range of data along the main axis.
+        """Creates an iterator which iterates over slices along an axis.
 
         Args:
-            start: The first index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
-            axis: The axis to get the data along.
+            slices: The ranges of the data to get.
+            islice: The ranges to data to iterate over.
+            axis: The axis to iterate along.
             dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
@@ -352,15 +442,27 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         if axis is None:
             axis = self.axis
 
-        slices = [slice(None, None)] * len(self.shape)
-        slices[axis] = slice(start=start, stop=stop, step=step)
-
-        if (proxy is None and self.returns_proxy) or proxy:
-            return ContainerProxyArray(data=self.data[tuple(slices)])
-        elif dtype is None:
-            return self.data[tuple(slices)]
+        length = len(self)
+        slices = list(slices)
+        full_slices = slices + [slice(None)] * (self.max_ndim - len(slices))
+        axis_slice = slices[axis]
+        slice_size = axis_slice.stop - axis_slice.start
+        if islice is None:
+            outer_start = 0
+            outer_stop = length
+            outer_step = slice_size
         else:
-            return self.data[tuple(slices)].astype(dtype=dtype)
+            outer_start = 0 if islice.start is None else islice.start
+            outer_stop = length if islice.stop is None else islice.stop
+            outer_step = slice_size * (1 if islice.step is None else islice.step)
+
+        # Adjust outer stop if there is not enough data to fill last slice
+        last_index = (((length - outer_start)//outer_step) * outer_step + outer_start)
+        adjusted_stop = last_index if (length - last_index) < slice_size else outer_stop
+
+        for inner_start in range(outer_start, adjusted_stop, outer_step):
+            full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_slice.step)
+            yield self.slices(slices=full_slices, dtype=dtype, proxy=proxy)
 
     def set_range(
         self,
@@ -397,74 +499,6 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         slices[axis] = slice(start=start, stop=stop, step=step)
 
         self.data[tuple(slices)] = data
-
-    def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
-        """Creates an iterator which iterates over the innermost proxies.
-
-        Returns:
-            The innermost proxies.
-        """
-        return (self,)
-
-    # Get Index
-    def get_from_index(
-        self,
-        indices: Iterable[int | slice | Iterable] | int | slice,
-        reverse: bool = False,
-        proxy: bool | None = True,
-    ) -> Any:
-        """Gets data from this object if given an index which can be in serval formats.
-
-        Args:
-            indices: The indices to find the data from.
-            reverse:  Determines, when using a Iterable of indices, if it will be read in reverse order.
-            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
-
-        Returns:
-            The requested proxy or data.
-        """
-        if isinstance(indices, int):
-            start = indices
-        elif len(indices) == 1:
-            start = indices[0]
-        else:
-            raise IndexError("index out of range")
-
-        return self.get_range(start=start, stop=start + 1, proxy=proxy)
-
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
-        """Gets a range of data as an array.
-
-        Args:
-            slices: The ranges to get the data from.
-            dtype: The dtype of array to return.
-
-        Returns:
-            The requested range as an array.
-        """
-        if dtype is None:
-            return self.data[slices]
-        else:
-            return self.data[slices].astype(dtype)
-
-    def fill_slices_array(
-        self,
-        data_array: np.ndarray,
-        array_slices: Iterable[slice] | None = None,
-        slices: Iterable[slice | int | None] | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with values from the contained proxies/objects.
-
-        Args:
-            data_array: The numpy array to fill.
-            array_slices: The slices to fill within the data_array.
-            slices: The slices to get the data from.
-
-        Returns:
-            The original array but filled.
-        """
-        data_array[tuple(array_slices)] = self.data[tuple(slices)]
-        return data_array
 
 
 # Assign Cyclic Definitions

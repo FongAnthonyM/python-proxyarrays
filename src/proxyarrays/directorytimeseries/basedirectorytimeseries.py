@@ -260,6 +260,26 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         """Adjusts the data to make it continuous."""
         pass
 
+    # Proxy
+    @abstractmethod
+    def get_from_index(
+        self,
+        indices: Iterator | Iterable | int,
+        reverse: bool = False,
+        proxy: bool = True,
+    ) -> Any:
+        """Get an item recursively from within this proxy using indices.
+
+        Args:
+            indices: The indices used to get an item within this proxy.
+            reverse: Determines if the indices should be used in the reverse order.
+            proxy: Determines if the
+
+        Returns:
+            The item recursively from within this proxy.
+        """
+        pass
+
     # Get Nanostamps
     @abstractmethod
     def get_nanostamps(self) -> np.ndarray:
@@ -283,7 +303,26 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         pass  # return self.time[super_index]
 
     @abstractmethod
-    def get_nanostamp_range(
+    def fill_nanostamps_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with nanostamps from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        pass
+
+    @abstractmethod
+    def nanostamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -302,25 +341,6 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
             The requested range of nanostamps.
         """
         pass  # return self.times[slice(start_nanostamp, stop, step)]
-
-    @abstractmethod
-    def fill_nanostamps_array(
-        self,
-        data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with nanostamps from the contained proxies/objects.
-
-        Args:
-            data_array: The numpy array to fill.
-            array_slice: The slices to fill within the data_array.
-            slice_: The slices to get the data from.
-
-        Returns:
-            The original array but filled.
-        """
-        pass
 
     # Get Timestamps
     @abstractmethod
@@ -357,7 +377,26 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         pass  # return self.time[super_index]
 
     @abstractmethod
-    def get_timestamp_range(
+    def fill_timestamps_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with timestamps from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        pass
+
+    @abstractmethod
+    def timestamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -377,26 +416,19 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         """
         pass  # return self.times[slice(start_timestamp, stop, step)]
 
+    # Datetimes [Timestamp]
     @abstractmethod
-    def fill_timestamps_array(
-        self,
-        data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with timestamps from the contained proxies/objects.
+    def get_datetime(self, index: int) -> Timestamp:
+        """A datetime from this proxy base on the index.
 
         Args:
-            data_array: The numpy array to fill.
-            array_slice: The slices to fill within the data_array.
-            slice_: The slices to get the data from.
+            index: The index of the datetime to get.
 
         Returns:
-            The original array but filled.
+            All the times as a tuple of datetimes.
         """
         pass
 
-    # Datetimes [Timestamp]
     @abstractmethod
     def get_datetimes(self) -> tuple[datetime.datetime]:
         """Gets all the datetimes of this proxy.
@@ -407,19 +439,6 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         pass
 
     # Get Data
-    @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
-        """Gets a range of data as an array.
-
-        Args:
-            slices: The ranges to get the data from.
-            dtype: The dtype of array to return.
-
-        Returns:
-            The requested range as an array.
-        """
-        pass
-
     @abstractmethod
     def fill_slices_array(
         self,
@@ -440,27 +459,50 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         pass
 
     @abstractmethod
-    def get_range(
+    def slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
+        """Gets a range of data as an array.
+
+        Args:
+            slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
+
+        Returns:
+            The requested range as an array.
+        """
+        pass
+
+    @abstractmethod
+    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> "BaseProxyArray":
+        """Get data as a new proxy using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested range as a proxy.
+        """
+        pass
+
+    @abstractmethod
+    def islices(
         self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
+        slices: Iterable[slice | int | None] | None = None,
+        islice: Slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> BaseProxyArray | np.ndarray:
-        """Gets a range of data along an axis.
+    ) -> Union["BaseProxyArray", np.ndarray]:
+        """Creates an iterator which iterates over slices along an axis.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
-            axis: The axis to get the data along.
+            slices: The ranges of the data to get.
+            islice: The range to data to iterate over.
+            axis: The axis to iterate along.
             dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
-        Returns:
-            The requested range.
+        Yields:
+            The requested slices.
         """
         pass
 

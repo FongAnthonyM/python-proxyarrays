@@ -45,9 +45,8 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         _true_end: The true end timestamp of this proxy.
         _assigned_end: The assigned end timestamp of this proxy.
         _sample_rate: The sample rate of this proxy.
-        _create_method: The method used to create timestamps for the create data methods.
         _precise: Determines if this proxy returns nanostamps (True) or timestamps (False).
-        _create_method: The method to create time information.
+        generate_time: The method to create time information.
         tzinfo: The time zone of the timestamps.
         time_tolerance: The allowed deviation a sample can be away from the sample period.
         is_infinite: Determines if this blank proxy is infinite.
@@ -104,7 +103,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self._sample_rate: Decimal | None = None
         self._precise: bool = False
 
-        self._create_method: MethodMultiplexer = MethodMultiplexer(instance=self, select="create_timestamp_range")
+        self.generate_time: MethodMultiplexer = MethodMultiplexer(instance=self, select="generate_timestamp_slice")
 
         self.time_tolerance: float = 0.000001
         self.tzinfo: datetime.tzinfo | None = None
@@ -355,12 +354,26 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         new_copy._sample_rate = self._sample_rate
         new_copy._precise = self._precise
 
-        new_copy._create_method.select(self._create_method.selected)
+        new_copy.generate_time.select(self.generate_time.selected)
 
         new_copy.tzinfo = self.tzinfo
 
         new_copy.is_infinite = self.is_infinite
         return new_copy
+
+    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if isinstance(type_, BlankTimeProxy):
+            kwargs = {"sample_rate": self._sample_rate} | kwargs
+        return super().create_proxy(type_=type_, **kwargs)
 
     # Updating
     def refresh(self) -> None:
@@ -506,7 +519,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Args:
             nano: Determines if this proxy returns nanostamps (True) or timestamps (False).
         """
-        self._create_method.select("create_nanostamp_range" if nano else "create_timestamp_range")
+        self.generate_time.select("generate_nanostamp_slice" if nano else "generate_timestamp_slice")
         self._precise = nano
 
     def set_tzinfo(self, tzinfo: datetime.tzinfo | None = None) -> None:
@@ -592,23 +605,24 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self.refresh()
 
     # Nanostamps
-    def create_nanostamp_range(
+    def _generate_nanostamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
         step: int = 1,
         dtype: np.dtype | str | None = None,
     ) -> np.ndarray:
-        """Creates an array of nanosecond timestamps from range style input.
+        """Generates an array of nanosecond timestamps.
 
         Args:
-            start: The start index to get the data from.
-            stop: The stop index to get the data from.
-            step: The interval between data to get.
+            start: The start index of the slice to generate.
+            stop: The length of the slice to generate.
+            step: The interval of the slice to generate.
+            slice_: The slice to generate the data from.
             dtype: The dtype of the returned array.
 
         Returns:
-            The requested timestamps.
+            The requested nanosecond timestamps.
         """
         if not self.is_infinite:
             samples = self.get_length()
@@ -653,16 +667,77 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         else:
             return np.arange(start_adjusted, stop_adjusted, np.uint64(period_ns), dtype="u8")
 
-    def create_nanostamp_slice(self, slice_: slice) -> np.ndarray:
-        """Creates a range of nanosecond timestamps from a slice.
+    @singlekwargdispatch("start")
+    def generate_nanostamp_slice(
+        self,
+        start: int | Slice | None = None,
+        stop: int | None = None,
+        step: int = 1,
+        slice_: Slice | None = None,
+        dtype: np.dtype | str | None = None,
+    ) -> np.ndarray:
+        """Generates an array of nanosecond timestamps.
 
         Args:
-            slice_: The timestamp range to create.
+            start: Either the first super index of the slice or the slice itself to generate the data from.
+            stop: The length of the slice to generate.
+            step: The interval of the slice to generate.
+            slice_: The slice to generate the data from.
+            dtype: The dtype of the returned array.
+            
+        Returns:
+            All the slices of this proxy array.
+        """
+        if start is None and (slice_ is None or isinstance(slice_, Slice)):
+            return self._generate_nanostamp_slice(start=slice_.start, stop=slice_.stop, step=slice_.step, dtype=dtype)
+        else:
+            raise TypeError(f"A {type(item)} cannot be used to slice a {self.__class__}.")
+
+    @generate_nanostamp_slice.register(Slice)
+    def _generate_nanostamp_slice_slice(
+        self,
+        start: Slice,
+        stop: int | None = None,
+        step: int = 1,
+        slice_: Slice | None = None,
+        dtype: np.dtype | str | None = None,
+    ) -> np.ndarray:
+        """Generates an array of nanosecond timestamps.
+
+        Args:
+            start: The slice to generate the data from.
+            stop: The length of the slice to generate.
+            step: The interval of the slice to generate.
+            slice_: The slice to generate the data from.
+            dtype: The dtype of the returned array.
+            
+        Returns:
+            All the slices of this proxy array.
+        """
+        return self._generate_nanostamp_slice(start=start.start, stop=start.stop, step=start.step, dtype=dtype)
+
+    @generate_full_slices.register(int)
+    def _generate_full_slices_int(
+        self,
+        start: int,
+        stop: int | None = None,
+        step: int = 1,
+        slice_: Slice | None = None,
+        dtype: np.dtype | str | None = None,
+    ) -> tuple[Slice, ...]:
+        """Generates an array of nanosecond timestamps.
+
+        Args:
+            start: The start index of the slice to generate.
+            stop: The length of the slice to generate.
+            step: The interval of the slice to generate.
+            slice_: The slice to generate the data from.
+            dtype: The dtype of the returned array.
 
         Returns:
-            The requested data.
+            The requested nanosecond timestamps.
         """
-        return self.create_nanostamp_range(start=slice_.start, stop=slice_.stop, step=slice_.step)
+        return self._generate_nanostamp_slice(start=start, stop=stop, step=step, dtype=dtype)
 
     def get_nanostamps(self) -> np.ndarray:
         """Gets all the nanosecond timestamps of this proxy.
@@ -670,7 +745,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             A numpy array of the timestamps of this proxy.
         """
-        return self.create_nanostamp_range()
+        return self.generate_nanostamp_slice()
 
     def get_nanostamp(self, super_index: int) -> np.uint64:
         """Get a nanosecond timestamp from this proxy with an index.
@@ -681,36 +756,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             The requested nanosecond timestamp.
         """
-        return self.create_nanostamp_range(start=super_index, stop=super_index + 1)[0]
-
-    def get_nanostamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int = 1,
-        proxy: bool = False,
-    ) -> np.ndarray | BaseTimeProxy:
-        """Gets a range of nanosecond timestamps along an axis.
-
-        Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the timestamps of the range.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range.
-        """
-        ts = self.create_nanostamp_range(start=start, stop=stop, step=step)
-        if proxy:
-            return self.__class__(
-                start=ts[0],
-                end=ts[-1],
-                sample_rate=self._sample_rate,
-                precise=True,
-            )
-        else:
-            return ts
+        return self.generate_nanostamp_slice(start=super_index, stop=super_index + 1)[0]
 
     def fill_nanostamps_array(
         self,
@@ -728,72 +774,17 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             The original array but filled.
         """
-        data_array[array_slice] = self.create_nanostamp_slice(slice_=slice_)
+        data_array[array_slice] = self.generate_nanostamp_slice(slice_=slice_)
         return data_array
 
-    # Timestamps
-    def create_timestamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int = 1,
-        dtype: np.dtype | str | None = None,
-    ) -> np.ndarray:
-        """Creates an array of timestamps from range style input.
-
-        Args:
-            start: The start index to get the data from.
-            stop: The stop index to get the data from.
-            step: The interval between data to get.
-            dtype: The data type to generate.
-
-        Returns:
-            The requested timestamps.
-        """
-        if dtype is not None:
-            return (self.create_nanostamp_range(start=start, stop=stop, step=step) / 10**9).astype(dtype)
-        else:
-            return self.create_nanostamp_range(start=start, stop=stop, step=step) / 10**9
-
-    def create_timestamp_slice(self, slice_: slice, dtype: np.dtype | str | None = None) -> np.ndarray:
-        """Creates a range of timestamps from a slice.
-
-        Args:
-            slice_: The timestamp range to create.
-            dtype: The timestamp type to generate.
-
-        Returns:
-            The requested data.
-        """
-        return self.create_timestamp_range(start=slice_.start, stop=slice_.stop, step=slice_.step, dtype=dtype)
-
-    def get_timestamps(self) -> np.ndarray:
-        """Gets all the timestamps of this proxy.
-
-        Returns:
-            A numpy array of the timestamps of this proxy.
-        """
-        return self.create_timestamp_range()
-
-    def get_timestamp(self, super_index: int) -> float:
-        """Get a timestamp from this proxy with an index.
-
-        Args:
-            super_index: The index to get.
-
-        Returns:
-            The requested timestamp.
-        """
-        return self.create_timestamp_range(start=super_index, stop=super_index + 1)[0]
-
-    def get_timestamp_range(
+    def nanostamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
         step: int = 1,
         proxy: bool = False,
     ) -> np.ndarray | BaseTimeProxy:
-        """Gets a range of timestamps along an axis.
+        """Gets a slice of nanosecond timestamps.
 
         Args:
             start: The first super index of the range to get.
@@ -804,16 +795,61 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         Returns:
             The requested range.
         """
-        ts = self.create_timestamp_range(start=start, stop=stop, step=step)
+        ts = self.generate_nanostamp_slice(start=start, stop=stop, step=step)
         if proxy:
-            return self.__class__(
+            return self.create_return_proxy(
                 start=ts[0],
                 end=ts[-1],
-                sample_rate=self._sample_rate,
                 precise=True,
             )
         else:
             return ts
+
+    # Timestamps
+    def generate_timestamp_slice(
+        self,
+        start: int | Slice | None = None,
+        stop: int | None = None,
+        step: int = 1,
+        slice_: Slice | None = None,
+        dtype: np.dtype | str | None = None,
+    ) -> np.ndarray:
+        """Generates an array of nanosecond timestamps.
+
+        Args:
+            start: Either the first super index of the slice or the slice itself to generate the data from.
+            stop: The length of the slice to generate.
+            step: The interval of the slice to generate.
+            slice_: The slice to generate the data from.
+            dtype: The dtype of the returned array.
+
+        Returns:
+            All the slices of this proxy array.
+        """
+        ts = self.generate_nanostamp_slice(start=start, stop=stop, step=step, slice_=slice_) / 10**9
+        if dtype is not None:
+            return ts.astype(dtype)
+        else:
+            return ts
+
+    def get_timestamps(self) -> np.ndarray:
+        """Gets all the timestamps of this proxy.
+
+        Returns:
+            A numpy array of the timestamps of this proxy.
+        """
+        return self.generate_timestamp_slice()
+
+    def get_timestamp(self, super_index: int) -> float:
+        """Get a timestamp from this proxy with an index.
+
+        Args:
+            super_index: The index to get.
+
+        Returns:
+            The requested timestamp.
+        """
+        return self.generate_timestamp_slice(start=super_index, stop=super_index + 1)[0]
 
     def fill_timestamps_array(
         self,
@@ -834,6 +870,34 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         data_array[array_slice] = self.create_timestamp_slice(slice_=slice_)
         return data_array
 
+    def timestamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int = 1,
+        proxy: bool = False,
+    ) -> np.ndarray | BaseTimeProxy:
+        """Gets a slice of timestamps along an axis.
+
+        Args:
+            start: The first super index of the range to get.
+            stop: The length of the range to get.
+            step: The interval to get the timestamps of the range.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested range.
+        """
+        ts = self.generate_timestamp_slice(start=start, stop=stop, step=step)
+        if proxy:
+            return self.create_return_proxy(
+                start=ts[0],
+                end=ts[-1],
+                precise=True,
+            )
+        else:
+            return ts
+
     # Datetimes [Timestamp]
     def get_datetime(self, index: int) -> Timestamp:
         """A datetime from this proxy base on the index.
@@ -845,7 +909,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             All the times as a tuple of datetimes.
         """
         tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
-        return Timestamp.fromnanostamp(self.create_nanostamp_range(index, index + 1)[0], tz=tz)
+        return Timestamp.fromnanostamp(self.generate_nanostamp_slice(index, index + 1)[0], tz=tz)
 
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes as Timestamps of this proxy.
@@ -854,7 +918,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             All the times.
         """
         tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
-        return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.create_nanostamp_range())
+        return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.generate_nanostamp_slice())
 
     # Find
     def find_time_index(

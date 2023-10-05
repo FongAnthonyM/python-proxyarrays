@@ -552,7 +552,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             new_times = np.arange(start, end, self.sample_period)
             if new_size > 1:
                 times = self.time_axis[consecutive[0] : consecutive[-1] + 1]
-                data = self.get_range(consecutive[0], consecutive[-1] + 1)
+                data = self.slice(consecutive[0], consecutive[-1] + 1)
                 interpolator = interpolate.interp1d(times, data, interp_type, axis, fill_value=fill_value, **kwargs)
                 self.set_range(interpolator(new_times), start=discontinuity)
             else:
@@ -638,26 +638,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         """
         return self.time_axis.get_nanostamp(super_index)
 
-    def get_nanostamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool = True,
-    ) -> np.ndarray | BaseTimeProxy:
-        """Get a range of nanostamps with indices.
-
-        Args:
-            start: The start_nanostamp super index.
-            stop: The stop super index.
-            step: The interval between indices to get nanostamps.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range of nanostamps.
-        """
-        return self.time_axis.get_nanostamp_range(start, stop, step, proxy)
-
     def fill_nanostamps_array(
         self,
         data_array: np.ndarray,
@@ -675,6 +655,26 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             The original array but filled.
         """
         return self.time_axis.fill_nanostamps_array(data_array, array_slice, slice_)
+
+    def nanostamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool = True,
+    ) -> np.ndarray | BaseTimeProxy:
+        """Get a range of nanostamps with indices.
+
+        Args:
+            start: The start_nanostamp super index.
+            stop: The stop super index.
+            step: The interval between indices to get nanostamps.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested range of nanostamps.
+        """
+        return self.time_axis.nanostamp_slice(start, stop, step, proxy)
 
     # Get Timestamps
     def get_timestamps(self) -> np.ndarray | None:
@@ -696,26 +696,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         """
         return self.time_axis.get_timestamp(super_index)
 
-    def get_timestamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool = True,
-    ) -> np.ndarray | BaseTimeProxy:
-        """Get a range of timestamps with indices.
-
-        Args:
-            start: The start_timestamp super index.
-            stop: The stop super index.
-            step: The interval between indices to get timestamps.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range of timestamps.
-        """
-        return self.time_axis.get_timestamp_range(start, stop, step, proxy)
-
     def fill_timestamps_array(
         self,
         data_array: np.ndarray,
@@ -733,6 +713,26 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             The original array but filled.
         """
         return self.time_axis.fill_timestamps_array(data_array, array_slice, slice_)
+
+    def timestamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool = True,
+    ) -> np.ndarray | BaseTimeProxy:
+        """Get a range of timestamps with indices.
+
+        Args:
+            start: The start_timestamp super index.
+            stop: The stop super index.
+            step: The interval between indices to get timestamps.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested range of timestamps.
+        """
+        return self.time_axis.timestamp_slice(start, stop, step, proxy)
 
     # Datetimes [Timestamp]
     def get_datetime(self, index: int) -> Timestamp:
@@ -1086,6 +1086,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             The requested closest index and the value at that index.
         """
         return self.time_axis.find_day_index(timestamp=timestamp, approx=approx, tails=tails)
+
 
 
 # Assign Cyclic Definitions

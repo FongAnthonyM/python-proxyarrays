@@ -202,6 +202,26 @@ class BaseTimeProxy(BaseProxyArray):
         """Adjusts the data to make it continuous."""
         pass
 
+    # Proxy
+    @abstractmethod
+    def get_from_index(
+        self,
+        indices: Iterator | Iterable | int,
+        reverse: bool = False,
+        proxy: bool = True,
+    ) -> Any:
+        """Get an item recursively from within this proxy using indices.
+
+        Args:
+            indices: The indices used to get an item within this proxy.
+            reverse: Determines if the indices should be used in the reverse order.
+            proxy: Determines if the
+
+        Returns:
+            The item recursively from within this proxy.
+        """
+        pass
+
     # Get Nanostamps
     @abstractmethod
     def get_nanostamps(self) -> np.ndarray:
@@ -225,27 +245,6 @@ class BaseTimeProxy(BaseProxyArray):
         pass  # return self.time[super_index]
 
     @abstractmethod
-    def get_nanostamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool = True,
-    ) -> Union["BaseTimeProxy", np.ndarray]:
-        """Get a range of nanostamps with indices.
-
-        Args:
-            start: The start_nanostamp super index.
-            stop: The stop super index.
-            step: The interval between indices to get nanostamps.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range of nanostamps.
-        """
-        pass  # return self.times[slice(start_nanostamp, stop, step)]
-
-    @abstractmethod
     def fill_nanostamps_array(
         self,
         data_array: np.ndarray,
@@ -263,6 +262,27 @@ class BaseTimeProxy(BaseProxyArray):
             The original array but filled.
         """
         pass
+
+    @abstractmethod
+    def nanostamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool = True,
+    ) -> Union["BaseTimeProxy", np.ndarray]:
+        """Get a slice of nanostamps with indices.
+
+        Args:
+            start: The start super index.
+            stop: The stop super index.
+            step: The interval between indices to get nanostamps.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested range of nanostamps.
+        """
+        pass  # return self.times[slice(start_nanostamp, stop, step)]
 
     # Get Timestamps
     @abstractmethod
@@ -287,27 +307,6 @@ class BaseTimeProxy(BaseProxyArray):
         pass  # return self.time[super_index]
 
     @abstractmethod
-    def get_timestamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool = True,
-    ) -> Union["BaseTimeProxy", np.ndarray]:
-        """Get a range of timestamps with indices.
-
-        Args:
-            start: The start_timestamp super index.
-            stop: The stop super index.
-            step: The interval between indices to get timestamps.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range of timestamps.
-        """
-        pass  # return self.times[slice(start_timestamp, stop, step)]
-
-    @abstractmethod
     def fill_timestamps_array(
         self,
         data_array: np.ndarray,
@@ -325,6 +324,27 @@ class BaseTimeProxy(BaseProxyArray):
             The original array but filled.
         """
         pass
+
+    @abstractmethod
+    def timestamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool = True,
+    ) -> Union["BaseTimeProxy", np.ndarray]:
+        """Get a slice of timestamps with indices.
+
+        Args:
+            start: The start_timestamp super index.
+            stop: The stop super index.
+            step: The interval between indices to get timestamps.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested range of timestamps.
+        """
+        pass  # return self.times[slice(start_timestamp, stop, step)]
 
     # Datetimes [Timestamp]
     @abstractmethod
@@ -348,13 +368,13 @@ class BaseTimeProxy(BaseProxyArray):
         """
         pass
 
-    def get_datetime_range(
+    def datetime_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
         step: int | None = None,
     ) -> "BaseTimeProxy":
-        """Get a range of datetimes with indices.
+        """Get a slice of datetimes with indices.
 
         Args:
             start: The start index.
@@ -364,22 +384,9 @@ class BaseTimeProxy(BaseProxyArray):
         Returns:
             The requested range of datetimes.
         """
-        return self.get_nanostamp_range(start, stop, step, proxy=True)
+        return self.nanostamp_slice(start, stop, step, proxy=True)
 
     # Get Data
-    @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
-        """Gets a range of data as an array.
-
-        Args:
-            slices: The ranges to get the data from.
-            dtype: The dtype of array to return.
-
-        Returns:
-            The requested range as an array.
-        """
-        pass
-
     @abstractmethod
     def fill_slices_array(
         self,
@@ -400,27 +407,50 @@ class BaseTimeProxy(BaseProxyArray):
         pass
 
     @abstractmethod
-    def get_range(
+    def slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
+        """Gets a range of data as an array.
+
+        Args:
+            slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
+
+        Returns:
+            The requested range as an array.
+        """
+        pass
+
+    @abstractmethod
+    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> "BaseProxyArray":
+        """Get data as a new proxy using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested range as a proxy.
+        """
+        pass
+
+    @abstractmethod
+    def islices(
         self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
+        slices: Iterable[slice | int | None] | None = None,
+        islice: Slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> BaseProxyArray | np.ndarray:
-        """Gets a range of data along an axis.
+    ) -> Union["BaseProxyArray", np.ndarray]:
+        """Creates an iterator which iterates over slices along an axis.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
-            axis: The axis to get the data along.
+            slices: The ranges of the data to get.
+            islice: The range to data to iterate over.
+            axis: The axis to iterate along.
             dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
-        Returns:
-            The requested range.
+        Yields:
+            The requested slices.
         """
         pass
 
@@ -444,7 +474,7 @@ class BaseTimeProxy(BaseProxyArray):
         """
         pass
 
-    def find_nanostamp_range(
+    def find_nanostamp_slice(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
@@ -478,12 +508,12 @@ class BaseTimeProxy(BaseProxyArray):
             stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
 
         return FoundTimeRange(
-            self.get_nanostamp_range(start_index, stop_index, step, proxy=True),
+            self.nanostamp_slice(start_index, stop_index, step, proxy=True),
             start_index,
             stop_index,
         )
 
-    def find_timestamp_range(
+    def find_timestamp_slice(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
@@ -517,12 +547,12 @@ class BaseTimeProxy(BaseProxyArray):
             stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
 
         return FoundTimeRange(
-            self.get_timestamp_range(start_index, stop_index, step, proxy=True),
+            self.timestamp_slice(start_index, stop_index, step, proxy=True),
             start_index,
             stop_index,
         )
 
-    def find_datetime_range(
+    def find_datetime_slice(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
@@ -542,7 +572,7 @@ class BaseTimeProxy(BaseProxyArray):
         Returns:
             The datetime range on the axis and the start and stop indices.
         """
-        return self.find_nanostamp_range(start, stop, step, approx, tails)
+        return self.find_nanostamp_slice(start, stop, step, approx, tails)
 
     def find_time_nanoseconds(
         self,
@@ -576,13 +606,8 @@ class BaseTimeProxy(BaseProxyArray):
             else:
                 start = self.end_nanostamp + np.int64(stop)
 
-        return self.find_nanostamp_range(
-            self.start_nanotimestamp + start,
-            self.end_nanotimestamp + stop,
-            step,
-            approx,
-            tails,
-        )
+        return self.find_nanostamp_slice(self.start_nanotimestamp + start, self.end_nanotimestamp + stop, step, approx,
+                                         tails)
 
     def find_time_seconds(
         self,
@@ -616,7 +641,7 @@ class BaseTimeProxy(BaseProxyArray):
             else:
                 start = self.end_timestamp + stop
 
-        return self.find_timestamp_range(self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails)
+        return self.find_timestamp_slice(self.start_timestamp + start, self.end_timestamp + stop, step, approx, tails)
 
 
 class FoundTimeRange(NamedTuple):

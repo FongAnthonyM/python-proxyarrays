@@ -347,7 +347,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
-            The flat copy of this object.
+            The new proxy array.
         """
         if type_ is None or isinstance(type_, TimeProxy):
             kwargs = {"precise": self._precise, "tzinfo": self.tzinfo} | kwargs
@@ -700,6 +700,8 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         #     self.sort_proxies()
         #     self.refresh()
 
+    # Time
+
     # Get Nanostamps
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_nanostamps(self) -> np.ndarray | None:
@@ -737,48 +739,6 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         proxy_index, _, inner_index = self.find_inner_proxy_index(super_index=super_index)
         return self.proxies[proxy_index].get_nanostamp_from_index(super_index=inner_index)
 
-    def get_nanostamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool | None = None,
-    ) -> Union["BaseTimeProxy", np.ndarray]:
-        """Get a range of nanostamps with indices.
-
-        Args:
-            start: The start nanostamp super index.
-            stop: The stop super index.
-            step: The interval between indices to get nanostamps.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range of nanostamps.
-        """
-        # Create nan numpy array
-        start = 0 if start is None else start
-        stop = self.length if stop is None else stop
-        step = 1 if step is None else step
-        length = (stop - start) // step
-
-        nanostamps = nan_array(length, dtype="u8")
-
-        if nanostamps.shape[0] > 0:
-            ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
-        else:
-            ts = nanostamps
-
-        if (proxy is None and self.returns_proxy) or proxy:
-            return self.time_axis_type(
-                ts,
-                sample_rate=self.sample_rate_decimal,
-                precise=True,
-                tzinfo=self.tzinfo,
-                mode=self.mode,
-            )
-        else:
-            return ts
-
     def fill_nanostamps_array(
         self,
         data_array: np.ndarray,
@@ -797,7 +757,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_proxy_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
+        range_proxy_indices = self.find_inner_proxy_indices_slice(start=slice_.start, stop=slice_.stop)
 
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
@@ -845,6 +805,243 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         return data_array
 
+    def nanostamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool | None = None,
+    ) -> Union["BaseTimeProxy", np.ndarray]:
+        """Get a slice of nanostamps with indices.
+
+        Args:
+            start: The start nanostamp super index.
+            stop: The stop super index.
+            step: The interval between indices to get nanostamps.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested slice of nanostamps.
+        """
+        # Create nan numpy array
+        start = 0 if start is None else start
+        stop = self.length if stop is None else stop
+        step = 1 if step is None else step
+        length = (stop - start) // step
+
+        nanostamps = nan_array(length, dtype="u8")
+
+        if nanostamps.shape[0] > 0:
+            ts = self.fill_nanostamps_array(data_array=nanostamps, slice_=slice(start, stop, step))
+        else:
+            ts = nanostamps
+
+        if (proxy is None and self.returns_proxy) or proxy:
+            return self.time_axis_type(
+                ts,
+                sample_rate=self.sample_rate_decimal,
+                precise=True,
+                tzinfo=self.tzinfo,
+                mode=self.mode,
+            )
+        else:
+            return ts
+
+    # Nanostamps iterate slice
+    def nanostamps_islice_proxies(
+        self,
+        start_proxy,
+        stop_proxy,
+        inner_start,
+        inner_stop,
+        step: Decimal,
+        istep: Decimal,
+    ) -> BaseTimeProxy:
+        current_start = self.proxies[start_proxy].nanpstamps[inner_start]
+        current_stop = previous_stop = current_start + step
+        gap = self.create_return_proxy()
+        for proxy_index in range(start_proxy, stop_proxy):
+            proxy = self.proxies[proxy_index]
+            proxy_end = proxy.end_nanostamp
+
+            # Yield if break in data
+            if proxy.start_nanostamp > current_stop:
+                if len(gap.proxies) > 0:
+                    yield gap
+                    gap = self.create_return_proxy()
+                current_start = proxy.start_nanostamp + istep - ((proxy.start_nanostamp - current_start) % istep)
+                current_stop = current_start + step
+
+            # Fill gap
+            if len(gap.proxies) > 0 or (proxy_end - current_start) < step:
+                gap.proxies.append(proxy.find_nanostamp_slice(
+                    start=current_start,
+                    stop=current_stop,
+                    tails=tail,
+                    proxy=True,
+                ))
+                if gap.end_nanostamp >= current_stop:
+                    yield gap
+                    previous_stop = current_stop
+                    current_start = current_start + istep
+                    current_stop = current_start + step
+                if proxy_end <= previous_stop:
+                    continue
+
+            # Iterate inner proxy
+            iter_start, _ = proxy.find_time_index(current_start, tails=True)
+            iter_ = proxy.nanostamps_islice(
+                start=iter_start,
+                stop=None,
+                step=step,
+                istep=istep,
+                proxy=proxy,
+            )
+
+            for item in iter_:
+                yield item
+
+            # Get adjusted end
+            adjusted_stop, adjusted_stop_time = proxy.adjust_slice_stop_decimal_time(
+                start=iter_start,
+                stop=None,
+                step=step,
+                istep=istep,
+            )
+
+            # Ending Gap
+            if adjusted_stop != len(proxy):
+                # Fill from first
+                gap.proxies.append(proxy.nanostamp_slice(start=adjusted_stop, proxy=True))
+
+            # Setup for next loop
+            previous_stop = current_stop
+            current_start = adjusted_stop_time
+            current_stop = current_start + step
+
+        # Last proxy iteration
+        proxy = self.proxies[stop_proxy]
+        proxy_end = proxy.end_nanostamp
+
+        # Yield if break in data
+        if proxy.start_nanostamp > current_stop:
+            if len(gap.proxies) > 0:
+                yield gap
+                gap = self.create_return_proxy()
+            current_start = proxy.start_nanostamp + istep - ((proxy.start_nanostamp - current_start) % istep)
+            current_stop = current_start + step
+
+        # Fill gap
+        if len(gap.proxies) > 0 or (proxy_end - current_start) < step:
+            gap.proxies.append(proxy.find_nanostamp_slice(
+                start=current_start,
+                stop=current_stop,
+                tails=tail,
+                proxy=True,
+            ))
+            if gap.end_nanostamp >= current_stop:
+                yield gap
+                previous_stop = current_stop
+                current_start = current_start + istep
+
+        if proxy_end > previous_stop:
+            # Iterate inner proxy
+            iter_start, _ = proxy.find_time_index(current_start, tails=True)
+            iter_ = proxy.nanostamps_islice(
+                start=iter_start,
+                stop=inner_stop,
+                step=step,
+                istep=istep,
+            )
+
+            for item in iter_:
+                yield item
+
+
+    def nanostamps_islice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        istep: int = 1,
+        proxy: bool | None = None,
+    ) -> Union["ContainerProxyArray", np.ndarray]:
+        """Creates an iterator which yields nanostamps.
+
+        Args:
+            start: The start time to begin slicing.
+            stop: The last time to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The requested range.
+        """
+        range_proxy_indices = self.find_inner_proxy_indices_slice(start=start, stop=stop)
+
+        start_proxy = range_proxy_indices.start.index
+        stop_proxy = range_proxy_indices.stop.index
+        inner_start = range_proxy_indices.start.inner_index
+        inner_stop = range_proxy_indices.stop.inner_index
+
+        # Get Data
+        if start_proxy == stop_proxy:
+            return self.proxies[start_proxy].nanostamps_islice(
+                start=inner_start,
+                stop=inner_stop,
+                step=step,
+                istep=istep,
+                proxy=proxy,
+            )
+        else:
+            return self.nanostamps_islice_proxies(
+                start_proxy=start_proxy,
+                stop_proxy=stop_proxy,
+                inner_start=inner_start,
+                inner_stop=inner_stop,
+                step=step,
+                istep=istep,
+                proxy=proxy,
+            )
+
+    def nanostamps_islice_time(
+        self,
+        start: datetime.datetime | float | int | np.dtype | None = None,
+        stop: datetime.datetime | float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        istep: int = 1,
+        approx: bool = True,
+        tails: bool = False,
+        proxy: bool | None = None,
+    ) -> Union["ContainerProxyArray", np.ndarray]:
+        """Creates an iterator which yields nanostamps.
+
+        Args:
+            start: The start time to begin slicing.
+            stop: The last time to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The requested range.
+        """
+        if start is None:
+            start_index = 0
+        else:
+            start_index, _ = self.find_time_index(start, approx=approx, tails=tails)
+
+        if stop is None:
+            stop_index = self.get_length()
+        else:
+            stop_index = self.find_time_index(timestamp=stop, approx=approx, tails=tails)[0] + 1
+
+        return self.nanostamps_islice(start=start_index, stop=stop_index, step=step, istep=istep, proxy=proxy)
+
+
     # Get Timestamps
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
@@ -882,44 +1079,6 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         proxy_index, _, inner_index = self.find_inner_proxy_index(super_index)
         return self.proxies[proxy_index].get_timestamp_from_index(inner_index)
 
-    def get_timestamp_range(
-        self,
-        start: int | None = None,
-        stop: int | None = None,
-        step: int | None = None,
-        proxy: bool | None = None,
-    ) -> np.ndarray | BaseTimeProxy:
-        """Gets a range of timestamps along an axis.
-
-        Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the timestamps of the range.
-            proxy: Determines if the returned object will be a proxy.
-
-        Returns:
-            The requested range.
-        """
-        # Create nan numpy array
-        start = 0 if start is None else start
-        stop = self.length if stop is None else stop
-        step = 1 if step is None else step
-        length = (stop - start) // step
-
-        timestamps = nan_array(length)
-
-        ts = self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
-        if (proxy is None and self.returns_proxy) or proxy:
-            return self.time_axis_type(
-                ts,
-                sample_rate=self.sample_rate_decimal,
-                precise=False,
-                tzinfo=self.tzinfo,
-                mode=self.mode,
-            )
-        else:
-            return ts
-
     def fill_timestamps_array(
         self,
         data_array: np.ndarray,
@@ -938,7 +1097,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         """
         # Get indices range
         da_shape = data_array.shape
-        range_proxy_indices = self.parse_range_super_indices(start=slice_.start, stop=slice_.stop)
+        range_proxy_indices = self.find_inner_proxy_indices_slice(start=slice_.start, stop=slice_.stop)
 
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
@@ -985,6 +1144,44 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             self.proxies[stop_proxy].fill_timestamps_array(**fill_kwargs)
 
         return data_array
+
+    def timestamp_slice(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        proxy: bool | None = None,
+    ) -> np.ndarray | BaseTimeProxy:
+        """Gets a slice of timestamps along an axis.
+
+        Args:
+            start: The first super index of the slice to get.
+            stop: The length of the slice to get.
+            step: The interval to get the timestamps of the slice.
+            proxy: Determines if the returned object will be a proxy.
+
+        Returns:
+            The requested slice.
+        """
+        # Create nan numpy array
+        start = 0 if start is None else start
+        stop = self.length if stop is None else stop
+        step = 1 if step is None else step
+        length = (stop - start) // step
+
+        timestamps = nan_array(length)
+
+        ts = self.fill_timestamps_array(data_array=timestamps, slice_=slice(start, stop, step))
+        if (proxy is None and self.returns_proxy) or proxy:
+            return self.time_axis_type(
+                ts,
+                sample_rate=self.sample_rate_decimal,
+                precise=False,
+                tzinfo=self.tzinfo,
+                mode=self.mode,
+            )
+        else:
+            return ts
 
     # Datetimes [Timestamp]
     def get_datetime(self, index: int) -> Timestamp:

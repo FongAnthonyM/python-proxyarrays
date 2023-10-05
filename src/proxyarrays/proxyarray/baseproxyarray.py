@@ -27,6 +27,10 @@ import numpy as np
 
 
 # Definitions #
+# Typing Aliases #
+Slice = slice
+
+
 # Classes #
 # Todo: Create a file/edit mode base object to inherit from
 class BaseProxyArray(CallableMultiplexObject, CachingObject):
@@ -106,6 +110,30 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         new_copy.returns_proxy = self.returns_proxy
         new_copy.mode = self.mode
         return new_copy
+
+    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> "BaseProxyArray":
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        return type_(**({"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs))
+
+    def create_return_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a new proxy array with the same attributes as this proxy, default type is the return proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        return self.create_proxy(type_=self.return_proxy_type if type_ is None else type_, **kwargs)
 
     # Editable Copy Methods
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
@@ -218,7 +246,44 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         """Changes the shape of the proxy without changing its data."""
         pass
 
-    # Get proxy within by Index
+    def shape_from_slices(self, slices: Iterable[Slice | int | None] | None = None) -> tuple[int, ...]:
+        """Creates a shape from given slices for this object.
+
+        Args:
+            slices: The slices to generate the data from.
+
+        Returns:
+            The requested shape.
+        """
+        if slices is None:
+            shape = self.shape
+        else:
+            shape = []
+            for index, slice_ in enumerate(slices):
+                if isinstance(slice_, int):
+                    shape.append(1)
+                else:
+                    start = 0 if slice_.start is None else slice_.start
+                    stop = self.shape[index] if slice_.stop is None else slice_.stop
+                    step = 1 if slice_.step is None else slice_.step
+
+                    if start < 0:
+                        start = self.shape[index] + start
+
+                    if stop < 0:
+                        stop = self.shape[index] + stop
+
+                    if start < 0 or start > self.shape[index] or stop < 0 or stop > self.shape[index]:
+                        raise IndexError("index is out of range")
+
+                    size = stop - start
+                    if size < 0:
+                        raise IndexError("start index is greater than stop")
+                    shape.append(size // step)
+
+        return tuple(shape)
+
+    # Proxy
     @abstractmethod
     def get_from_index(
         self,
@@ -238,26 +303,95 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         """
         pass
 
-    # Get Ranges of Data with Slices
-    @abstractmethod
-    def get_slices_array(self, slices: Iterable[slice | int | None] | None = None, dtype: Any = None) -> np.ndarray:
-        """Gets a range of data as an array.
+    # Data Slicing
+    @singlekwargdispatch("start")
+    def generate_full_slices(
+        self,
+        start: int | Slice | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        slice_: Slice | None = None,
+        axis: int | None = None,
+    ) -> tuple[Slice, ...]:
+        """Generates a tuple of slices based on the shape of this proxy array and sets a given slice based on axis.
+
+            Args:
+                start: Either first index of the slice or the slice itself to set.
+                stop: The length of the slice to set.
+                step: The interval of the slice to set.
+                slice_: The slice to set.
+                axis: The axis set the slice.
+
+            Returns:
+                All the slices of this proxy array.
+            """
+        if start is None and (slice_ is None or isinstance(slice_, Slice)):
+            return self._generate_full_slices_slice(start=slice_)
+        else:
+            raise TypeError(f"A {type(item)} cannot be used to slice a {self.__class__}.")
+
+    @generate_full_slices.register(Slice)
+    def _generate_full_slices_slice(
+        self,
+        start: Slice,
+        stop: int | None = None,
+        step: int | None = None,
+        slice_: Slice | None = None,
+        axis: int | None = None,
+    ) -> tuple[Slice, ...]:
+        """Generates a tuple of slices based on the shape of this proxy array and sets a given slice based on axis.
 
         Args:
-            slices: The ranges to get the data from.
-            dtype: The dtype of array to return.
+            start: The slice to set.
+            stop: The length of the slice to set.
+            step: The interval of the slice to set.
+            slice_: The slice to set.
+            axis: The axis set the slice.
 
         Returns:
-            The requested range as an array.
+            All the slices of this proxy array.
         """
-        pass
+        if axis is None:
+            axis = self.axis
+
+        slices = [Slice(None)] * self.max_ndim
+        slices[axis] = start
+        return tuple(slices)
+
+    @generate_full_slices.register(int)
+    def _generate_full_slices_int(
+        self,
+        start: int,
+        stop: int | None = None,
+        step: int | None = None,
+        slice_: Slice | None = None,
+        axis: int | None = None,
+    ) -> tuple[Slice, ...]:
+        """Generates a tuple of slices based on the shape of this proxy array and sets a given slice based on axis.
+
+        Args:
+            start: The first index of the slice to set.
+            stop: The length of the slice to set.
+            step: The interval of the slice to set.
+            slice_: The slice to set.
+            axis: The axis set the slice.
+
+        Returns:
+            All the slices of this proxy array.
+        """
+        if axis is None:
+            axis = self.axis
+
+        slices = [Slice(None)] * self.max_ndim
+        slices[axis] = Slice(start=start, stop=stop, step=step)
+        return tuple(slices)
 
     @abstractmethod
     def fill_slices_array(
         self,
         data_array: np.ndarray,
-        array_slices: Iterable[slice] | None = None,
-        slices: Iterable[slice | int | None] | None = None,
+        array_slices: Iterable[Slice] | None = None,
+        slices: Iterable[Slice | int | None] | None = None,
     ) -> np.ndarray:
         """Fills a given array with values from the contained proxies/objects.
 
@@ -272,26 +406,103 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         pass
 
     @abstractmethod
-    def get_range(
+    def slices_array(
+        self, slices: Iterable[Slice | int | None] | None = None,
+        dtype: Any = None,
+    ) -> np.ndarray:
+        """Get data as an array using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+            dtype: The dtype of array to return.
+
+        Returns:
+            The requested range as an array.
+        """
+        pass
+
+    @abstractmethod
+    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> "BaseProxyArray":
+        """Get data as a new proxy using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+
+        Returns:
+            The requested range as a proxy.
+        """
+        pass
+
+    def slices(
         self,
-        start: int | None = None,
+        slices: Iterable[Slice | int | None] | None = None,
+        dtype: Any = None,
+        proxy: bool | None = None,
+    ) -> Union["BaseProxyArray", np.ndarray]:
+        """Get data using slices to determine the data slice.
+
+        Args:
+            slices: The slices along the axes to get data from.
+            dtype: The dtype of array to return.
+            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
+
+        Returns:
+            The requested slice as an array or proxy.
+        """
+        if (proxy is None and self.returns_proxy) or proxy:
+            return self.slices_proxy(slices=slices)
+        else:
+            return self.slices_array(slices=slices, dtype=dtype)
+
+    def slice(
+        self,
+        start: int | Slice | None = None,
         stop: int | None = None,
         step: int | None = None,
+        slice_: Slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
     ) -> Union["BaseProxyArray", np.ndarray]:
-        """Gets a range of data along an axis.
+        """Gets a slice of data along an axis.
 
         Args:
-            start: The first super index of the range to get.
-            stop: The length of the range to get.
-            step: The interval to get the data of the range.
+            start: Either the first super index of the slice or the slice itself to get the data from.
+            stop: The length of the slice to get.
+            step: The interval to get the data of the slice.
+            slice_: The slice to get the data from.
             axis: The axis to get the data along.
             dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
 
         Returns:
-            The requested range.
+            The requested slice as an array or proxy.
+        """
+        return self.slices(
+            slices=self.generate_full_slices(start=start, stop=stop, step=step, axis=axis),
+            dtype=dtype,
+            proxy=proxy,
+        )
+
+    @abstractmethod
+    def islices(
+        self,
+        slices: Iterable[slice | int | None] | None = None,
+        islice: Slice | None = None,
+        axis: int | None = None,
+        dtype: Any = None,
+        proxy: bool | None = None,
+    ) -> Union["BaseProxyArray", np.ndarray]:
+        """Creates an iterator which iterates over slices along an axis.
+
+        Args:
+            slices: The ranges of the data to get.
+            islice: The range to data to iterate over.
+            axis: The axis to iterate along.
+            dtype: The dtype of array to return.
+            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
+
+        Yields:
+            The requested slices.
         """
         pass

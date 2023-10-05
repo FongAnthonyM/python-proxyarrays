@@ -521,7 +521,26 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """
         return self.nanostamps[super_index]
 
-    def get_nanostamp_range(
+    def fill_nanostamps_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with nanostamps from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        data_array[array_slice] = self.nanostamps[slice_]
+        return data_array
+
+    def nanostamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -550,25 +569,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             )
         else:
             return ts
-
-    def fill_nanostamps_array(
-        self,
-        data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with nanostamps from the contained proxies/objects.
-
-        Args:
-            data_array: The numpy array to fill.
-            array_slice: The slices to fill within the data_array.
-            slice_: The slices to get the data from.
-
-        Returns:
-            The original array but filled.
-        """
-        data_array[array_slice] = self.nanostamps[slice_]
-        return data_array
 
     # Get Day Nanostamps
     @timed_keyless_cache(call_method="clearing_call", local=True)
@@ -614,7 +614,26 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """
         return self.timestamps[super_index]
 
-    def get_timestamp_range(
+    def fill_timestamps_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with timestamps from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        data_array[array_slice] = self.timestamps[slice_]
+        return data_array
+
+    def timestamp_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -644,25 +663,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         else:
             return ts
 
-    def fill_timestamps_array(
-        self,
-        data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with timestamps from the contained proxies/objects.
-
-        Args:
-            data_array: The numpy array to fill.
-            array_slice: The slices to fill within the data_array.
-            slice_: The slices to get the data from.
-
-        Returns:
-            The original array but filled.
-        """
-        data_array[array_slice] = self.timestamps[slice_]
-        return data_array
-
     # Datetimes [Timestamp]
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_datetimes(self) -> tuple[Timestamp]:
@@ -686,7 +686,27 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         return Timestamp.fromnanostamp(self.nanostamps[index], tz=tz)
 
-    def get_datetime_range(
+    def fill_datetime_array(
+        self,
+        data_array: np.ndarray,
+        array_slice: slice | None = None,
+        slice_: slice | None = None,
+    ) -> np.ndarray:
+        """Fills a given array with nanostamps from the contained proxies/objects.
+
+        Args:
+            data_array: The numpy array to fill.
+            array_slice: The slices to fill within the data_array.
+            slice_: The slices to get the data from.
+
+        Returns:
+            The original array but filled.
+        """
+        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
+        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.nanostamps[slice_])
+        return data_array
+
+    def datetime_slice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -716,26 +736,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         else:
             tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
             return tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in ns)
-
-    def fill_datetime_array(
-        self,
-        data_array: np.ndarray,
-        array_slice: slice | None = None,
-        slice_: slice | None = None,
-    ) -> np.ndarray:
-        """Fills a given array with nanostamps from the contained proxies/objects.
-
-        Args:
-            data_array: The numpy array to fill.
-            array_slice: The slices to fill within the data_array.
-            slice_: The slices to get the data from.
-
-        Returns:
-            The original array but filled.
-        """
-        tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
-        data_array[array_slice] = tuple(Timestamp.fromnanostamp(ts, tz=tz) for ts in self.nanostamps[slice_])
-        return data_array
 
     # For Other Data
     def shift_to_nearest_sample_end(self, data: np.ndarray, tolerance: float | None = None) -> np.ndarray:
@@ -1035,3 +1035,127 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
                 return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=tz))
 
         raise IndexError("Timestamp out of range.")
+
+    # Iterate Slices
+    def adjust_slice_stop_decimal_time(self, start, stop, step: Decimal, istep: Decimal) -> tuple[int, np.uint64]:
+        start_time = self.nanostamps[start]
+        stop_time = self.nanostamps[stop - 1]
+
+        remain = self.length - stop
+        adjust = 1 if remain != 0 and remain <= step else 0
+
+        adjusted = (int((start_time - stop_time) // istep) - adjust) * step + start_time
+        index = np.searchsorted(self.nanostamps, adjusted)[0]
+        return index, self.nanostamps[index]
+
+    def index_islices_deltatime(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        istep: int = 1,
+    ) -> np.ndarray:
+        """Creates an iterator which yields index slices for nanostamp slices.
+
+        Args:
+            start: The start index to begin slicing.
+            stop: The last index to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+
+        Returns:
+            The requested range.
+        """
+        # Start/Stop
+        start_index = 0 if start is None else start
+        stop_index = self.get_length() if stop is None else stop
+        start_time = self.nanostamps[start_index]
+        end_time = self.nanostamps[stop_index - 1]
+
+        # Step
+        if step is None:
+            return (slice(start_index, stop_index),)
+        elif isinstance(step, datetime.timedelta):
+            step = step.total_seconds()
+
+        step_decimal = Decimal(step) * 10 ** 9
+        istep_decimal = step_decimal * istep
+
+        # Adjust
+        remain = self.length - stop_index
+        adjust = 1 if remain != 0 and remain <= step_decimal else 0
+
+        # Create Slices
+        starts = np.array(range(0, int((end_time - start_time) // istep_decimal) - adjust)) * step_decimal + start_time
+        ends = start + step_decimal
+        slices = np.zeros((len(starts), 2))
+        slices[:, 0] = np.searchsorted(self.nanostamps, starts)
+        slices[:, 1] = np.searchsorted(self.nanostamps, ends)
+        return (slice(s, e) for s, e in slices)
+
+    def index_islices_time(
+        self,
+        start: datetime.datetime | float | int | np.dtype | None = None,
+        stop: datetime.datetime | float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        istep: int = 1,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> np.ndarray:
+        """Creates an iterator which yields index slices for nanostamp slices.
+
+        Args:
+            start: The start time to begin slicing.
+            stop: The last time to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The requested range.
+        """
+        if start is not None:
+            start = self.find_time_index(timestamp=start, approx=approx, tails=tails)[0]
+
+        if stop is not None:
+            stop = self.find_time_index(timestamp=stop, approx=approx, tails=tails)[0]
+
+        return self.index_islices_deltatime(start=start, stop=stop, step=step, istep=istep)
+
+    def nanostamps_islices_time(
+        self,
+        start: datetime.datetime | float | int | np.dtype | None = None,
+        stop: datetime.datetime | float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        istep: int = 1,
+        approx: bool = True,
+        tails: bool = False,
+        proxy: bool | None = None,
+    ) -> Union["ContainerProxyArray", np.ndarray]:
+        """Creates an iterator which yields nanostamps.
+
+        Args:
+            start: The start time to begin slicing.
+            stop: The last time to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The requested range.
+        """
+        inner_slices = self.index_islices_time(
+            start=start,
+            stop=stop,
+            step=step,
+            istep=istep,
+            approx=approx,
+            tails=tails,
+        )
+
+        if proxy:
+            return (self.nanostamps[s] for s in inner_slices)
+        else:
+            return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
