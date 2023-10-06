@@ -14,7 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 import datetime
 from decimal import Decimal
 from typing import Any, NamedTuple, Union
@@ -25,6 +25,7 @@ from dspobjects.time import Timestamp
 import numpy as np
 
 # Local Packages #
+from ..proxyarray.baseproxyarray import Slice
 from ..proxyarray import BaseProxyArray
 
 

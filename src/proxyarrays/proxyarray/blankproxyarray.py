@@ -14,7 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from collections.abc import Iterable, Sized
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 # Third-Party Packages #
 from baseobjects.functions import FunctionRegister, CallableMultiplexer
@@ -23,6 +23,7 @@ import numpy as np
 
 # Local Packages #
 from .baseproxyarray import BaseProxyArray, Slice
+from .containerproxyarray import ContainerProxyArray
 
 
 # Definitions #
@@ -49,6 +50,7 @@ class BlankProxyArray(BaseProxyArray):
         **kwargs: Keyword arguments for inheritance.
     """
 
+    default_return_proxy_type: type = None
     generation_functions: FunctionRegister = FunctionRegister({
         "nans": nan_array,
         "empty": np.empty,
@@ -229,7 +231,7 @@ class BlankProxyArray(BaseProxyArray):
             return self.generate_slice(item)
         elif isinstance(item, (tuple, list)):
             return self.generate_slices(item)
-        elif isinstance(item, ...):
+        elif item is Ellipsis:
             return self.generate_slice()
 
     # Shape
@@ -420,14 +422,14 @@ class BlankProxyArray(BaseProxyArray):
         full_slices = slices + [slice(None)] * (self.max_ndim - len(slices))
         axis_slice = slices[axis]
         slice_size = axis_slice.stop - axis_slice.start
-        if iter_slice is None:
+        if islice is None:
             outer_start = 0
             outer_stop = length
             outer_step = slice_size
         else:
-            outer_start = 0 if iter_slice.start is None else iter_slice.start
-            outer_stop = length if iter_slice.stop is None else iter_slice.stop
-            outer_step = slice_size * (1 if iter_slice.step is None else iter_slice.step)
+            outer_start = 0 if islice.start is None else islice.start
+            outer_stop = length if islice.stop is None else islice.stop
+            outer_step = slice_size * (1 if islice.step is None else islice.step)
 
         # Adjust outer stop if there is not enough data to fill last slice
         last_index = (((length - outer_start)//outer_step) * outer_step + outer_start)
@@ -436,3 +438,6 @@ class BlankProxyArray(BaseProxyArray):
         for inner_start in range(outer_start, adjusted_stop, outer_step):
             full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_slice.step)
             yield self.generate_slices(slices=full_slices, dtype=dtype)
+
+
+BlankProxyArray.default_return_proxy_type = BlankProxyArray

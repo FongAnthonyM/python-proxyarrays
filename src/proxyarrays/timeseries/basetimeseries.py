@@ -14,10 +14,10 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 import datetime
 from decimal import Decimal
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Union
 
 # Third-Party Packages #
 from dspobjects.dataclasses import IndexDateTime, FoundData
@@ -409,7 +409,7 @@ class BaseTimeSeries(BaseTimeProxy):
         pass
 
     @abstractmethod
-    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> "BaseProxyArray":
+    def slices_proxy(self, slices: Iterable[slice] | None = None) -> "BaseProxyArray":
         """Get data as a new proxy using slices to determine the data slice.
 
         Args:
@@ -424,7 +424,7 @@ class BaseTimeSeries(BaseTimeProxy):
     def islices(
         self,
         slices: Iterable[slice | int | None] | None = None,
-        islice: Slice | None = None,
+        islice: slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,

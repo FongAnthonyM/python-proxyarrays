@@ -20,6 +20,7 @@ import math
 from typing import Any, Callable
 
 # Third-Party Packages #
+from baseobjects import singlekwargdispatch
 from baseobjects.typing import AnyCallable
 from baseobjects.functions import MethodMultiplexer
 from dspobjects.dataclasses import IndexDateTime
@@ -27,6 +28,7 @@ from dspobjects.time import Timestamp, NANO_SCALE, nanostamp
 import numpy as np
 
 # Local Packages #
+from ..proxyarray.baseproxyarray import Slice
 from ..proxyarray import BlankProxyArray
 from .basetimeproxy import BaseTimeProxy
 
@@ -361,7 +363,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         new_copy.is_infinite = self.is_infinite
         return new_copy
 
-    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> BaseProxyArray:
+    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
         """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
@@ -689,9 +691,17 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             All the slices of this proxy array.
         """
         if start is None and (slice_ is None or isinstance(slice_, Slice)):
-            return self._generate_nanostamp_slice(start=slice_.start, stop=slice_.stop, step=slice_.step, dtype=dtype)
+            if slice_ is None:
+                return self._generate_nanostamp_slice(dtype=dtype)
+            else:
+                return self._generate_nanostamp_slice(
+                    start=slice_.start,
+                    stop=slice_.stop,
+                    step=slice_.step,
+                    dtype=dtype,
+                )
         else:
-            raise TypeError(f"A {type(item)} cannot be used to slice a {self.__class__}.")
+            raise TypeError(f"A {type(start)} cannot be used to slice a {self.__class__}.")
 
     @generate_nanostamp_slice.register(Slice)
     def _generate_nanostamp_slice_slice(
@@ -716,7 +726,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         """
         return self._generate_nanostamp_slice(start=start.start, stop=start.stop, step=start.step, dtype=dtype)
 
-    @generate_full_slices.register(int)
+    @generate_nanostamp_slice.register(int)
     def _generate_full_slices_int(
         self,
         start: int,

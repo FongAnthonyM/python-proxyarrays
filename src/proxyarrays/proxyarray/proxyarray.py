@@ -16,7 +16,7 @@ __email__ = __email__
 from collections.abc import Iterable, Iterator
 from bisect import bisect_right
 from itertools import chain
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Union
 from warnings import warn
 
 # Third-Party Packages #
@@ -94,7 +94,6 @@ class ProxyArray(BaseProxyArray):
 
         # Assign Classes #
         self.combine_type: type = self.default_combine_type
-        self.return_proxy_type: type = self.default_return_proxy_type
 
         # Containers #
         self.proxies: list = []

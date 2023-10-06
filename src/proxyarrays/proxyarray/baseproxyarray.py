@@ -44,6 +44,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         *args: Arguments for inheritance.
         **kwargs: Keyword arguments for inheritance.
     """
+    default_return_proxy_type: type | None = None
 
     # Magic Methods #
     # Construction/Destruction
@@ -53,6 +54,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         self.returns_proxy: bool = True
         self.mode: str = "a"
 
+        self.return_proxy_type: type = self.default_return_proxy_type
         self.spawn_editable: MethodMultiplexer = MethodMultiplexer(instance=self, select="_default_spawn_editable")
 
         # Parent Attributes #
@@ -111,7 +113,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         new_copy.mode = self.mode
         return new_copy
 
-    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> "BaseProxyArray":
+    def create_proxy(self, type_: type["BaseProxyArray"], **kwargs: Any) -> "BaseProxyArray":
         """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
@@ -123,7 +125,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         """
         return type_(**({"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs))
 
-    def create_return_proxy(self, type_: type[BaseProxyArray] | None = None, **kwargs: Any) -> "BaseProxyArray":
+    def create_return_proxy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
         """Creates a new proxy array with the same attributes as this proxy, default type is the return proxy.
 
         Args:
@@ -326,9 +328,12 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
                 All the slices of this proxy array.
             """
         if start is None and (slice_ is None or isinstance(slice_, Slice)):
-            return self._generate_full_slices_slice(start=slice_)
+            if slice_ is None:
+                return self._generate_full_slices_slice(start=slice(None))
+            else:
+                return self._generate_full_slices_slice(start=slice_)
         else:
-            raise TypeError(f"A {type(item)} cannot be used to slice a {self.__class__}.")
+            raise TypeError(f"A {type(start)} cannot be used to slice a {self.__class__}.")
 
     @generate_full_slices.register(Slice)
     def _generate_full_slices_slice(
@@ -354,7 +359,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.max_ndim
+        slices = [Slice(None)] * len(self.shape)
         slices[axis] = start
         return tuple(slices)
 
@@ -382,7 +387,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.max_ndim
+        slices = [Slice(None)] * len(self.shape)
         slices[axis] = Slice(start=start, stop=stop, step=step)
         return tuple(slices)
 
@@ -487,7 +492,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
     @abstractmethod
     def islices(
         self,
-        slices: Iterable[slice | int | None] | None = None,
+        slices: Iterable[Slice | int | None] | None = None,
         islice: Slice | None = None,
         axis: int | None = None,
         dtype: Any = None,
