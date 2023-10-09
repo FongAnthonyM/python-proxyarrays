@@ -876,7 +876,7 @@ class ProxyArray(BaseProxyArray):
         if step is None:
             step = 1
 
-        stop = ((stop - start) // step) * step + start
+        stop = ((stop - start) // step) * step + start - 1
 
         if start == 0:
             start_index = ProxyIndex(0, 0, 0)

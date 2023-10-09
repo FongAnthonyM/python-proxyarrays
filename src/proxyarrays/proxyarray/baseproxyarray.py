@@ -44,6 +44,8 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         *args: Arguments for inheritance.
         **kwargs: Keyword arguments for inheritance.
     """
+    default_return_proxy_node: type | None = None
+    default_return_proxy_leaf: type | None = None
     default_return_proxy_type: type | None = None
 
     # Magic Methods #
@@ -54,6 +56,8 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         self.returns_proxy: bool = True
         self.mode: str = "a"
 
+        self.return_proxy_node: type = self.default_return_proxy_node
+        self.return_proxy_leaf: type = self.default_return_proxy_leaf
         self.return_proxy_type: type = self.default_return_proxy_type
         self.spawn_editable: MethodMultiplexer = MethodMultiplexer(instance=self, select="_default_spawn_editable")
 
@@ -124,6 +128,30 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
             The new proxy array.
         """
         return type_(**({"axis": self.axis, "mode": self.mode, "update": self._is_updating} | kwargs))
+
+    def create_return_proxy_node(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a new proxy array with the same attributes as this proxy, default type is the return proxy node.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        return self.create_proxy(type_=self.return_proxy_node if type_ is None else type_, **kwargs)
+
+    def create_return_proxy_leaf(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a new proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        return self.create_proxy(type_=self.return_proxy_leaf if type_ is None else type_, **kwargs)
 
     def create_return_proxy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
         """Creates a new proxy array with the same attributes as this proxy, default type is the return proxy.

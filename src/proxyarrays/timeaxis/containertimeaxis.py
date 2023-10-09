@@ -1048,12 +1048,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         index = np.searchsorted(self.nanostamps, adjusted)[0]
         return index, self.nanostamps[index]
 
-    def index_islices_deltatime(
+    def index_islice_deltatime(
         self,
         start: int | None = None,
         stop: int | None = None,
-        step: int | float | datetime.timedelta | None = None,
-        istep: int = 1,
+        step: int | float | datetime.timedelta | Decimal | None = None,
+        istep: int | Decimal = 1,
     ) -> np.ndarray:
         """Creates an iterator which yields index slices for nanostamp slices.
 
@@ -1078,20 +1078,52 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         elif isinstance(step, datetime.timedelta):
             step = step.total_seconds()
 
-        step_decimal = Decimal(step) * 10 ** 9
-        istep_decimal = step_decimal * istep
-
-        # Adjust
-        remain = self.length - stop_index
-        adjust = 1 if remain != 0 and remain <= step_decimal else 0
+        if not isinstance(step, Decimal):
+            step = Decimal(step) * 10 ** 9
+        if not isinstance(istep, Decimal):
+            istep = step * istep
 
         # Create Slices
-        starts = np.array(range(0, int((end_time - start_time) // istep_decimal) - adjust)) * step_decimal + start_time
-        ends = start + step_decimal
+        starts = np.array(range(0, int((end_time - start_time) // istep) + 1)) * step + start_time
+        ends = starts + step
         slices = np.zeros((len(starts), 2))
         slices[:, 0] = np.searchsorted(self.nanostamps, starts)
         slices[:, 1] = np.searchsorted(self.nanostamps, ends)
-        return (slice(s, e) for s, e in slices)
+        return (slice(int(s), int(e)) for s, e in slices)
+
+    def nanostamps_islice(
+        self,
+        start: int | None,
+        stop: int | None = None,
+        step: int | float | datetime.timedelta | Decimal | None = None,
+        istep: int | Decimal = 1,
+        proxy: bool | None = None,
+    ) -> Union["ContainerProxyArray", np.ndarray]:
+        """Creates an iterator which yields nanostamps.
+
+        Args:
+            start: The start time to begin slicing.
+            stop: The last time to end slicing.
+            step: The time within each slice.
+            istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The requested range.
+        """
+        inner_slices = self.index_islice_deltatime(
+            start=start,
+            stop=stop,
+            step=step,
+            istep=istep,
+        )
+
+        if proxy:
+            return (self.nanostamps[s] for s in inner_slices)
+        else:
+            return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
+
 
     def index_islices_time(
         self,
@@ -1123,7 +1155,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
 
         return self.index_islices_deltatime(start=start, stop=stop, step=step, istep=istep)
 
-    def nanostamps_islices_time(
+    def nanostamps_islice_time(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,

@@ -33,4 +33,5 @@ class TimeAxisProxy(TimeProxy, BaseTimeAxis):
 
 
 # Assign Cyclic Definitions
+TimeAxisProxy.default_return_proxy_node = TimeAxisProxy
 TimeAxisProxy.default_return_proxy_type = TimeAxisProxy

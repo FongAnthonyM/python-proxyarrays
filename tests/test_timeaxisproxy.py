@@ -43,11 +43,33 @@ class TestXLTEKStudy(ClassTest):
     def test_nanostamp_islice_time(self):
         sample_rate = 1024.0
         time_axis = TimeAxisProxy()
-        for s in range(0, 100, 10):
-            dat = BlankTimeAxis(start=s, sample_rate=1024.0, shape=(10000,), precise=True)[...]
+        generator = BlankTimeAxis(start=0, sample_rate=1024.0, shape=(100000,), precise=True)
+        lengths = (
+            int(sample_rate * 10),
+            int(sample_rate * 1),
+            int(sample_rate * 0.5),
+            int(sample_rate * 0.5),
+            int(sample_rate * 10),
+            int(sample_rate * 10),
+        )
+        gaps = (
+            0,
+            0,
+            0,
+            0,
+            0,
+            10000,
+        )
+        end = 0
+
+        for length, gap in zip(lengths, gaps):
+            start = end + gap
+            end = start + length
+            dat = generator[start:end]
             time_axis.proxies.append(ContainerTimeAxis(data=dat, sample_rate=sample_rate, precise=True))
 
-        print()
+        iter_ = time_axis.nanostamps_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
+        chunks = [c for c in iter_]
 
 
 # Main #
