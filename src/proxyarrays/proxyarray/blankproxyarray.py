@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable, Sized
+from collections.abc import Iterable, Sized, Generator
 from typing import Any, Callable, Union
 
 # Third-Party Packages #
@@ -193,7 +193,7 @@ class BlankProxyArray(BaseProxyArray):
         Returns:
             The new proxy array.
         """
-        if isinstance(type_, BlankProxyArray):
+        if issubclass(type_, BlankProxyArray):
             call_multiplexer = self.generate_data
             kwargs = {"shape": self.shape, "fill_kwargs": self.fill_kwargs} | kwargs
             new_proxy = super().create_proxy(type_=type_, **kwargs)
@@ -256,7 +256,7 @@ class BlankProxyArray(BaseProxyArray):
 
     # Proxies
     def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
-        """Creates an iterator which iterates over the innermost proxies.
+        """Creates a generator which iterates over the innermost proxies.
 
         Returns:
             The innermost proxies.
@@ -401,12 +401,12 @@ class BlankProxyArray(BaseProxyArray):
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> Union["BlankProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+    ) -> Generator[Union["ContainerProxyArray", np.ndarray], None, None]:
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.
-            iter_slice: The ranges to data to iterate over.
+            islice: The ranges to data to iterate over.
             axis: The axis to iterate along.
             dtype: The dtype of array to return.
             proxy: Determines if returned object is a proxy or an array, default is this object's setting.
@@ -419,9 +419,17 @@ class BlankProxyArray(BaseProxyArray):
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.max_ndim - len(slices))
+        full_slices = slices + [slice(None)] * (len(self.shape) - len(slices))
         axis_slice = slices[axis]
-        slice_size = axis_slice.stop - axis_slice.start
+        if isinstance(axis_slice, int):
+            slice_size = axis_slice
+            axis_step = None
+        else:
+            axis_start = 0 if axis_slice.start is None else axis_slice.start
+            axis_stop = self.length if axis_slice.stop is None else axis_slice.stop
+            axis_step = axis_slice.step
+            slice_size = axis_stop - axis_start
+
         if islice is None:
             outer_start = 0
             outer_stop = length
@@ -436,8 +444,9 @@ class BlankProxyArray(BaseProxyArray):
         adjusted_stop = last_index if (length - last_index) < slice_size else outer_stop
 
         for inner_start in range(outer_start, adjusted_stop, outer_step):
-            full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_slice.step)
+            full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_step)
             yield self.generate_slices(slices=full_slices, dtype=dtype)
 
 
+# Assign Cyclic Definitions
 BlankProxyArray.default_return_proxy_type = BlankProxyArray

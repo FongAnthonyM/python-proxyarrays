@@ -14,7 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Generator
 from typing import Any, Union
 
 # Third-Party Packages #
@@ -525,8 +525,8 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> Union["BaseProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+    ) -> Generator[Union["BaseProxyArray", np.ndarray], None, None]:
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.

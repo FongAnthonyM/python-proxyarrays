@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable
+from collections.abc import Iterable, Generator
 from typing import Any, Union
 
 # Third-Party Packages #
@@ -328,7 +328,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             self.append_proxy(proxy, axis=axis, truncate=truncate)  # Can be rewritten to be faster.
 
     def flat_iterator(self) -> Iterable[BaseProxyArray, ...]:
-        """Creates an iterator which iterates over the innermost proxies.
+        """Creates a generator which iterates over the innermost proxies.
 
         Returns:
             The innermost proxies.
@@ -426,8 +426,8 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> Union["ContainerProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+    ) -> Generator[Union["ContainerProxyArray", np.ndarray], None, None]:
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.
@@ -444,9 +444,17 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.max_ndim - len(slices))
+        full_slices = slices + [slice(None)] * (len(self.shape) - len(slices))
         axis_slice = slices[axis]
-        slice_size = axis_slice.stop - axis_slice.start
+        if isinstance(axis_slice, int):
+            slice_size = axis_slice
+            axis_step = None
+        else:
+            axis_start = 0 if axis_slice.start is None else axis_slice.start
+            axis_stop = self.length if axis_slice.stop is None else axis_slice.stop
+            axis_step = axis_slice.step
+            slice_size = axis_stop - axis_start
+
         if islice is None:
             outer_start = 0
             outer_stop = length
@@ -461,7 +469,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         adjusted_stop = last_index if (length - last_index) < slice_size else outer_stop
 
         for inner_start in range(outer_start, adjusted_stop, outer_step):
-            full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_slice.step)
+            full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_step)
             yield self.slices(slices=full_slices, dtype=dtype, proxy=proxy)
 
     def set_range(

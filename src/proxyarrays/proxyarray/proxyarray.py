@@ -13,9 +13,10 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Generator
 from bisect import bisect_right
 from itertools import chain
+from math import ceil
 from typing import Any, NamedTuple, Union
 from warnings import warn
 
@@ -693,7 +694,7 @@ class ProxyArray(BaseProxyArray):
         return self.combine_type(proxies=self.proxies[start:stop:step])
 
     def flat_iterator(self) -> Iterator[BaseProxyArray, ...]:
-        """Creates an iterator which iterates over the innermost proxies.
+        """Creates a generator which iterates over the innermost proxies.
 
         Returns:
             The innermost proxies.
@@ -1018,8 +1019,8 @@ class ProxyArray(BaseProxyArray):
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> Union["ContainerProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+    ) -> Generator[Union["ContainerProxyArray", np.ndarray], None, None]:
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.
@@ -1037,7 +1038,14 @@ class ProxyArray(BaseProxyArray):
         length = len(self)
         slices = list(slices)
         axis_slice = slices[self.axis]
-        slice_size = axis_slice.stop - axis_slice.start
+        if isinstance(axis_slice, int):
+            slice_size = axis_slice
+            axis_step = None
+        else:
+            axis_start = 0 if axis_slice.start is None else axis_slice.start
+            axis_stop = self.length if axis_slice.stop is None else axis_slice.stop
+            axis_step = axis_slice.step
+            slice_size = axis_stop - axis_start
 
         # Get shape of slices
         full_slices = slices + [Slice(None)] * (self.max_ndim - len(slices))
@@ -1047,7 +1055,7 @@ class ProxyArray(BaseProxyArray):
                 start = 0 if slice_.start is None else slice_.start
                 stop = self.max_shape[i] if slice_.stop is None else slice_.stop
                 step = 1 if slice_.step is None else slice_.step
-                s_shape[i] = int(stop - start) // step
+                s_shape[i] = int(stop - start)
             else:
                 s_shape[i] = 1
 
@@ -1063,7 +1071,7 @@ class ProxyArray(BaseProxyArray):
 
         # Adjust outer stop if there is not enough data to fill last slice
         last_index = (((length - outer_start) // outer_step) * outer_step + outer_start)
-        adjusted_stop = last_index if (length - last_index) > axis_slice.step else outer_stop
+        adjusted_stop = last_index if (length - last_index) > slice_size else outer_stop
 
         # Get indices range
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=outer_start, stop=adjusted_stop)
@@ -1075,6 +1083,7 @@ class ProxyArray(BaseProxyArray):
 
         # Iterate over data
         if start_proxy == stop_proxy:
+            # If all data is in a proxy, call its islice.
             iter_ = self.proxies[start_proxy].islices(
                 slices=slices,
                 islice=Slice(inner_start, inner_stop, islice.step),
@@ -1088,6 +1097,8 @@ class ProxyArray(BaseProxyArray):
             iter_start = inner_start
             fill_array_slices = [Slice(None)] * len(s_shape)
             fill_slices = slices.copy()
+            gap_data = None
+            gap_offset = 0
             for proxy_index in range(start_proxy, stop_proxy):
                 proxy_length = self.lengths[proxy_index]
                 # Adjust inner iterator stop if there is not enough data to fill last slice
@@ -1095,10 +1106,28 @@ class ProxyArray(BaseProxyArray):
                 remainder = proxy_length - last_proxy_index
                 adjusted_iter_stop = last_proxy_index if remainder < slice_size else proxy_length
 
+                # Handle Gap data
+                if gap_data is not None:
+                    gap_fill = min(gap_offset + proxy_length, slice_size)
+                    fill_array_slices[axis] = Slice(gap_offset, gap_fill)
+                    fill_slices[axis] = Slice(0, gap_fill - gap_offset)
+                    self.proxies[proxy_index].fill_slices_array(
+                        data_array=gap_data,
+                        array_slices=fill_array_slices,
+                        slices=fill_slices,
+                    )
+                    if gap_fill == slice_size:
+                        yield self.create_return_proxy_node(data=gap_data[::axis_step]) if proxy else gap_data
+                        gap_data = None
+                        gap_offset = 0
+                    else:
+                        gap_offset = gap_fill
+                        continue
+
                 # Iterate inner proxy
-                iter_ = self.proxies[proxy_index].iter_slices(
+                iter_ = self.proxies[proxy_index].islices(
                     slices=slices,
-                    iter_slice=Slice(iter_start, adjusted_iter_stop, islice.step),
+                    islice=Slice(iter_start, adjusted_iter_stop, islice.step),
                     dtype=dtype,
                     proxy=proxy,
                 )
@@ -1108,25 +1137,16 @@ class ProxyArray(BaseProxyArray):
                 # Yield gap data
                 if remainder != 0 and remainder < slice_size:
                     # Create Array
-                    data = np.empty(shape=s_shape, dtype=dtype)
+                    gap_data = np.empty(shape=s_shape, dtype=dtype)
 
-                    # Fill from first
                     fill_array_slices[axis] = Slice(None, remainder)
-                    fill_slices[axis] = Slice(adjusted_stop, None, axis_slice.step)
+                    fill_slices[axis] = Slice(adjusted_iter_stop, None)
                     self.proxies[proxy_index].fill_slices_array(
-                        data_array=data,
+                        data_array=gap_data,
                         array_slices=fill_array_slices,
                         slices=fill_slices,
                     )
-
-                    # Fill from second
-                    fill_array_slices[axis] = Slice(slice_size - remainder, None)
-                    fill_slices[axis] = Slice(0, offset, axis_slice.step)
-                    self.proxies[proxy_index + 1].fill_slices_array(
-                        data_array=data,
-                        array_slices=fill_array_slices,
-                        slices=fill_slices,
-                    )
+                    gap_offset = remainder
 
                 # Setup next loop
                 iter_start = 0 if remainder == 0 else outer_step - remainder
@@ -1137,15 +1157,31 @@ class ProxyArray(BaseProxyArray):
             last_proxy_index = (((inner_stop - iter_start) // outer_step) * outer_step + iter_start)
             adjusted_iter_stop = last_proxy_index if (proxy_length - last_proxy_index) < slice_size else proxy_length
 
+            # Handle Gap data
+            if gap_data is not None:
+                gap_fill = min(gap_offset + proxy_length, slice_size)
+                fill_array_slices[axis] = Slice(gap_offset, gap_fill)
+                fill_slices[axis] = Slice(0, gap_fill - gap_offset)
+                self.proxies[proxy_index].fill_slices_array(
+                    data_array=gap_data,
+                    array_slices=fill_array_slices,
+                    slices=fill_slices,
+                )
+                if gap_fill == slice_size:
+                    yield self.create_return_proxy_node(data=gap_data[::axis_step]) if proxy else gap_data
+                    gap_data = None
+                    gap_offset = 0
+
             # Iterate inner proxy
-            iter_ = self.proxies[stop_proxy].islices(
-                slices=slices,
-                islice=Slice(iter_start, adjusted_iter_stop, islice.step),
-                dtype=dtype,
-                proxy=proxy,
-            )
-            for item in iter_:
-                yield item
+            if gap_offset == 0:
+                iter_ = self.proxies[stop_proxy].islices(
+                    slices=slices,
+                    islice=Slice(iter_start, adjusted_iter_stop, islice.step),
+                    dtype=dtype,
+                    proxy=proxy,
+                )
+                for item in iter_:
+                    yield item
 
     # Get proxy based on Index
     def get_proxy(self, index: int, proxy: bool | None = None) -> BaseProxyArray | np.ndarray:

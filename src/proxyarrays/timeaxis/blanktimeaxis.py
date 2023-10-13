@@ -22,12 +22,15 @@ import numpy as np
 # Local Packages #
 from ..timeproxy import BlankTimeProxy
 from .basetimeaxis import BaseTimeAxis
+from .containertimeaxis import ContainerTimeAxis
 
 
 # Definitions #
 # Classes #
 class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
     """A proxy for generating time axis information."""
+    default_return_proxy_node = ContainerTimeAxis
+    default_return_proxy_type = ContainerTimeAxis
 
     # Instance Methods #
     # Create Data

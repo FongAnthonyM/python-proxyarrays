@@ -345,7 +345,7 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
     # Get Timestamps
     @abstractmethod
     def get_datetime(self, index: int) -> Timestamp:
-        """A datetime from this proxy base on the index.
+        """A datetime from this proxy based on the index.
 
         Args:
             index: The index of the datetime to get.
@@ -419,7 +419,7 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
     # Datetimes [Timestamp]
     @abstractmethod
     def get_datetime(self, index: int) -> Timestamp:
-        """A datetime from this proxy base on the index.
+        """A datetime from this proxy based on the index.
 
         Args:
             index: The index of the datetime to get.
@@ -492,7 +492,7 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         dtype: Any = None,
         proxy: bool | None = None,
     ) -> Union["BaseProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.
@@ -506,7 +506,7 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
         """
         pass
 
-    # Find Index
+    # Find Time Index
     @abstractmethod
     def find_time_index(
         self,
@@ -523,5 +523,28 @@ class BaseDirectoryTimeSeries(BaseTimeSeries):
 
         Returns:
             The requested closest index and the value at that index.
+        """
+        pass
+
+    @abstractmethod
+    def find_time_index_slice(
+        self,
+        start: datetime.datetime | float | int | np.dtype | None = None,
+        stop: datetime.datetime | float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> tuple[IndexDateTime, IndexDateTime, int | float | datetime.timedelta | None]:
+        """Finds the indices for a slice inbetween two times, can give approximate values.
+
+        Args:
+            start: The first time to find for the slice.
+            stop: The last time to find for the slice.
+            step: The step between elements in the slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The slice indices.
         """
         pass

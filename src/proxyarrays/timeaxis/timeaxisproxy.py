@@ -28,6 +28,7 @@ from .containertimeaxis import ContainerTimeAxis
 class TimeAxisProxy(TimeProxy, BaseTimeAxis):
     """A TimeProxy that has been expanded to be a time axis."""
 
+    default_return_proxy_leaf = ContainerTimeAxis
     default_fill_type = BlankTimeAxis
     time_axis_type = ContainerTimeAxis
 

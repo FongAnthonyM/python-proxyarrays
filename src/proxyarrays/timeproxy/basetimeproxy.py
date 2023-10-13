@@ -441,7 +441,7 @@ class BaseTimeProxy(BaseProxyArray):
         dtype: Any = None,
         proxy: bool | None = None,
     ) -> Union["BaseProxyArray", np.ndarray]:
-        """Creates an iterator which iterates over slices along an axis.
+        """Creates a generator which iterates over slices along an axis.
 
         Args:
             slices: The ranges of the data to get.
@@ -455,7 +455,7 @@ class BaseTimeProxy(BaseProxyArray):
         """
         pass
 
-    # Find TimeProxy
+    # Find Time Index
     @abstractmethod
     def find_time_index(
         self,
@@ -472,6 +472,29 @@ class BaseTimeProxy(BaseProxyArray):
 
         Returns:
             The requested closest index and the value at that index.
+        """
+        pass
+
+    @abstractmethod
+    def find_time_index_slice(
+        self,
+        start: datetime.datetime | float | int | np.dtype | None = None,
+        stop: datetime.datetime | float | int | np.dtype | None = None,
+        step: int | float | datetime.timedelta | None = None,
+        approx: bool = True,
+        tails: bool = False,
+    ) -> tuple[IndexDateTime, IndexDateTime, int | float | datetime.timedelta | None]:
+        """Finds the indices for a slice inbetween two times, can give approximate values.
+
+        Args:
+            start: The first time to find for the slice.
+            stop: The last time to find for the slice.
+            step: The step between elements in the slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
+
+        Returns:
+            The slice indices.
         """
         pass
 
@@ -498,20 +521,12 @@ class BaseTimeProxy(BaseProxyArray):
         if isinstance(step, datetime.timedelta):
             step = step.total_seconds()
 
-        if start is None:
-            start_index = 0
-        else:
-            start_index, _ = self.find_time_index(timestamp=start, approx=approx, tails=tails)
-
-        if stop is None:
-            stop_index = self.get_length()
-        else:
-            stop_index, _ = self.find_time_index(timestamp=stop, approx=approx, tails=tails)
+        start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=tails)
 
         return FoundTimeRange(
-            self.nanostamp_slice(start_index, stop_index, step, proxy=True),
-            start_index,
-            stop_index,
+            self.nanostamp_slice(start_index[0], stop_index[0], step, proxy=True),
+            start_index[0],
+            stop_index[0],
         )
 
     def find_timestamp_slice(
