@@ -408,16 +408,41 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         else:
             return self.data[slices].astype(dtype)
 
-    def slices_proxy(self, slices: Iterable[Slice] | None = None) -> BaseProxyArray:
+    def slices_proxy(self, slices: Iterable[Slice] | None = None, dtype: Any = None) -> BaseProxyArray:
         """Get data as a new proxy using slices to determine the data slice.
 
         Args:
             slices: The ranges to get the data from.
+            dtype: The data type to make the returned data
 
         Returns:
             The requested slice as a proxy.
         """
-        return self.create_return_proxy(data=self.data[tuple(slices)])
+        if dtype is None:
+            return self.create_return_proxy(data=self.data[tuple(slices)])
+        else:
+            return self.create_return_proxy(data=self.data[tuple(slices)].astype(dtype))
+
+    def slices(
+        self,
+        slices: Iterable[Slice | int | None] | None = None,
+        dtype: Any = None,
+        proxy: bool | None = None,
+    ) -> Union["BaseProxyArray", np.ndarray]:
+        """Get data using slices to determine the data slice.
+
+        Args:
+            slices: The slices along the axes to get data from.
+            dtype: The dtype of array to return.
+            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
+
+        Returns:
+            The requested slice as an array or proxy.
+        """
+        if (proxy is None and self.returns_proxy) or proxy:
+            return self.slices_proxy(slices=slices, dtype=dtype)
+        else:
+            return self.slices_array(slices=slices, dtype=dtype)
 
     def islices(
         self,
