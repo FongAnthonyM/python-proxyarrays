@@ -416,7 +416,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
             axis = self.axis
 
         slices = [Slice(None)] * len(self.shape)
-        slices[axis] = Slice(start=start, stop=stop, step=step)
+        slices[axis] = Slice(start, stop, step)
         return tuple(slices)
 
     @abstractmethod

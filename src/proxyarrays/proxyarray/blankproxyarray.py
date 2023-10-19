@@ -198,6 +198,7 @@ class BlankProxyArray(BaseProxyArray):
             kwargs = {"shape": self.shape, "fill_kwargs": self.fill_kwargs} | kwargs
             new_proxy = super().create_proxy(type_=type_, **kwargs)
             new_proxy.generate_data.add_select_function(name=call_multiplexer.selected, func=call_multiplexer.__func__)
+            return new_proxy
         else:
             return super().create_proxy(type_=type_, **kwargs)
 

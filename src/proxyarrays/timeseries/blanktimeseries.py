@@ -34,6 +34,7 @@ class BlankTimeSeries(BlankTimeProxy, BaseTimeSeries):
     This proxy does not store a blank array, rather it generates an array whenever data would be accessed.
     """
 
+    default_return_proxy_leaf = ContainerTimeSeries
     time_series_type = ContainerTimeSeries
 
     # Data iterate slice
@@ -89,3 +90,7 @@ class BlankTimeSeries(BlankTimeProxy, BaseTimeSeries):
         )
 
         return (self.slice(s.start, s.stop, proxy=True) for s in inner_slices)  # need to fix
+
+
+# Assign Cyclic Definitions
+BlankTimeProxy.default_return_proxy_type = BlankTimeProxy

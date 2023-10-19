@@ -16,7 +16,7 @@ __email__ = __email__
 from collections.abc import Iterable, Iterator, Generator
 from bisect import bisect_right
 from itertools import chain
-from math import ceil
+from math import ceil, floor
 from typing import Any, NamedTuple, Union
 from warnings import warn
 
@@ -877,13 +877,21 @@ class ProxyArray(BaseProxyArray):
         if step is None:
             step = 1
 
-        stop = ((stop - start) // step) * step + start - 1
+        stop = floor((stop - start) / step) * step + start
 
-        if start == 0:
+        if start == 0 and stop == 0:
             start_index = ProxyIndex(0, 0, 0)
-            stop_index = self.find_inner_proxy_index(stop)
+            stop_index = ProxyIndex(0, 0, 0)
+        elif start == 0:
+            start_index = ProxyIndex(0, 0, 0)
+            stop_index = self.find_inner_proxy_index(stop - 1)
+            stop_index = ProxyIndex(stop_index[0], stop_index[1], stop_index[2] + 1)
+        elif stop == 0:
+            start_index = self.find_inner_proxy_index(start)
+            stop_index = ProxyIndex(0, 0, 0)
         else:
-            start_index, stop_index = self.find_inner_proxy_indices([start, stop])
+            start_index, stop_index = self.find_inner_proxy_indices([start, stop - 1])
+            stop_index = ProxyIndex(stop_index[0], stop_index[1], stop_index[2] + 1)
 
         return SliceIndices(start_index, stop_index)
 
@@ -1036,12 +1044,13 @@ class ProxyArray(BaseProxyArray):
             axis = self.axis
 
         length = len(self)
-        slices = list(slices)
-        axis_slice = slices[self.axis]
-        if isinstance(axis_slice, int):
-            slice_size = axis_slice
+        if isinstance(slices, int):
+            slice_size = slices
+            slices = [slice(None, slice_size)]
             axis_step = None
         else:
+            slices = list(slices)
+            axis_slice = slices[self.axis]
             axis_start = 0 if axis_slice.start is None else axis_slice.start
             axis_stop = self.length if axis_slice.stop is None else axis_slice.stop
             axis_step = axis_slice.step
@@ -1054,7 +1063,6 @@ class ProxyArray(BaseProxyArray):
             if slice_ is not None:
                 start = 0 if slice_.start is None else slice_.start
                 stop = self.max_shape[i] if slice_.stop is None else slice_.stop
-                step = 1 if slice_.step is None else slice_.step
                 s_shape[i] = int(stop - start)
             else:
                 s_shape[i] = 1

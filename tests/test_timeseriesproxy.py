@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 
 # Local Packages #
-from src.proxyarrays import TimeSeriesProxy, ContainerTimeSeries, BlankTimeAxis, ContainerTimeAxis
+from src.proxyarrays import TimeSeriesProxy, ContainerTimeSeries, BlankTimeSeries, BlankTimeAxis, ContainerTimeAxis
 
 
 # Definitions #
@@ -81,20 +81,29 @@ class TestTimeSeriesProxy(ClassTest):
         step = int(sample_rate)
 
         n_slices = (len(time_series) - start) // step
-        step_shape = (step,)
+        step_shape = (step, channels)
 
-        iter_ = time_series.islices((slice(None, step),), slice(start, None))
+        iter_ = time_series.islices(step, slice(start, None))
         chunks = [(c.shape == step_shape) for c in iter_]
         assert all(chunks)
         assert len(chunks) == n_slices
 
-    def test_nanostamp_islice_time(self):
+    def test_find_data_islice_time(self):
         sample_rate = 1024.0
-        time_series = self.create_time_series(sample_rate)
+        channels = 50
+        time_series = self.create_time_series(sample_rate, channels)
 
-        iter_ = time_series.nanostamps_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
+        time_series.insert_missing(fill_method="full", fill_kwargs={"fill_value": 10})
+
+        start = int(1 * sample_rate)
+        step = int(sample_rate)
+        # n_slices = (len(time_series) - start) // step
+        step_shape = (step, channels)
+
+        iter_ = time_series.find_data_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
         chunks = [c for c in iter_]
-        print(chunks)
+        # assert all(((c.shape == step_shape) for c in chunks))
+        # assert len(chunks) == n_slices
 
 
 # Main #

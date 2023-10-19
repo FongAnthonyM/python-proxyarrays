@@ -81,7 +81,7 @@ class TestTimeAxisProxy(ClassTest):
         sample_rate = 1024.0
         time_axis = self.create_time_axis(sample_rate)
 
-        iter_ = time_axis.nanostamps_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
+        iter_ = time_axis.nanostamp_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
         chunks = [c for c in iter_]
         print(chunks)
 

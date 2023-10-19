@@ -848,7 +848,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             return ts
 
     # Nanostamps iterate slice
-    def nanostamps_islice_proxy(
+    def nanostamp_islice_proxy(
         self,
         start_proxy: int,
         stop_proxy: int,
@@ -910,7 +910,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                     tails=True,
                 )
 
-                if len(p) > 0:
+                if p is not None and len(p) > 0:
                     gap.proxies.append(p)
 
                 if proxy_end <= current_stop:
@@ -924,12 +924,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                     current_stop = current_start + step
 
             # Iterate over inner proxy
-            iter_ = proxy.nanostamps_islice_time(
-                start=np.uint64(current_start),
-                stop=None,
-                step=step,
-                istep=istep,
-            )
+            iter_ = proxy.nanostamp_islice_time(start=np.uint64(current_start), stop=None, step=step, istep=istep)
 
             try:
                 new = next(iter_)
@@ -972,7 +967,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             tails=True,
         )
 
-        if len(p) > 0:
+        if p is not None and len(p) > 0:
             gap.proxies.append(p)
 
         # Yield completed gap data
@@ -983,17 +978,13 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         # Iterate over inner proxy
         if proxy_end > current_stop:
-            iter_ = proxy.nanostamps_islice_time(
-                start=np.uint64(current_start),
-                stop=nanostamp(stop_time),
-                step=step,
-                istep=istep,
-            )
+            iter_ = proxy.nanostamp_islice_time(start=np.uint64(current_start), stop=nanostamp(stop_time), step=step,
+                                                istep=istep)
 
             for item in iter_:
                 yield item
 
-    def nanostamps_islice(
+    def nanostamp_islice(
         self,
         start: int | None = None,
         stop: int | None = None,
@@ -1031,23 +1022,13 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         # Get Data
         if start_proxy == stop_proxy:
-            return self.proxies[start_proxy].nanostamps_islice_time(
-                start=start_time,
-                stop=stop_time,
-                step=step,
-                istep=istep,
-            )
+            return self.proxies[start_proxy].nanostamp_islice_time(start=start_time, stop=stop_time, step=step,
+                                                                   istep=istep)
         else:
-            return self.nanostamps_islice_proxy(
-                start_proxy=start_proxy,
-                stop_proxy=stop_proxy,
-                start_time=start,
-                stop_time=stop,
-                step=step,
-                istep=istep,
-            )
+            return self.nanostamp_islice_proxy(start_proxy=start_proxy, stop_proxy=stop_proxy, start_time=start,
+                                               stop_time=stop, step=step, istep=istep)
 
-    def nanostamps_islice_time(
+    def nanostamp_islice_time(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
@@ -1089,22 +1070,10 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         # Get Data
         if start_proxy == stop_proxy:
-            return self.proxies[start_proxy].nanostamps_islice_time(
-                start=start,
-                stop=stop,
-                step=step,
-                istep=istep,
-                approx=approx,
-            )
+            return self.proxies[start_proxy].nanostamp_islice_time(start=start, stop=stop, step=step, istep=istep)
         else:
-            return self.nanostamps_islice_proxy(
-                start_proxy=start_proxy,
-                stop_proxy=stop_proxy,
-                start_time=start,
-                stop_time=stop,
-                step=step,
-                istep=istep,
-            )
+            return self.nanostamp_islice_proxy(start_proxy=start_proxy, stop_proxy=stop_proxy, start_time=start,
+                                               stop_time=stop, step=step, istep=istep)
 
     # Get Timestamps
     @timed_keyless_cache(call_method="clearing_call", local=True)

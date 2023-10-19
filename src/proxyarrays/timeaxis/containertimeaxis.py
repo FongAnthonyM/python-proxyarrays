@@ -188,7 +188,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """The start datetime of this proxy."""
         tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[0], tz=tz) if nanostamps is not None else None
+        return Timestamp.fromnanostamp(nanostamps[0], tz=tz) if nanostamps is not None and any(nanostamps) else None
 
     @property
     def start_date(self) -> datetime.date | None:
@@ -213,7 +213,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """The end datetime of this proxy."""
         tz = datetime.timezone.utc if self.tzinfo is None else self.tzinfo
         nanostamps = self.nanostamps
-        return Timestamp.fromnanostamp(nanostamps[-1], tz=tz) if nanostamps is not None else None
+        return Timestamp.fromnanostamp(nanostamps[-1], tz=tz) if nanostamps is not None and any(nanostamps) else None
 
     @property
     def end_date(self) -> datetime.date | None:
@@ -667,7 +667,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         else:
             return ts
 
-    def nanostamps_islice(
+    def nanostamp_islice(
         self,
         start: int | None,
         stop: int | None = None,
@@ -693,7 +693,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         )
         return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
 
-    def nanostamps_islice_time(
+    def nanostamp_islice_time(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,

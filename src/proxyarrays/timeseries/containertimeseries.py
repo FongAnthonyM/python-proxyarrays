@@ -138,6 +138,15 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         self.time_axis.set_precision(nano=value)
 
     @property
+    def tzinfo(self) -> datetime.tzinfo | None:
+        """The time zone information of this time series."""
+        return self.time_axis.tzinfo
+
+    @tzinfo.setter
+    def tzinfo(self, value: datetime.tzinfo | None) -> None:
+        self.time_axis.set_tzinfo(value)
+
+    @property
     def nanostamps(self) -> np.ndarray | None:
         """The nanosecond timestamps of this proxy."""
         return self.get_nanostamps()
@@ -717,7 +726,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         """
         return self.time_axis.nanostamp_slice(start, stop, step, proxy)
 
-    def nanostamps_islice(
+    def nanostamp_islice(
         self,
         start: int | None,
         stop: int | None = None,
@@ -737,7 +746,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         """
         return self.time_axis.nanostamp_islice(start=start, stop=stop, step=step, istep=istep)
 
-    def nanostamps_islice_time(
+    def nanostamp_islice_time(
         self,
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
@@ -1246,4 +1255,8 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
 
 # Assign Cyclic Definitions
+# Assign Cyclic Definitions
+ContainerTimeSeries.default_return_proxy_node = ContainerTimeSeries
+ContainerTimeSeries.default_return_proxy_leaf = ContainerTimeSeries
+ContainerTimeSeries.default_return_proxy_type = ContainerTimeSeries
 ContainerTimeSeries.time_series_type = ContainerTimeSeries

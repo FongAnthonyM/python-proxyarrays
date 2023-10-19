@@ -95,13 +95,13 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
                 gap = self.create_return_proxy_node()
             else:
                 # Get remainder data from proxy based on start offset into proxy
-                p, _, _ = proxy.find_data_slice(
+                p, _, _, _, _, _ = proxy.find_data_slice(
                     start=np.uint64(current_start),
                     stop=np.uint64(current_stop),
                     tails=True,
                 )
 
-                if len(p) > 0:
+                if p is not None and len(p) > 0:
                     gap.proxies.append(p)
 
                 if proxy_end <= current_stop:
@@ -157,13 +157,13 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
 
         # Handle Gap data between proxies
         # Get remainder data from proxy based on start offset into proxy
-        p, _, _ = proxy.find_data_slice(
+        p, _, _, _, _, _ = proxy.find_data_slice(
             start=np.uint64(current_start),
             stop=np.uint64(current_stop),
             tails=True,
         )
 
-        if len(p) > 0:
+        if p is not None and len(p) > 0:
             gap.proxies.append(p)
 
         # Yield completed gap data
@@ -222,14 +222,14 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
 
         # Get Data
         if start_proxy == stop_proxy:
-            return self.proxies[start_proxy].nanostamps_islice_time(
+            return self.proxies[start_proxy].find_data_islice_time(
                 start=start_time,
                 stop=stop_time,
                 step=step,
                 istep=istep,
             )
         else:
-            return self.nanostamps_islice_proxy(
+            return self.find_data_islice_proxy(
                 start_proxy=start_proxy,
                 stop_proxy=stop_proxy,
                 start_time=start,
@@ -270,7 +270,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         if step is None:
             start_index, stop_index, _ = self.find_time_index_slice(start, stop)
             return (s for s in (self.nanostamp_slice(start_index[0], stop_index[0], proxy=True),))
-        elif isinstance(step, datetime.timedelta):
+        elif isinstance(step, timedelta):
             step = step.total_seconds()
 
         if not isinstance(step, Decimal):
@@ -280,15 +280,9 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
 
         # Get Data
         if start_proxy == stop_proxy:
-            return self.proxies[start_proxy].nanostamps_islice_time(
-                start=start,
-                stop=stop,
-                step=step,
-                istep=istep,
-                approx=approx,
-            )
+            return self.proxies[start_proxy].find_data_islice_time(start=start, stop=stop, step=step, istep=istep)
         else:
-            return self.nanostamps_islice_proxy(
+            return self.find_data_islice_proxy(
                 start_proxy=start_proxy,
                 stop_proxy=stop_proxy,
                 start_time=start,
@@ -299,4 +293,6 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
 
 
 # Assign Cyclic Definitions
+TimeSeriesProxy.default_return_proxy_node = TimeSeriesProxy
+TimeSeriesProxy.default_return_proxy_leaf = ContainerTimeSeries
 TimeSeriesProxy.default_return_proxy_type = TimeSeriesProxy
