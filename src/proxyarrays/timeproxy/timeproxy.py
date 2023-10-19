@@ -339,20 +339,6 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         new_copy.fill_type = self.fill_type
         return new_copy
 
-    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> BaseProxyArray:
-        """Creates a new proxy array with the same attributes as this proxy.
-
-        Args:
-            type_: The type of proxy array to create.
-            **kwargs: The keyword arguments for creating the proxy array.
-
-        Returns:
-            The new proxy array.
-        """
-        if issubclass(type_, TimeProxy):
-            kwargs = {"tzinfo": self.tzinfo} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
-
     # Sorting
     def proxy_sort_key(self, proxy: Any) -> Any:
         """The key to be used in sorting with the proxy as the sort basis.
