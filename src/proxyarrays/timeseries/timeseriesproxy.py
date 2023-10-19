@@ -260,15 +260,18 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         Returns:
             The generator which yields data slices.
         """
+        stop = nanostamp(stop)
         start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=tails)
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=start_index[0], stop=stop_index[0])
 
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
+        adjusted_stop = nanostamp(stop_index.datetime) + np.uint64(1)
+        if adjusted_stop < stop:
+            stop = adjusted_stop
 
         # Step
         if step is None:
-            start_index, stop_index, _ = self.find_time_index_slice(start, stop)
             return (s for s in (self.nanostamp_slice(start_index[0], stop_index[0], proxy=True),))
         elif isinstance(step, timedelta):
             step = step.total_seconds()

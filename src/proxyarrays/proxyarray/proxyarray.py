@@ -387,9 +387,9 @@ class ProxyArray(BaseProxyArray):
         shape = [None] * max_dims
         for ax in range(max_dims):
             if ax == self.axis:
-                shape[ax] = sum(shape_array[:, ax])
+                shape[ax] = shape_array[:, ax].sum()
             else:
-                shape[ax] = min(shape_array[:, ax])
+                shape[ax] = shape_array[:, ax].min()
         return tuple(shape)
 
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)
@@ -414,9 +414,9 @@ class ProxyArray(BaseProxyArray):
         shape = [None] * max_dims
         for ax in range(max_dims):
             if ax == self.axis:
-                shape[ax] = sum(shape_array[:, ax])
+                shape[ax] = shape_array[:, ax].sum()
             else:
-                shape[ax] = max(shape_array[:, ax])
+                shape[ax] = shape_array[:, ax].max()
         return tuple(shape)
 
     @timed_keyless_cache(lifetime=1.0, call_method="clearing_call", local=True)

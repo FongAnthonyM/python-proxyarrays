@@ -599,7 +599,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
                     previous_discontinuity = discontinuity
             offsets = np.append(offsets, [[self.time_axis - discontinuities[-1], 0]], axis=0)
 
-            new_size = np.sum(offsets)
+            new_size = offsets.sum()
             new_shape = list(self.data.shape)
             new_shape[axis] = new_size
             old_data = self.data
@@ -625,7 +625,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
                 self.time_axis[new_mid:new_end] = np.arange(mid_timestamp, end_timestamp, self.sample_period)
 
                 old_start = discontinuity
-                new_start += sum(offset)
+                new_start += offset.sum()
 
     # Iterate Slices
     def index_islice_time(
