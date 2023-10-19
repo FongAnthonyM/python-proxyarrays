@@ -350,7 +350,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             The new proxy array.
         """
         if issubclass(type_, TimeProxy):
-            kwargs = {"precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+            kwargs = {"tzinfo": self.tzinfo} | kwargs
         return super().create_proxy(type_=type_, **kwargs)
 
     # Sorting

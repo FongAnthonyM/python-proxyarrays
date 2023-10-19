@@ -30,7 +30,7 @@ from dspobjects.time import Timestamp, nanostamp
 import numpy as np
 
 # Local Packages #
-from ..proxyarray import ContainerProxyArray
+from ..proxyarray import BaseProxyArray, ContainerProxyArray
 from ..timeproxy import BaseTimeProxy
 from .basetimeaxis import BaseTimeAxis
 
@@ -266,44 +266,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """The sample period as Decimal object"""
         return self.get_sample_period_decimal()
 
-    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
-        """Create a new copy of this object without data.
-
-        Args:
-            *args: The arguments for creating the new copy.
-            **kwargs: The keyword arguments for creating the new copy.
-
-        Returns:
-            The new copy without proxies.
-        """
-        new_copy = super().empty_copy(*args, **kwargs)
-
-        new_copy.switch_algorithm_size = self.switch_algorithm_size
-        new_copy._precise = self._precise
-        new_copy.target_sample_rate = self.target_sample_rate
-        new_copy.time_tolerance = self.time_tolerance
-        new_copy._sample_rate = self._sample_rate
-        new_copy.tzinfo = self.tzinfo
-
-        new_copy.get_data.select(self.get_data.selected)
-        new_copy.tail_correction.select(self.tail_correction.selected)
-        new_copy.blank_generator.select(self.blank_generator.selected)
-        return new_copy
-
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
-        """Creates a new proxy array with the same attributes as this proxy.
-
-        Args:
-            type_: The type of proxy array to create.
-            **kwargs: The keyword arguments for creating the proxy array.
-
-        Returns:
-            The new proxy array.
-        """
-        if issubclass(type_, ContainerTimeAxis):
-            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
-
     # Instance Methods #
     # Constructors/Destructors
     def construct(
@@ -347,6 +309,44 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             self.set_precision(True)
 
         super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
+        """Create a new copy of this object without data.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        new_copy = super().empty_copy(*args, **kwargs)
+
+        new_copy.switch_algorithm_size = self.switch_algorithm_size
+        new_copy._precise = self._precise
+        new_copy.target_sample_rate = self.target_sample_rate
+        new_copy.time_tolerance = self.time_tolerance
+        new_copy._sample_rate = self._sample_rate
+        new_copy.tzinfo = self.tzinfo
+
+        new_copy.get_data.select(self.get_data.selected)
+        new_copy.tail_correction.select(self.tail_correction.selected)
+        new_copy.blank_generator.select(self.blank_generator.selected)
+        return new_copy
+
+    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, ContainerTimeAxis):
+            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(type_=type_, **kwargs)
 
     # Getters and Setters
     def get_sample_rate(self) -> float | None:

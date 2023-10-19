@@ -374,7 +374,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             The new proxy array.
         """
         if issubclass(type_, BlankTimeProxy):
-            kwargs = {"sample_rate": self._sample_rate} | kwargs
+            kwargs = {"precise": self._precise, "tzinfo": self.tzinfo, "sample_rate": self._sample_rate} | kwargs
         return super().create_proxy(type_=type_, **kwargs)
 
     # Updating

@@ -300,15 +300,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
         super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
-    def construct_resampler(self) -> Resample:
-        """Constructs the resampler for this proxy.
-
-        Returns:
-            The resampler.
-        """
-        self.resampler = Resample(old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis)
-        return self.resampler
-
     def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerTimeSeries":
         """Create a new copy of this object without data.
 
@@ -335,6 +326,29 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
         new_copy.time_axis = self.time_axis.empty_copy()
         return new_copy
+
+    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, ContainerTimeAxis):
+            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(type_=type_, **kwargs)
+
+    def construct_resampler(self) -> Resample:
+        """Constructs the resampler for this proxy.
+
+        Returns:
+            The resampler.
+        """
+        self.resampler = Resample(old_fs=self.sample_rate, new_fs=self.target_sample_rate, axis=self.axis)
+        return self.resampler
 
     # Getters and Setters
     def get_sample_rate(self) -> float:
