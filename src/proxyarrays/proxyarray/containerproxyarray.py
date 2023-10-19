@@ -404,9 +404,9 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             The requested range as an array.
         """
         if dtype is None:
-            return self.data[slices]
+            return self.data[tuple(slices)]
         else:
-            return self.data[slices].astype(dtype)
+            return self.data[tuple(slices)].astype(dtype)
 
     def slices_proxy(self, slices: Iterable[Slice] | None = None, dtype: Any = None) -> BaseProxyArray:
         """Get data as a new proxy using slices to determine the data slice.

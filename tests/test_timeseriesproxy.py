@@ -83,7 +83,7 @@ class TestTimeSeriesProxy(ClassTest):
         n_slices = (len(time_series) - start) // step
         step_shape = (step, channels)
 
-        iter_ = time_series.islices(step, slice(start, None))
+        iter_ = time_series.islices(step, slice(start, None), proxy=False)
         chunks = [(c.shape == step_shape) for c in iter_]
         assert all(chunks)
         assert len(chunks) == n_slices
