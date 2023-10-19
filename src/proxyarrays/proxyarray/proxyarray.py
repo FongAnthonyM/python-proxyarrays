@@ -1069,10 +1069,12 @@ class ProxyArray(BaseProxyArray):
 
         # Get iteration slice information
         if islice is None:
+            istep = None
             outer_start = 0
             outer_stop = length
             outer_step = slice_size
         else:
+            istep = islice.step
             outer_start = 0 if islice.start is None else islice.start
             outer_stop = length if islice.stop is None else islice.stop
             outer_step = slice_size * (1 if islice.step is None else islice.step)
@@ -1094,7 +1096,7 @@ class ProxyArray(BaseProxyArray):
             # If all data is in a proxy, call its islice.
             iter_ = self.proxies[start_proxy].islices(
                 slices=slices,
-                islice=Slice(inner_start, inner_stop, islice.step),
+                islice=Slice(inner_start, inner_stop, istep),
                 dtype=dtype,
                 proxy=proxy,
             )
@@ -1135,7 +1137,7 @@ class ProxyArray(BaseProxyArray):
                 # Iterate inner proxy
                 iter_ = self.proxies[proxy_index].islices(
                     slices=slices,
-                    islice=Slice(iter_start, adjusted_iter_stop, islice.step),
+                    islice=Slice(iter_start, adjusted_iter_stop, istep),
                     dtype=dtype,
                     proxy=proxy,
                 )
@@ -1170,7 +1172,7 @@ class ProxyArray(BaseProxyArray):
                 gap_fill = min(gap_offset + proxy_length, slice_size)
                 fill_array_slices[axis] = Slice(gap_offset, gap_fill)
                 fill_slices[axis] = Slice(0, gap_fill - gap_offset)
-                self.proxies[proxy_index].fill_slices_array(
+                self.proxies[stop_proxy].fill_slices_array(
                     data_array=gap_data,
                     array_slices=fill_array_slices,
                     slices=fill_slices,
@@ -1184,7 +1186,7 @@ class ProxyArray(BaseProxyArray):
             if gap_offset == 0:
                 iter_ = self.proxies[stop_proxy].islices(
                     slices=slices,
-                    islice=Slice(iter_start, adjusted_iter_stop, islice.step),
+                    islice=Slice(iter_start, adjusted_iter_stop, istep),
                     dtype=dtype,
                     proxy=proxy,
                 )

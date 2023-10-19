@@ -138,7 +138,7 @@ class TestTimeSeriesProxy(ClassTest):
         pr = cProfile.Profile()
         pr.enable()
 
-        iter_ = time_series.islices(step, slice(start, None))
+        iter_ = time_series.islices(step)
         chunks = [(c.shape == step_shape) for c in iter_]
 
         pr.disable()
