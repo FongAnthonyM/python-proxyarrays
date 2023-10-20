@@ -1160,6 +1160,7 @@ class ProxyArray(BaseProxyArray):
 
                 # Setup next loop
                 iter_start = 0 if remainder == 0 else outer_step - remainder
+                self.proxies[proxy_index].clear_all_caches()
 
             # Last proxy iteration
             proxy_length = self.lengths[stop_proxy]

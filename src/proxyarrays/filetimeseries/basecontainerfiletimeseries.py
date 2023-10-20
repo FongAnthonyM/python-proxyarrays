@@ -278,3 +278,79 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         """
         if self.mode == "r":
             raise IOError("not writable")
+
+    def should_cache(self) -> bool:
+        """Determines data should be cached for methods.
+
+        Returns:
+            The decision if data should be cached.
+        """
+        return self.data.nbytes <= 2000000000
+
+    def islices(
+        self,
+        slices: Iterable[slice | int | None] | None = None,
+        islice: slice | None = None,
+        axis: int | None = None,
+        dtype: Any = None,
+        proxy: bool | None = None,
+    ) -> Generator[Union["ContainerProxyArray", np.ndarray], None, None]:
+        """Creates a generator which iterates over slices along an axis.
+
+        Args:
+            slices: The ranges of the data to get.
+            islice: The ranges to data to iterate over.
+            axis: The axis to iterate along.
+            dtype: The dtype of array to return.
+            proxy: Determines if returned object is a proxy or an array, default is this object's setting.
+
+        Returns:
+            The requested range.
+        """
+        if axis is None:
+            axis = self.axis
+
+        length = len(self)
+        slices = list(slices)
+        full_slices = slices + [slice(None)] * (len(self.shape) - len(slices))
+        axis_slice = slices[axis]
+        if isinstance(axis_slice, int):
+            slice_size = axis_slice
+            axis_step = None
+        else:
+            axis_start = 0 if axis_slice.start is None else axis_slice.start
+            axis_stop = self.length if axis_slice.stop is None else axis_slice.stop
+            axis_step = axis_slice.step
+            slice_size = axis_stop - axis_start
+
+        if islice is None:
+            outer_start = 0
+            outer_stop = length
+            outer_step = slice_size
+        else:
+            outer_start = 0 if islice.start is None else islice.start
+            outer_stop = length if islice.stop is None else islice.stop
+            outer_step = slice_size * (1 if islice.step is None else islice.step)
+
+        # Adjust outer stop if there is not enough data to fill last slice
+        last_index = (((length - outer_start)//outer_step) * outer_step + outer_start)
+        adjusted_stop = last_index if (length - last_index) < slice_size else outer_stop
+
+        if self.should_cache():
+            data = self.data[...]
+            for inner_start in range(outer_start, adjusted_stop, outer_step):
+                full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_step)
+
+                if dtype is None:
+                    data_slice = data[tuple(full_slices)]
+                else:
+                    data_slice = data[tuple(full_slices)].astype(dtype)
+
+                if proxy:
+                    yield self.create_return_proxy(data=data_slice)
+                else:
+                    yield data_slice
+        else:
+            for inner_start in range(outer_start, adjusted_stop, outer_step):
+                full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_step)
+                yield self.slices(slices=full_slices, dtype=dtype, proxy=proxy)
