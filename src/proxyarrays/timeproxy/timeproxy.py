@@ -69,7 +69,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         self,
         proxies: Iterable[BaseTimeProxy] | None = None,
         axis: int = 0,
-        precise: bool = True,
+        precise: bool | None = None,
         tzinfo: datetime.tzinfo | None = None,
         mode: str = "a",
         update: bool = True,
