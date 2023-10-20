@@ -20,6 +20,7 @@ from typing import Any
 
 # Third-Party Packages #
 from baseobjects.functions import singlekwargdispatch
+import numpy as np
 
 # Local Packages #
 from ..timeseries import ContainerTimeSeries
