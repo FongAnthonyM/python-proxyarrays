@@ -1095,7 +1095,7 @@ class ProxyArray(BaseProxyArray):
         if start_proxy == stop_proxy:
             # If all data is in a proxy, call its islice.
             iter_ = self.proxies[start_proxy].islices(
-                slices=slices,
+                slices=full_slices,
                 islice=Slice(inner_start, inner_stop, istep),
                 dtype=dtype,
                 proxy=proxy,
@@ -1106,7 +1106,7 @@ class ProxyArray(BaseProxyArray):
         else:
             iter_start = inner_start
             fill_array_slices = [Slice(None)] * len(s_shape)
-            fill_slices = slices.copy()
+            fill_slices = full_slices.copy()
             gap_data = None
             gap_offset = 0
             for proxy_index in range(start_proxy, stop_proxy):
@@ -1136,7 +1136,7 @@ class ProxyArray(BaseProxyArray):
 
                 # Iterate inner proxy
                 iter_ = self.proxies[proxy_index].islices(
-                    slices=slices,
+                    slices=full_slices,
                     islice=Slice(iter_start, adjusted_iter_stop, istep),
                     dtype=dtype,
                     proxy=proxy,
@@ -1185,7 +1185,7 @@ class ProxyArray(BaseProxyArray):
             # Iterate inner proxy
             if gap_offset == 0:
                 iter_ = self.proxies[stop_proxy].islices(
-                    slices=slices,
+                    slices=full_slices,
                     islice=Slice(iter_start, adjusted_iter_stop, istep),
                     dtype=dtype,
                     proxy=proxy,
