@@ -136,10 +136,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @property
     def nanostamps(self) -> np.ndarray | None:
         """The nanosecond timestamps of this proxy."""
-        try:
-            return self.get_nanostamps.caching_call()
-        except AttributeError:
-            return self.get_nanostamps()
+        return self.get_nanostamps()
 
     @nanostamps.setter
     def nanostamps(self, value: np.ndarray | None) -> None:
@@ -151,18 +148,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @property
     def day_nanostamps(self) -> np.ndarray | None:
         """The day nanosecond timestamps of this proxy."""
-        try:
-            return self.get_day_nanostamps.caching_call()
-        except AttributeError:
-            return self.get_day_nanostamps()
+        return self.get_day_nanostamps()
 
     @property
     def timestamps(self) -> np.ndarray | None:
         """The timestamps of this proxy."""
-        try:
-            return self.get_timestamps.caching_call()
-        except AttributeError:
-            return self.get_timestamps()
+        return self.get_timestamps()
 
     @timestamps.setter
     def timestamps(self, value: np.ndarray | None) -> None:
@@ -591,7 +582,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         return (slice(int(s), int(e)) for s, e in slices)
 
     # Get Nanostamps
-    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_nanostamps(self) -> np.ndarray | None:
         """Gets the nanostamps of this proxy.
 
@@ -721,7 +711,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
 
     # Get Day Nanostamps
-    @timed_keyless_cache(call_method="clearing_call", local=True)
+
     def get_day_nanostamps(self) -> np.ndarray | None:
         """Gets the day nanostamps of this proxy.
 
@@ -731,7 +721,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         return (self.get_nanostamps() // 864e11 * 864e11).astype("u8")
 
     # Get Timestamps
-    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_timestamps(self) -> np.ndarray | None:
         """Gets the timestamps of this proxy.
 
@@ -814,7 +803,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             return ts
 
     # Datetimes [Timestamp]
-    @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_datetimes(self) -> tuple[Timestamp]:
         """Gets all the datetimes of this proxy.
 
