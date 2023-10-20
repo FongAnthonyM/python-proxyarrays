@@ -14,6 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from abc import abstractmethod
+from collections.abc import Iterable, Generator
 import pathlib
 from typing import Any
 
@@ -294,7 +295,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         axis: int | None = None,
         dtype: Any = None,
         proxy: bool | None = None,
-    ) -> Generator[Union["ContainerProxyArray", np.ndarray], None, None]:
+    ) -> Generator[ContainerTimeSeries | np.ndarray, None, None]:
         """Creates a generator which iterates over slices along an axis.
 
         Args:
