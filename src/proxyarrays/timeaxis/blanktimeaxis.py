@@ -30,7 +30,12 @@ from .containertimeaxis import ContainerTimeAxis
 class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
     """A proxy for generating time axis information."""
     default_return_proxy_node = ContainerTimeAxis
-    default_return_proxy_type = ContainerTimeAxis
+
+    # Magic Methods #
+    @property
+    def ndims(self) -> int:
+        """The number of dimensions of this array."""
+        return 1
 
     # Instance Methods #
     # Create Data
@@ -50,6 +55,9 @@ class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
         Returns:
             The requested data.
         """
+        if dtype is None and self._precise:
+            dtype = np.dtype
+        
         if slices is None:
             start = None
             stop = None
@@ -72,3 +80,7 @@ class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
                 shape[self.axis] = slice(None)
 
         return self.generate_time(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]
+
+
+# Assign Cyclic Definitions
+BlankTimeAxis.default_return_proxy_type = BlankTimeAxis

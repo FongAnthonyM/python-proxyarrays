@@ -111,6 +111,11 @@ class BlankProxyArray(BaseProxyArray):
     def shape(self, value: tuple[int]) -> None:
         self._shape = value
 
+    @property
+    def ndims(self) -> int:
+        """The number of dimensions of this array."""
+        return len(self._shape)
+
     # Numpy ndarray Methods
     def __array__(self, dtype: Any = None) -> np.ndarray:
         """Returns an ndarray representation of this object with an option to cast it to a dtype.
@@ -420,7 +425,7 @@ class BlankProxyArray(BaseProxyArray):
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (len(self.shape) - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice

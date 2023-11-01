@@ -139,14 +139,21 @@ class ProxyArray(BaseProxyArray):
             return self.get_shape()
 
     @property
-    def max_ndim(self) -> int:
+    def max_ndims(self) -> int:
         """The maximum number dimension in the contained proxies/objects if they are different across axes."""
         return len(self.max_shape)
 
     @property
-    def min_ndim(self) -> int:
+    def min_ndims(self) -> int:
         """The minimum number dimension in the contained proxies/objects if they are different across axes."""
         return len(self.min_shape)
+
+    @property
+    def ndims(self) -> int:
+        """The number of dimensions of this array."""
+        if not self.validate_shape():
+            warn(f"The ProxyArray '{self}' does not have a valid shape, returning minimum shape.")
+        return self.min_ndims
 
     @property
     def lengths(self) -> tuple[int]:
@@ -776,11 +783,8 @@ class ProxyArray(BaseProxyArray):
         Returns:
             The requested proxy or data.
         """
-        if (proxy is None and self.returns_proxy) or proxy:
-            return self.get_proxy(index=indices)
-        else:
-            proxy_index, _, inner_index = self.find_inner_proxy_index(super_index=indices)
-            return self.proxies[proxy_index].get_from_index(indices=inner_index)
+        proxy_index, _, inner_index = self.find_inner_proxy_index(super_index=indices)
+        return self.proxies[proxy_index].get_from_index(indices=inner_index, proxy=proxy)
 
     # Find Inner Indices within proxies
     def find_inner_proxy_index(self, super_index: int) -> ProxyIndex:
@@ -982,11 +986,11 @@ class ProxyArray(BaseProxyArray):
             The requested slice as an array.
         """
         if slices is None:
-            slices = [Slice(None)] * self.max_ndim
+            slices = [Slice(None)] * self.max_ndims
 
         # Create nan numpy array
         slices = list(slices)
-        full_slices = slices + [Slice(None)] * (self.max_ndim - len(slices))
+        full_slices = slices + [Slice(None)] * (self.max_ndims - len(slices))
         s_shape = [None] * len(full_slices)
         for i, slice_ in enumerate(full_slices):
             if slice_ is not None:
@@ -1057,7 +1061,7 @@ class ProxyArray(BaseProxyArray):
             slice_size = axis_stop - axis_start
 
         # Get shape of slices
-        full_slices = slices + [Slice(None)] * (self.max_ndim - len(slices))
+        full_slices = slices + [Slice(None)] * (self.max_ndims - len(slices))
         s_shape = [None] * len(full_slices)
         for i, slice_ in enumerate(full_slices):
             if slice_ is not None:

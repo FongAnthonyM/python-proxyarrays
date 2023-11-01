@@ -85,6 +85,11 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         """The shape of this proxy, which is the wrapped data."""
         return self.get_shape()
 
+    @property
+    def ndims(self) -> int:
+        """The number of dimensions of this array."""
+        return len(self._shape)
+
     # Numpy ndarray Methods
     def __array__(self, dtype: Any = None) -> np.ndarray:
         """Returns an ndarray representation of this object with an option to cast it to a dtype.
@@ -125,7 +130,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             self.target_shape = shape
 
         if self.target_shape is not None and self.data is None:
-            self.data = np.zeros(shape=self.target_shape, **kwargs)
+            self.data = np.zeros(shape=self.target_shape)
 
         if data is not None:
             self.data = data
@@ -229,7 +234,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             dtype = self.data.dtype
 
         new_slices = [0] * len(shape)
-        old_slices = [0] * len(self.shape)
+        old_slices = [0] * self.ndims
         for index, (n, o) in enumerate(zip(shape, self.shape)):
             slice_ = slice(None, n if n > o else o)
             new_slices[index] = slice_
@@ -469,7 +474,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (len(self.shape) - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice
@@ -526,7 +531,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         if stop is None:
             stop = start + data.shape[axis]
 
-        slices = [0] * len(self.shape)
+        slices = [0] * len(self.ndims)
         for index, ax in enumerate(data.shape):
             slices[index] = slice(None, None)
         slices[axis] = slice(start=start, stop=stop, step=step)

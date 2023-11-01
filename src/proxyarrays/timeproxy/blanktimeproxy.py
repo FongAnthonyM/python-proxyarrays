@@ -144,6 +144,11 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self.refresh()
 
     @property
+    def ndims(self) -> int:
+        """The number of dimensions of this array."""
+        return len(self._shape)
+
+    @property
     def precise(self) -> bool:
         """Determines if this proxy returns nanostamps (True) or timestamps (False)."""
         return self._precise
@@ -732,9 +737,13 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
         if not self.is_infinite:
             samples = self.get_length()
+        elif start is None and self._assigned_start is None:
+            raise ValueError(f"Start must be specified with an infinite {self.__class__}.")
+        elif stop is None and self._assigned_end is None:
+            raise ValueError(f"Stop must be specified with an infinite {self.__class__}.")
 
         period_ns = self.sample_period_decimal * 10**9 / 1 * step
-        if self.assigned_start_timestamp is not None:
+        if self._assigned_start is not None:
             ns = self._true_start
 
             if start is None:
@@ -772,7 +781,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self,
         start: int | Slice | None = None,
         stop: int | None = None,
-        step: int = 1,
+        step: int | None = None,
         slice_: Slice | None = None,
         dtype: np.dtype | str | None = None,
     ) -> np.ndarray:
@@ -789,15 +798,16 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
             All the slices of this proxy array.
         """
         if start is None and (slice_ is None or isinstance(slice_, Slice)):
-            if slice_ is None:
-                return self._generate_nanostamp_slice(dtype=dtype)
-            else:
-                return self._generate_nanostamp_slice(
-                    start=slice_.start,
-                    stop=slice_.stop,
-                    step=slice_.step,
-                    dtype=dtype,
-                )
+            if slice_ is not None:
+                start = slice_.start
+                stop = slice_.stop
+                step = slice_.stop
+            return self._generate_nanostamp_slice(
+                start=start,
+                stop=stop,
+                step=step,
+                dtype=dtype,
+            )
         else:
             raise TypeError(f"A {type(start)} cannot be used to slice a {self.__class__}.")
 
@@ -806,7 +816,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self,
         start: Slice,
         stop: int | None = None,
-        step: int = 1,
+        step: int | None = None,
         slice_: Slice | None = None,
         dtype: np.dtype | str | None = None,
     ) -> np.ndarray:

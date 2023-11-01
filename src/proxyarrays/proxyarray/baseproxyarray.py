@@ -357,9 +357,9 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
             """
         if start is None and (slice_ is None or isinstance(slice_, Slice)):
             if slice_ is None:
-                return self._generate_full_slices_slice(start=slice(None))
+                return self._generate_full_slices_slice(start=slice(None, stop, step), axis=axis)
             else:
-                return self._generate_full_slices_slice(start=slice_)
+                return self._generate_full_slices_slice(start=slice_, axis=axis)
         else:
             raise TypeError(f"A {type(start)} cannot be used to slice a {self.__class__}.")
 
@@ -387,7 +387,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * len(self.shape)
+        slices = [Slice(None)] * self.ndims
         slices[axis] = start
         return tuple(slices)
 
@@ -415,7 +415,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * len(self.shape)
+        slices = [Slice(None)] * self.ndims
         slices[axis] = Slice(start, stop, step)
         return tuple(slices)
 

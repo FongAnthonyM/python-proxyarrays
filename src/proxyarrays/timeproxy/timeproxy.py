@@ -723,7 +723,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             The requested nanostamp.
         """
         proxy_index, _, inner_index = self.find_inner_proxy_index(super_index=super_index)
-        return self.proxies[proxy_index].get_nanostamp_from_index(super_index=inner_index)
+        return self.proxies[proxy_index].get_nanostamp(super_index=inner_index)
 
     def fill_nanostamps_array(
         self,
@@ -1099,7 +1099,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             The requested timestamp.
         """
         proxy_index, _, inner_index = self.find_inner_proxy_index(super_index)
-        return self.proxies[proxy_index].get_timestamp_from_index(inner_index)
+        return self.proxies[proxy_index].get_timestamp(inner_index)
 
     def fill_timestamps_array(
         self,

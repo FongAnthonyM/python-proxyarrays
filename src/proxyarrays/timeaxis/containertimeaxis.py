@@ -158,9 +158,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @timestamps.setter
     def timestamps(self, value: np.ndarray | None) -> None:
         self._timestamps = value
-        self.get_nanostamps.clear_cache()
-        self.get_timestamps.clear_cache()
-        self.get_datetimes.clear_cache()
 
     @property
     def data(self) -> np.ndarray:
@@ -1243,5 +1240,5 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
 
 
 # Assign Cyclic Definitions
-ContainerTimeAxis.default_return_proxy_node = ContainerTimeAxis
+ContainerTimeAxis.default_return_proxy_leaf = ContainerTimeAxis
 ContainerTimeAxis.default_return_proxy_type = ContainerTimeAxis
