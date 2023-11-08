@@ -497,6 +497,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | Decimal | None = None,
         istep: int | Decimal = 1,
+        approx: bool = True,
+        tails: bool = True,
     ) -> Generator[slice, None, None]:
         """Creates a generator which yields index slices for nanostamp slices based on time.
 
@@ -505,6 +507,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             stop: The last time to end slicing.
             step: The time within each slice.
             istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
             The generator which yields slices.
@@ -515,7 +519,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
 
         # Step
         if step is None:
-            start_index, stop_index, _ = self.find_time_index_slice(start, stop, approx=True, tails=True)
+            start_index, stop_index, _ = self.find_time_index_slice(start, stop, approx=approx, tails=tails)
             return (s for s in (slice(start_index[0], stop_index[0]),))
         elif isinstance(step, datetime.timedelta):
             step = step.total_seconds()
@@ -686,6 +690,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
         istep: int = 1,
+        approx: bool = True,
+        tails: bool = True,
     ) -> Generator["ContainerTimeAxis", None, None]:
         """Creates a generator which yields nanostamps slices based on times.
 
@@ -694,6 +700,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             stop: The last time to end slicing.
             step: The time within each slice.
             istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
             The generator which yields nanostamp slices.
@@ -703,6 +711,8 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             stop=stop,
             step=step,
             istep=istep,
+            approx=approx,
+            tails=tails,
         )
 
         return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)

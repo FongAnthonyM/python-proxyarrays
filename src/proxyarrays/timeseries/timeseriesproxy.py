@@ -260,8 +260,9 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         Returns:
             The generator which yields data slices.
         """
-        stop = nanostamp(stop)
-        start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=tails)
+        if stop is not None:
+            stop = nanostamp(stop)
+        start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=True)
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=start_index[0], stop=stop_index[0])
 
         start_proxy = range_proxy_indices.start.index
@@ -283,7 +284,14 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
 
         # Get Data
         if start_proxy == stop_proxy:
-            return self.proxies[start_proxy].find_data_islice_time(start=start, stop=stop, step=step, istep=istep)
+            return self.proxies[start_proxy].find_data_islice_time(
+                start=start,
+                stop=stop,
+                step=step,
+                istep=istep,
+                approx=approx,
+                tails=tails,
+            )
         else:
             return self.find_data_islice_proxy(
                 start_proxy=start_proxy,
@@ -292,6 +300,8 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
                 stop_time=stop,
                 step=step,
                 istep=istep,
+                approx=approx,
+                tails=tails,
             )
 
 
