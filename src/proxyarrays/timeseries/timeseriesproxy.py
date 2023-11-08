@@ -300,8 +300,6 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
                 stop_time=stop,
                 step=step,
                 istep=istep,
-                approx=approx,
-                tails=tails,
             )
 
 
