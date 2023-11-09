@@ -263,6 +263,9 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         if stop is not None:
             stop = nanostamp(stop)
         start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=True)
+        if start_index[0] == self.length or stop_index[0] == 0:
+            return (self.create_return_proxy_node() for i in (1,))
+
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=start_index[0], stop=stop_index[0])
 
         start_proxy = range_proxy_indices.start.index
