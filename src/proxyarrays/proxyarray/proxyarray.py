@@ -920,6 +920,11 @@ class ProxyArray(BaseProxyArray):
         # Get indices range
         da_shape = data_array.shape
         axis_slice = slices[self.axis]
+
+        # Return no change if start and stop is the same.
+        if axis_slice.start == axis_slice.stop:
+            return data_array
+
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=axis_slice.start, stop=axis_slice.stop)
 
         start_proxy = range_proxy_indices.start.index
