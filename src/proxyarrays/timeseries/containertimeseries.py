@@ -648,6 +648,8 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | Decimal | None = None,
         istep: int | Decimal = 1,
+        approx: bool = True,
+        tails: bool = True,
     ) -> Generator[slice, None, None]:
         """Creates a generator which yields index slices for nanostamp slices based on time.
 
@@ -656,11 +658,20 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             stop: The last time to end slicing.
             step: The time within each slice.
             istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
             The generator which yields slices.
         """
-        return self.time_axis.index_islice_time(start=start, stop=stop, step=step, istep=istep)
+        return self.time_axis.index_islice_time(
+            start=start,
+            stop=stop,
+            step=step,
+            istep=istep,
+            approx=approx,
+            tails=tails,
+        )
 
     def index_islice_deltatime(
         self,
@@ -1246,6 +1257,8 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | None = None,
         istep: int = 1,
+        approx: bool = True,
+        tails: bool = True,
     ) -> Generator["ContainerTimeSeries", None, None]:
         """Creates a generator which yields nanostamps slices based on times.
 
@@ -1254,6 +1267,8 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             stop: The last time to end slicing.
             step: The time within each slice.
             istep: The step of each slice.
+            approx: Determines if an approximate indices will be given if the time is not present.
+            tails: Determines if the first or last times will be give the requested item is outside the axis.
 
         Returns:
             The generator which yields nanostamp slices.
@@ -1263,12 +1278,13 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             stop=stop,
             step=step,
             istep=istep,
+            approx=approx,
+            tails=tails,
         )
 
         return (self.slice(s.start, s.stop, proxy=True) for s in inner_slices)  # need to fix
 
 
-# Assign Cyclic Definitions
 # Assign Cyclic Definitions
 ContainerTimeSeries.default_return_proxy_node = ContainerTimeSeries
 ContainerTimeSeries.default_return_proxy_leaf = ContainerTimeSeries

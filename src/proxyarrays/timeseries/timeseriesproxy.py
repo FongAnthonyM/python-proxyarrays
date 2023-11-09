@@ -292,8 +292,6 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
                 stop=stop,
                 step=step,
                 istep=istep,
-                approx=approx,
-                tails=tails,
             )
         else:
             return self.find_data_islice_proxy(
