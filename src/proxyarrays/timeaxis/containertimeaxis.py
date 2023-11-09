@@ -586,10 +586,10 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The nanostamps of this proxy.
         """
-        if self._nanostamps is not None:
-            return self._nanostamps
-        elif self._timestamps is not None:
-            return (self._timestamps * 10**9).astype(np.uint64)
+        if (nanostamps_ := self._nanostamps) is not None:
+            return nanostamps_
+        elif (timestamps_ := self._timestamps) is not None:
+            return (timestamps_ * 10**9).astype(np.uint64)
         else:
             return None
 

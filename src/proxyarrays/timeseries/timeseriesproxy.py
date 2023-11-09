@@ -271,7 +271,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         start_proxy = range_proxy_indices.start.index
         stop_proxy = range_proxy_indices.stop.index
         adjusted_stop = nanostamp(stop_index.datetime) + np.uint64(1)
-        if adjusted_stop < stop:
+        if stop is None or adjusted_stop < stop:
             stop = adjusted_stop
 
         # Step
