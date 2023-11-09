@@ -141,9 +141,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
     @nanostamps.setter
     def nanostamps(self, value: np.ndarray | None) -> None:
         self._nanostamps = value
-        self.get_nanostamps.clear_cache()
-        self.get_timestamps.clear_cache()
-        self.get_datetimes.clear_cache()
 
     @property
     def day_nanostamps(self) -> np.ndarray | None:
