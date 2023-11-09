@@ -879,7 +879,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                     gap = self.create_return_proxy_node()
                 elif len(gap.proxies) > 0:
                     # Yield Gap data if there is any
-                    yield gap if len(gap.proxies) > 1 else gap.proxies.pop(0)
+                    yield gap.proxies.pop(0) if len(gap.proxies) == 1 else gap
                     gap = self.create_return_proxy_node()
                 current_start = proxy_start - ((proxy_start - current_start) % istep)
                 current_stop = current_start + step
@@ -904,7 +904,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
                     continue
                 else:
                     # Yield completed gap data
-                    yield gap if len(gap.proxies) > 1 else gap.proxies.pop(0)
+                    yield gap.proxies.pop(0) if len(gap.proxies) == 1 else gap
                     gap = self.create_return_proxy_node()
                     current_start = current_start + istep
                     current_stop = current_start + step
@@ -940,7 +940,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         if proxy_start > current_stop:
             if len(gap.proxies) > 0:
                 # Yield Gap data if there is any
-                yield gap if len(gap.proxies) > 1 else gap.proxies.pop(0)
+                yield gap.proxies.pop(0) if len(gap.proxies) == 1 else gap
                 gap = self.create_return_proxy_node()
             current_start = proxy_start + istep - ((proxy_start - current_start) % istep)
             current_stop = current_start + step
@@ -958,7 +958,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
 
         # Yield completed gap data
         if proxy_end >= current_stop:
-            yield gap if len(gap.proxies) > 1 else gap.proxies.pop(0)
+            yield gap.proxies.pop(0) if len(gap.proxies) == 1 else gap
             current_start = current_start + istep
             current_stop = current_start + step
 
