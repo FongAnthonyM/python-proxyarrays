@@ -1024,6 +1024,25 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         return data, time_axis
 
     # Data
+    def slices_proxy(self, slices: Iterable[slice] | None = None, dtype: Any = None) -> BaseTimeSeries:
+        """Get data as a new proxy using slices to determine the data slice.
+
+        Args:
+            slices: The ranges to get the data from.
+            dtype: The data type to make the returned data
+
+        Returns:
+            The requested slice as a proxy.
+        """
+        t_slices = tuple(slices)
+        if dtype is None:
+            return self.create_return_proxy(data=self.data[t_slices], time_axis=self.time_axis[t_slices[self.axis]])
+        else:
+            return self.create_return_proxy(
+                data=self.data[t_slices].astype(dtype),
+                time_axis=self.time_axis[t_slices[self.axis]],
+            )
+
     def shift_times(
         self,
         shift: np.ndarray | float | int,
