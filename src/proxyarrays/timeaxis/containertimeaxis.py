@@ -651,7 +651,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """
         ts = self.nanostamps[slice(start, stop, step)]
         if proxy:
-            return self.create_return_proxy_node(data=ts)
+            return self.create_return_proxy_leaf(data=ts)
         else:
             return ts
 
