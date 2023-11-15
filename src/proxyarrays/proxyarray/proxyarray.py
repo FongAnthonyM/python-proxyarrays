@@ -216,10 +216,7 @@ class ProxyArray(BaseProxyArray):
         Returns:
             The ndarray representation of this object.
         """
-        if dtype is None:
-            return self[...]
-        else:
-            return self[...].as_type(dtype)
+        return self.slices_array(dtype=dtype)
 
     # Instance Methods
     # Constructors/Destructors

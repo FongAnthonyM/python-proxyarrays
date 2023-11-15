@@ -16,6 +16,7 @@ __email__ = __email__
 from collections.abc import Generator
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
 # Third-Party Packages #
 from dspobjects.time import nanostamp
@@ -38,6 +39,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
     time_axis_type = ContainerTimeAxis
     time_series_type = ContainerTimeSeries
 
+    # Instance Methods #
     # Data iterate slice
     def find_data_islice_proxy(
         self,
