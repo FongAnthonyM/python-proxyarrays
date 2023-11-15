@@ -65,6 +65,14 @@ class TestTimeSeriesProxy(ClassTest):
 
         return time_series
 
+    def test_array(self):
+        sample_rate = 1024.0
+        channels = 50
+        time_series = self.create_time_series(sample_rate, channels)
+
+        data = np.array(time_series)
+        assert data is not None
+
     def test_find_slice_time(self):
         sample_rate = 1024.0
         channels = 50

@@ -55,9 +55,6 @@ class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
         Returns:
             The requested data.
         """
-        if dtype is None and self._precise:
-            dtype = np.dtype
-        
         if slices is None:
             start = None
             stop = None
