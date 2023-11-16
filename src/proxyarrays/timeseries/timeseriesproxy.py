@@ -175,10 +175,10 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
             current_stop = current_start + step
 
         # Iterate over inner proxy
-        if proxy_end > current_stop:
+        if proxy_end > current_stop and not (start := np.uint64(current_start)) > (stop := nanostamp(stop_time)):
             iter_ = proxy.find_data_islice_time(
-                start=np.uint64(current_start),
-                stop=nanostamp(stop_time),
+                start=start,
+                stop=stop,
                 step=step,
                 istep=istep,
             )

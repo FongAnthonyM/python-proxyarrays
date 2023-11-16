@@ -963,9 +963,13 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
             current_stop = current_start + step
 
         # Iterate over inner proxy
-        if proxy_end > current_stop:
-            iter_ = proxy.nanostamp_islice_time(start=np.uint64(current_start), stop=nanostamp(stop_time), step=step,
-                                                istep=istep)
+        if proxy_end > current_stop and not (start := np.uint64(current_start)) > (stop := nanostamp(stop_time)):
+            iter_ = proxy.nanostamp_islice_time(
+                start=start,
+                stop=stop,
+                step=step,
+                istep=istep,
+            )
 
             for item in iter_:
                 yield item
