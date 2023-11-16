@@ -919,7 +919,7 @@ class ProxyArray(BaseProxyArray):
         axis_slice = slices[self.axis]
 
         # Return no change if start and stop is the same.
-        if axis_slice.start == axis_slice.stop:
+        if axis_slice.start == axis_slice.stop and axis_slice.start is not None:
             return data_array
 
         range_proxy_indices = self.find_inner_proxy_indices_slice(start=axis_slice.start, stop=axis_slice.stop)
