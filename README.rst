@@ -1,4 +1,4 @@
-Frame Structure
+proxy Structure
 ===============
 
 |PyPI| |Status| |Python Version| |License|
@@ -7,26 +7,26 @@ Frame Structure
 
 |pre-commit| |Black|
 
-.. |PyPI| image:: https://img.shields.io/pypi/v/framestructure.svg
-   :target: https://pypi.org/project/framestructure/
+.. |PyPI| image:: https://img.shields.io/pypi/v/proxyarrays.svg
+   :target: https://pypi.org/project/proxyarrays/
    :alt: PyPI
-.. |Status| image:: https://img.shields.io/pypi/status/framestructure.svg
-   :target: https://pypi.org/project/framestructure/
+.. |Status| image:: https://img.shields.io/pypi/status/proxyarrays.svg
+   :target: https://pypi.org/project/proxyarrays/
    :alt: Status
-.. |Python Version| image:: https://img.shields.io/pypi/pyversions/framestructure
-   :target: https://pypi.org/project/framestructure
+.. |Python Version| image:: https://img.shields.io/pypi/pyversions/proxyarrays
+   :target: https://pypi.org/project/proxyarrays
    :alt: Python Version
-.. |License| image:: https://img.shields.io/pypi/l/python-framestructure
+.. |License| image:: https://img.shields.io/pypi/l/python-proxyarrays
    :target: https://opensource.org/licenses/MIT
    :alt: License
-.. |Read the Docs| image:: https://img.shields.io/readthedocs/python-framestructure/latest.svg?label=Read%20the%20Docs
-   :target: https://python-framestructure.readthedocs.io/
-   :alt: Read the documentation at https://python-framestructure.readthedocs.io/
-.. |Tests| image:: https://github.com/FongAnthonyM/python-framestructure/workflows/Tests/badge.svg
-   :target: https://github.com/FongAnthonyM/python-framestructure/actions?workflow=Tests
+.. |Read the Docs| image:: https://img.shields.io/readthedocs/python-proxyarrays/latest.svg?label=Read%20the%20Docs
+   :target: https://python-proxyarrays.readthedocs.io/
+   :alt: Read the documentation at https://python-proxyarrays.readthedocs.io/
+.. |Tests| image:: https://github.com/FongAnthonyM/python-proxyarrays/workflows/Tests/badge.svg
+   :target: https://github.com/FongAnthonyM/python-proxyarrays/actions?workflow=Tests
    :alt: Tests
-.. |Codecov| image:: https://codecov.io/gh/FongAnthonyM/python-framestructure/branch/main/graph/badge.svg
-   :target: https://codecov.io/gh/FongAnthonyM/python-framestructure
+.. |Codecov| image:: https://codecov.io/gh/FongAnthonyM/python-proxyarrays/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/FongAnthonyM/python-proxyarrays
    :alt: Codecov
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
@@ -51,11 +51,11 @@ Requirements
 Installation
 ------------
 
-You can install *Frame Structure* via pip_ from PyPI_:
+You can install *proxy Structure* via pip_ from PyPI_:
 
 .. code:: console
 
-   $ pip install python-framestructure
+   $ pip install python-proxyarrays
 
 
 Usage
@@ -75,7 +75,7 @@ License
 -------
 
 Distributed under the terms of the `MIT license`_,
-*Frame Structure* is free and open source software.
+*proxy Structure* is free and open source software.
 
 
 Issues
@@ -95,8 +95,8 @@ This project was generated from `@cjolowicz`_'s `Hypermodern Python Cookiecutter
 .. _MIT license: https://opensource.org/licenses/MIT
 .. _PyPI: https://pypi.org/
 .. _Hypermodern Python Cookiecutter: https://github.com/cjolowicz/cookiecutter-hypermodern-python
-.. _file an issue: https://github.com/FongAnthonyM/python-framestructure/issues
+.. _file an issue: https://github.com/FongAnthonyM/python-proxyarrays/issues
 .. _pip: https://pip.pypa.io/
 .. github-only
 .. _Contributor Guide: CONTRIBUTING.rst
-.. _Usage: https://python-framestructure.readthedocs.io/en/latest/usage.html
+.. _Usage: https://python-proxyarrays.readthedocs.io/en/latest/usage.html

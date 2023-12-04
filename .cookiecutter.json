@@ -3,10 +3,10 @@
   "author": "Anthony Fong",
   "development_status": "Development Status :: 3 - Alpha",
   "email": "FongAnthonyM@gmail.com",
-  "friendly_name": "Frame Structure",
+  "friendly_name": "proxy Structure",
   "github_user": "FongAnthonyM",
   "license": "MIT",
-  "package_name": "framestructure",
-  "project_name": "python-framestructure",
+  "package_name": "proxyarrays",
+  "project_name": "python-proxyarrays",
   "version": "0.0.0"
 }

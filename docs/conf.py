@@ -1,6 +1,6 @@
 """Sphinx configuration."""
 # Package Header #
-from src.framestructure.header import *
+from src.proxyarrays.header import *
 
 # Header #
 __author__ = __author__

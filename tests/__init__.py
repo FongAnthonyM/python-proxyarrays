@@ -1,1 +1,1 @@
-"""Test suite for the framestructure package."""
+"""Test suite for the proxyarrays package."""

@@ -1,63 +1,63 @@
 [tool.poetry]
-name = "framestructure"
-version = "0.4.1"
-description = "Objects for organizing data in frame structures."
+name = "proxyarrays"
+version = "0.5.1"
+description = "Numpy array like objects that are proxies for remote or virtual arrays."
 authors = ["Anthony Fong <FongAnthonyM@gmail.com>"]
 license = "MIT"
 readme = "README.rst"
-homepage = "https://github.com/FongAnthonyM/python-framestructure"
-repository = "https://github.com/FongAnthonyM/python-framestructure"
-documentation = "https://python-framestructure.readthedocs.io"
+homepage = "https://github.com/FongAnthonyM/python-proxyarrays"
+repository = "https://github.com/FongAnthonyM/python-proxyarrays"
+documentation = "https://python-proxyarrays.readthedocs.io"
 packages = [
-    { include = "framestructure", from = "src" },
+    { include = "proxyarrays", from = "src" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
 ]
 
 [tool.poetry.urls]
-Changelog = "https://github.com/FongAnthonyM/python-framestructure/releases"
+Changelog = "https://github.com/FongAnthonyM/python-proxyarrays/releases"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-baseobjects = "^1.9.0"
-dspobjects = "^0.2.0"
-numpy = "^1.21.1"
-scipy = "^1.6.1"
+python = ">=3.10, <4.0"
+baseobjects = ">=1.10.0"
+dspobjects = ">=0.3.0"
+numpy = ">=1.25.1"
+scipy = ">=1.6.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-coverage = {extras = ["toml"], version = "^6.2"}
-safety = "^1.10.3"
-mypy = "^0.931"
-typeguard = "^2.13.2"
-xdoctest = {extras = ["colors"], version = "^0.15.10"}
-sphinx = "^4.3.2"
-sphinx-autobuild = "^2021.3.14"
-pre-commit = "^2.16.0"
-flake8 = "^4.0.1"
-black = "^23.3.0"
-flake8-bandit = "^2.1.2"
-flake8-bugbear = "^22.1.11"
-flake8-docstrings = "^1.6.0"
-flake8-rst-docstrings = "^0.2.3"
-pep8-naming = "^0.12.1"
-darglint = "^1.8.1"
-reorder-python-imports = "^2.6.0"
-pre-commit-hooks = "^4.0.1"
-sphinx-rtd-theme = "^1.0.0"
-sphinx-click = "^3.0.2"
-Pygments = "^2.10.0"
+pytest = ">=6.2.5"
+coverage = {extras = ["toml"], version = ">=6.2"}
+safety = ">=1.10.3"
+mypy = ">=0.931"
+typeguard = ">=2.13.2"
+xdoctest = {extras = ["colors"], version = ">=0.15.10"}
+sphinx = ">=4.3.2"
+sphinx-autobuild = ">=2021.3.14"
+pre-commit = ">=2.16.0"
+flake8 = ">=4.0.1"
+black = ">=23.3.0"
+flake8-bandit = ">=2.1.2"
+flake8-bugbear = ">=22.1.11"
+flake8-docstrings = ">=1.6.0"
+flake8-rst-docstrings = ">=0.2.3"
+pep8-naming = ">=0.12.1"
+darglint = ">=1.8.1"
+reorder-python-imports = ">=2.6.0"
+pre-commit-hooks = ">=4.0.1"
+sphinx-rtd-theme = ">=1.0.0"
+sphinx-click = ">=3.0.2"
+Pygments = ">=2.10.0"
 
 [tool.poetry.scripts]
-python-framestructure = "framestructure.__main__:main"
+python-proxyarrays = "proxyarrays.__main__:main"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 
 [tool.coverage.run]
 branch = true
-source = ["framestructure"]
+source = ["proxyarrays"]
 
 [tool.coverage.report]
 show_missing = true
