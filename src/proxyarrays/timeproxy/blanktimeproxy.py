@@ -1121,7 +1121,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         else:
             remain, sample = math.modf((nano_ts - self._true_start) * (self._sample_rate / NANO_SCALE))
             if approx or remain == 0:
-                true_nano_ts = np.uint64(self._true_start + sample * (self.sample_period_decimal * 10**9 // 1))
+                true_nano_ts = np.uint64(self._true_start + sample * int(self.sample_period_decimal * int(10**9)))
                 return IndexDateTime(int(sample), Timestamp.fromnanostamp(true_nano_ts))
 
         return IndexDateTime(None, None)
