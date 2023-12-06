@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "proxyarrays"
-version = "0.5.1"
+version = "0.6.0"
 description = "Numpy array like objects that are proxies for remote or virtual arrays."
 authors = ["Anthony Fong <FongAnthonyM@gmail.com>"]
 license = "MIT"
