@@ -90,6 +90,16 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         """The number of dimensions of this array."""
         return len(self._shape)
 
+    # Container Methods
+    def __setitem__(self, item: Any, value: Any) -> None:
+        """Sets an item from within this proxy based on an input item.
+
+        Args:
+            item: The object to be used to set a specific item within this proxy.
+            value: The object to set.
+        """
+        return self.set_item(item, value)
+
     # Numpy ndarray Methods
     def __array__(self, dtype: Any = None) -> np.ndarray:
         """Returns an ndarray representation of this object with an option to cast it to a dtype.
@@ -201,6 +211,16 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             An item within this proxy.
         """
         return self.data[item]
+
+    def set_item(self, item: Any, value: Any) -> None:
+        """Sets an item from within this proxy based on an input item.
+
+        Args:
+            item: The object to be used to set a specific item within this proxy.
+            value: The object to set.
+        """
+        self.data[item] = value
+
 
     # Shape
     def validate_shape(self) -> bool:
