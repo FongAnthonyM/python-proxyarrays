@@ -90,6 +90,11 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         """The number of dimensions of this array."""
         return len(self._shape)
 
+    @property
+    def dtype(self):
+        """The dtype of this proxy, which is the wrapped data."""
+        return self.data.dtype
+
     # Container Methods
     def __setitem__(self, item: Any, value: Any) -> None:
         """Sets an item from within this proxy based on an input item.
