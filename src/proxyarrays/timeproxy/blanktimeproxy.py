@@ -144,7 +144,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self.refresh()
 
     @property
-    def ndims(self) -> int:
+    def ndim(self) -> int:
         """The number of dimensions of this array."""
         return len(self._shape)
 

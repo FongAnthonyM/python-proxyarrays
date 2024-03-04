@@ -371,6 +371,14 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         """
         return 1 / self._sample_rate
 
+    def get_original_precision(self) -> bool:
+        """Gets the presision of the timestamps from the orignial file.
+
+        Args:
+            nano: Determines if this proxy returns nanostamps (True) or timestamps (False).
+        """
+        return self._data.dtype == np.uint64
+
     def set_precision(self, nano: bool) -> None:
         """Sets if this proxy returns nanostamps (True) or timestamps (False).
 
@@ -586,12 +594,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The nanostamps of this proxy.
         """
-        if (nanostamps_ := self._nanostamps) is not None:
-            return nanostamps_
-        elif (timestamps_ := self._timestamps) is not None:
-            return (timestamps_ * 10**9).astype(np.uint64)
-        else:
+        if self._data is None:
             return None
+        elif self.get_original_precision():
+            return self._data
+        else:
+            return (self._data * 10**9).astype(np.uint64)
 
     def _get_nanostamps(self) -> np.ndarray | None:
         """An alias method for getting the nanostamps of this proxy.
@@ -715,7 +723,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
 
     # Get Day Nanostamps
-
     def get_day_nanostamps(self) -> np.ndarray | None:
         """Gets the day nanostamps of this proxy.
 
@@ -731,12 +738,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The timestamps of this proxy.
         """
-        if self._timestamps is not None:
-            return self._timestamps
-        elif self._nanostamps is not None:
-            return self._nanostamps / 10**9
-        else:
+        if self._data is None:
             return None
+        elif not self.get_original_precision():
+            return self._data
+        else:
+            return self._data / 10**9
 
     def _get_timestamps(self) -> np.ndarray | None:
         """An alias method for getting the timestamps of this proxy.

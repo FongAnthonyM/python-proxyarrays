@@ -314,7 +314,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndim - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice

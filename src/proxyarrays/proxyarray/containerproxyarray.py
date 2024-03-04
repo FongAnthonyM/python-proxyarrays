@@ -18,6 +18,8 @@ from typing import Any, Union
 
 # Third-Party Packages #
 from baseobjects.functions import FunctionRegister
+from baseobjects.wrappers import StaticWrapper
+from baseobjects.cachingtools import CachingInitMeta
 from dspobjects.operations import nan_array
 import numpy as np
 
@@ -27,7 +29,7 @@ from .baseproxyarray import BaseProxyArray, Slice
 
 # Definitions #
 # Classes #
-class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (StaticWrapper needs to be expanded)
+class ContainerProxyArray(BaseProxyArray, StaticWrapper, metaclass=CachingInitMeta):
     """A proxy container that wraps an array like object to give it proxy functionality.
 
     Attributes:
@@ -45,6 +47,10 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         init: Determines if this object will construct.
         **kwargs: Keyword arguments for creating a new numpy array.
     """
+
+    _wrapped_types: list[type | object] = [np.ndarray]
+    _wrap_attributes: list[str] = ["data"]
+    _exclude_attributes: set[str] = StaticWrapper._exclude_attributes | {"__array_ufunc__"}
 
     blank_generation_functions: FunctionRegister = FunctionRegister({
         "nan_array": nan_array,
@@ -71,7 +77,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         self.is_truncate: bool = False
         self.axis: int = 0
 
-        self.data: np.ndarray | None = None
+        self._data: np.ndarray | None = None
 
         # Parent Attributes #
         super().__init__(*args, init=False)
@@ -84,16 +90,6 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
     def shape(self):
         """The shape of this proxy, which is the wrapped data."""
         return self.get_shape()
-
-    @property
-    def ndims(self) -> int:
-        """The number of dimensions of this array."""
-        return len(self._shape)
-
-    @property
-    def dtype(self):
-        """The dtype of this proxy, which is the wrapped data."""
-        return self.data.dtype
 
     # Container Methods
     def __setitem__(self, item: Any, value: Any) -> None:
@@ -226,7 +222,6 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         """
         self.data[item] = value
 
-
     # Shape
     def validate_shape(self) -> bool:
         """Checks if this proxy has a valid/continuous shape.
@@ -259,7 +254,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
             dtype = self.data.dtype
 
         new_slices = [0] * len(shape)
-        old_slices = [0] * self.ndims
+        old_slices = [0] * self.ndim
         for index, (n, o) in enumerate(zip(shape, self.shape)):
             slice_ = slice(None, n if n > o else o)
             new_slices[index] = slice_
@@ -499,7 +494,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndim - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice
@@ -556,7 +551,7 @@ class ContainerProxyArray(BaseProxyArray):  # Todo: Make this a StaticWrapper (S
         if stop is None:
             stop = start + data.shape[axis]
 
-        slices = [0] * len(self.ndims)
+        slices = [0] * len(self.ndim)
         for index, ax in enumerate(data.shape):
             slices[index] = slice(None, None)
         slices[axis] = slice(start=start, stop=stop, step=step)

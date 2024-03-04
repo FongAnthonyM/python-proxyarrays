@@ -387,7 +387,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.ndims
+        slices = [Slice(None)] * self.ndim
         slices[axis] = start
         return tuple(slices)
 
@@ -415,7 +415,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.ndims
+        slices = [Slice(None)] * self.ndim
         slices[axis] = Slice(start, stop, step)
         return tuple(slices)
 
