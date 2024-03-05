@@ -50,7 +50,7 @@ class ContainerProxyArray(BaseProxyArray, StaticWrapper, metaclass=CachingInitMe
 
     _wrapped_types: list[type | object] = [np.ndarray]
     _wrap_attributes: list[str] = ["data"]
-    _exclude_attributes: set[str] = StaticWrapper._exclude_attributes | {"__array_ufunc__"}
+    _exclude_attributes: set[str] = StaticWrapper._exclude_attributes | {"__array_ufunc__", "__array_function__"}
 
     blank_generation_functions: FunctionRegister = FunctionRegister({
         "nan_array": nan_array,
