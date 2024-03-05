@@ -116,12 +116,12 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         self.set_file(value)
 
     @property
-    def data(self) -> Any:
+    def _data(self) -> Any:
         """The numpy data of this file."""
         return self.get_data()
 
-    @data.setter
-    def data(self, value) -> None:
+    @_data.setter
+    def _data(self, value) -> None:
         if value is not None:
             self.set_data(value)
 
