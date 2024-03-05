@@ -168,6 +168,20 @@ class ContainerProxyArray(BaseProxyArray, StaticWrapper, metaclass=CachingInitMe
         new_copy.axis = self.axis
         return new_copy
 
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        proxy_copy = super().proxy_leaf_copy(type_=type_, **kwargs)
+        proxy_copy.data = self.data.copy()
+        return proxy_copy
+
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
         """The default method for creating an editable version of this proxy.

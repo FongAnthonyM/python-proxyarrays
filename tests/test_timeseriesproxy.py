@@ -113,6 +113,14 @@ class TestTimeSeriesProxy(ClassTest):
         # assert all(((c.shape == step_shape) for c in chunks))
         # assert len(chunks) == n_slices
 
+    def test_dataless_proxy_leaf_copy(self):
+        sample_rate = 1024.0
+        channels = 50
+        time_series = self.create_time_series(sample_rate, channels)
+
+        dataless = time_series.dataless_proxy_leaf_copy()
+
+        assert dataless.time_axis is not None
 
 # Main #
 if __name__ == "__main__":

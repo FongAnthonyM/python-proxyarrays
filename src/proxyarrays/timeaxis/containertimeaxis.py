@@ -295,6 +295,21 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
 
         super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
+    def create_proxy(self, type_: type[BaseTimeProxy], *args: Any, **kwargs: Any) -> BaseTimeProxy:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, ContainerTimeAxis):
+            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(*args, type_=type_, **kwargs)
+
     def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
         """Create a new copy of this object without data.
 
@@ -318,20 +333,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         new_copy.tail_correction.select(self.tail_correction.selected)
         new_copy.blank_generator.select(self.blank_generator.selected)
         return new_copy
-
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
-        """Creates a new proxy array with the same attributes as this proxy.
-
-        Args:
-            type_: The type of proxy array to create.
-            **kwargs: The keyword arguments for creating the proxy array.
-
-        Returns:
-            The new proxy array.
-        """
-        if issubclass(type_, ContainerTimeAxis):
-            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
 
     # Getters and Setters
     def get_sample_rate(self) -> float | None:

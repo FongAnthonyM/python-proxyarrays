@@ -368,11 +368,12 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         new_copy.is_infinite = self.is_infinite
         return new_copy
 
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
+    def create_proxy(self, type_: type[BaseTimeProxy], *args, **kwargs: Any) -> BaseTimeProxy:
         """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
             type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
@@ -380,7 +381,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         """
         if issubclass(type_, BlankTimeProxy):
             kwargs = {"precise": self._precise, "tzinfo": self.tzinfo, "sample_rate": self._sample_rate} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
+        return super().create_proxy(*args, type_=type_, **kwargs)
 
     # Updating
     def refresh(self) -> None:
