@@ -1064,13 +1064,13 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             The requested slice as a proxy.
         """
         t_slices = tuple(slices)
-        if dtype is None:
-            return self.create_return_proxy(data=self.data[t_slices], time_axis=self.time_axis[t_slices[self.axis]])
-        else:
-            return self.create_return_proxy(
-                data=self.data[t_slices].astype(dtype),
-                time_axis=self.time_axis[t_slices[self.axis]],
-            )
+
+        return self.create_return_proxy(
+            data=self.data[t_slices] if dtype is None else self.data[t_slices].astype(dtype),
+            time_axis=self.time_axis[t_slices[self.axis]],
+            sample_rate=self.sample_rate_decimal,
+            tzinfo=self.tzinfo,
+        )
 
     def shift_times(
         self,
