@@ -101,27 +101,12 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
 
     # Instance Methods #
     # Constructors/Destructors
-    def empty_copy(self, *args: Any, **kwargs: Any) -> "BaseProxyArray":
-        """Create a new copy of this object without proxies.
-
-        Args:
-            *args: The arguments for creating the new copy.
-            **kwargs: The keyword arguments for creating the new copy.
-
-        Returns:
-            The new copy without proxies.
-        """
-        new_copy = self.__class__(*args, **kwargs)
-        new_copy._is_updating = self._is_updating
-        new_copy.returns_proxy = self.returns_proxy
-        new_copy.mode = self.mode
-        return new_copy
-
-    def create_proxy(self, type_: type["BaseProxyArray"], **kwargs: Any) -> "BaseProxyArray":
+    def create_proxy(self, type_: type["BaseProxyArray"], *args: Any, **kwargs: Any) -> "BaseProxyArray":
         """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
             type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
@@ -164,6 +149,31 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
             The new proxy array.
         """
         return self.create_proxy(type_=self.return_proxy_type if type_ is None else type_, **kwargs)
+
+    def empty_copy(self, *args: Any, **kwargs: Any) -> "BaseProxyArray":
+        """Create a new copy of this object without proxies.
+
+        Args:
+            *args: The arguments for creating the new copy.
+            **kwargs: The keyword arguments for creating the new copy.
+
+        Returns:
+            The new copy without proxies.
+        """
+        return self.create_proxy(type_=self.__class__, **kwargs)
+
+    @abstractmethod
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        return self.create_proxy(type_=self.return_proxy_leaf if type_ is None else type_, **kwargs)
 
     # Editable Copy Methods
     def editable_copy(self, *args: Any, **kwargs: Any) -> Any:
@@ -387,7 +397,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.ndims
+        slices = [Slice(None)] * self.ndim
         slices[axis] = start
         return tuple(slices)
 
@@ -415,7 +425,7 @@ class BaseProxyArray(CallableMultiplexObject, CachingObject):
         if axis is None:
             axis = self.axis
 
-        slices = [Slice(None)] * self.ndims
+        slices = [Slice(None)] * self.ndim
         slices[axis] = Slice(start, stop, step)
         return tuple(slices)
 

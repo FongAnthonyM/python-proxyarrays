@@ -112,7 +112,7 @@ class BlankProxyArray(BaseProxyArray):
         self._shape = value
 
     @property
-    def ndims(self) -> int:
+    def ndim(self) -> int:
         """The number of dimensions of this array."""
         return len(self._shape)
 
@@ -172,6 +172,26 @@ class BlankProxyArray(BaseProxyArray):
 
         super().construct(**kwargs)
 
+    def create_proxy(self, type_: type[BaseProxyArray], *args: Any, **kwargs: Any) -> BaseProxyArray:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, BlankProxyArray):
+            call_multiplexer = self.generate_data
+            kwargs = {"shape": self.shape, "fill_kwargs": self.fill_kwargs} | kwargs
+            new_proxy = super().create_proxy(*args, type_=type_, **kwargs)
+            new_proxy.generate_data.add_select_function(name=call_multiplexer.selected, func=call_multiplexer.__func__)
+            return new_proxy
+        else:
+            return super().create_proxy(*args, type_=type_, **kwargs)
+
     def empty_copy(self, *args: Any, **kwargs: Any) -> "BlankProxyArray":
         """Create a new copy of this object without proxies.
 
@@ -188,24 +208,17 @@ class BlankProxyArray(BaseProxyArray):
         new_copy.generate_data.select(self.generate_data.selected)
         return new_copy
 
-    def create_proxy(self, type_: type[BaseProxyArray], **kwargs: Any) -> BaseProxyArray:
-        """Creates a new proxy array with the same attributes as this proxy.
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
 
         Args:
             type_: The type of proxy array to create.
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
-            The new proxy array.
+            The copy of this proxy array.
         """
-        if issubclass(type_, BlankProxyArray):
-            call_multiplexer = self.generate_data
-            kwargs = {"shape": self.shape, "fill_kwargs": self.fill_kwargs} | kwargs
-            new_proxy = super().create_proxy(type_=type_, **kwargs)
-            new_proxy.generate_data.add_select_function(name=call_multiplexer.selected, func=call_multiplexer.__func__)
-            return new_proxy
-        else:
-            return super().create_proxy(type_=type_, **kwargs)
+        return super().proxy_leaf_copy(type_=type_, **kwargs)
 
     # Getters
     def get_shape(self) -> tuple[int]:
@@ -425,7 +438,7 @@ class BlankProxyArray(BaseProxyArray):
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndim - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice

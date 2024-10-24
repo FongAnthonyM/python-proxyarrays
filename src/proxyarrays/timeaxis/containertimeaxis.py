@@ -295,6 +295,21 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
 
         super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
+    def create_proxy(self, type_: type[BaseTimeProxy], *args: Any, **kwargs: Any) -> BaseTimeProxy:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, ContainerTimeAxis):
+            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(*args, type_=type_, **kwargs)
+
     def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerProxyArray":
         """Create a new copy of this object without data.
 
@@ -318,20 +333,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         new_copy.tail_correction.select(self.tail_correction.selected)
         new_copy.blank_generator.select(self.blank_generator.selected)
         return new_copy
-
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
-        """Creates a new proxy array with the same attributes as this proxy.
-
-        Args:
-            type_: The type of proxy array to create.
-            **kwargs: The keyword arguments for creating the proxy array.
-
-        Returns:
-            The new proxy array.
-        """
-        if issubclass(type_, ContainerTimeAxis):
-            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
 
     # Getters and Setters
     def get_sample_rate(self) -> float | None:
@@ -370,6 +371,14 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
             The sample period of this proxy.
         """
         return 1 / self._sample_rate
+
+    def get_original_precision(self) -> bool:
+        """Gets the presision of the timestamps from the orignial file.
+
+        Args:
+            nano: Determines if this proxy returns nanostamps (True) or timestamps (False).
+        """
+        return self._data.dtype == np.uint64
 
     def set_precision(self, nano: bool) -> None:
         """Sets if this proxy returns nanostamps (True) or timestamps (False).
@@ -586,12 +595,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The nanostamps of this proxy.
         """
-        if (nanostamps_ := self._nanostamps) is not None:
-            return nanostamps_
-        elif (timestamps_ := self._timestamps) is not None:
-            return (timestamps_ * 10**9).astype(np.uint64)
-        else:
+        if self._data is None:
             return None
+        elif self.get_original_precision():
+            return self._data
+        else:
+            return (self._data * 10**9).astype(np.uint64)
 
     def _get_nanostamps(self) -> np.ndarray | None:
         """An alias method for getting the nanostamps of this proxy.
@@ -715,7 +724,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         return (self.nanostamp_slice(s.start, s.stop, proxy=True) for s in inner_slices)
 
     # Get Day Nanostamps
-
     def get_day_nanostamps(self) -> np.ndarray | None:
         """Gets the day nanostamps of this proxy.
 
@@ -731,12 +739,12 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         Returns:
             The timestamps of this proxy.
         """
-        if self._timestamps is not None:
-            return self._timestamps
-        elif self._nanostamps is not None:
-            return self._nanostamps / 10**9
-        else:
+        if self._data is None:
             return None
+        elif not self.get_original_precision():
+            return self._data
+        else:
+            return self._data / 10**9
 
     def _get_timestamps(self) -> np.ndarray | None:
         """An alias method for getting the timestamps of this proxy.
@@ -1017,7 +1025,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         if tolerance is None:
             tolerance = self.time_tolerance
 
-        if correction is None or (isinstance(correction, bool) and correction):
+        if isinstance(correction, bool) and correction:
             correction = self.tail_correction
         elif isinstance(correction, str):
             correction = self.get_correction(correction)

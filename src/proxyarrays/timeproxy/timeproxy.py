@@ -1248,7 +1248,7 @@ class TimeProxy(ProxyArray, BaseTimeProxy):
         nano_ts = nanostamp(timestamp)
 
         index = None
-        times = self.end_nanostamps
+        times = self.get_end_nanostamps()
 
         if nano_ts < self.start_nanostamp:
             if tails:

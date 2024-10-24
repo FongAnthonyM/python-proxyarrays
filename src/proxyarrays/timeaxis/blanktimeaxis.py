@@ -33,7 +33,7 @@ class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
 
     # Magic Methods #
     @property
-    def ndims(self) -> int:
+    def ndim(self) -> int:
         """The number of dimensions of this array."""
         return 1
 

@@ -139,21 +139,21 @@ class ProxyArray(BaseProxyArray):
             return self.get_shape()
 
     @property
-    def max_ndims(self) -> int:
+    def max_ndim(self) -> int:
         """The maximum number dimension in the contained proxies/objects if they are different across axes."""
         return len(self.max_shape)
 
     @property
-    def min_ndims(self) -> int:
+    def min_ndim(self) -> int:
         """The minimum number dimension in the contained proxies/objects if they are different across axes."""
         return len(self.min_shape)
 
     @property
-    def ndims(self) -> int:
+    def ndim(self) -> int:
         """The number of dimensions of this array."""
         if not self.validate_shape():
             warn(f"The ProxyArray '{self}' does not have a valid shape, returning minimum shape.")
-        return self.min_ndims
+        return self.min_ndim
 
     @property
     def lengths(self) -> tuple[int]:
@@ -282,6 +282,20 @@ class ProxyArray(BaseProxyArray):
         new_copy = self.empty_copy()
         new_copy.proxies.extend(self.flat_iterator())
         return new_copy
+
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        proxy_copy = super().proxy_leaf_copy(type_=type_, **kwargs)
+        proxy_copy.data = self.slices_array()
+        return proxy_copy
 
     # Editable Copy Methods
     def _default_spawn_editable(self, *args: Any, **kwargs: Any) -> BaseProxyArray:
@@ -988,11 +1002,11 @@ class ProxyArray(BaseProxyArray):
             The requested slice as an array.
         """
         if slices is None:
-            slices = [Slice(None)] * self.max_ndims
+            slices = [Slice(None)] * self.max_ndim
 
         # Create nan numpy array
         slices = list(slices)
-        full_slices = slices + [Slice(None)] * (self.max_ndims - len(slices))
+        full_slices = slices + [Slice(None)] * (self.max_ndim - len(slices))
         s_shape = [None] * len(full_slices)
         for i, slice_ in enumerate(full_slices):
             if slice_ is not None:
@@ -1063,7 +1077,7 @@ class ProxyArray(BaseProxyArray):
             slice_size = axis_stop - axis_start
 
         # Get shape of slices
-        full_slices = slices + [Slice(None)] * (self.max_ndims - len(slices))
+        full_slices = slices + [Slice(None)] * (self.max_ndim - len(slices))
         s_shape = [None] * len(full_slices)
         for i, slice_ in enumerate(full_slices):
             if slice_ is not None:

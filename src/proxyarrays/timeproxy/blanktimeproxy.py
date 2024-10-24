@@ -144,7 +144,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         self.refresh()
 
     @property
-    def ndims(self) -> int:
+    def ndim(self) -> int:
         """The number of dimensions of this array."""
         return len(self._shape)
 
@@ -368,11 +368,12 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         new_copy.is_infinite = self.is_infinite
         return new_copy
 
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
+    def create_proxy(self, type_: type[BaseTimeProxy], *args, **kwargs: Any) -> BaseTimeProxy:
         """Creates a new proxy array with the same attributes as this proxy.
 
         Args:
             type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
@@ -380,7 +381,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         """
         if issubclass(type_, BlankTimeProxy):
             kwargs = {"precise": self._precise, "tzinfo": self.tzinfo, "sample_rate": self._sample_rate} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
+        return super().create_proxy(*args, type_=type_, **kwargs)
 
     # Updating
     def refresh(self) -> None:
@@ -1121,7 +1122,7 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
         else:
             remain, sample = math.modf((nano_ts - self._true_start) * (self._sample_rate / NANO_SCALE))
             if approx or remain == 0:
-                true_nano_ts = np.uint64(self._true_start + sample * (self.sample_period_decimal * 10**9 // 1))
+                true_nano_ts = np.uint64(self._true_start + sample * int(self.sample_period_decimal * int(10**9)))
                 return IndexDateTime(int(sample), Timestamp.fromnanostamp(true_nano_ts))
 
         return IndexDateTime(None, None)

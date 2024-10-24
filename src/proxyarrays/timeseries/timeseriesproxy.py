@@ -40,6 +40,47 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
     time_series_type = ContainerTimeSeries
 
     # Instance Methods #
+    # Constructors/Destructors
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        proxy_copy = super().proxy_leaf_copy(type_=type_, **kwargs)
+        proxy_copy.time_axis = self.time_axis_type(
+            data=self.get_nanostamps(),
+            samperate=self.sample_rate,
+            axis=self.axis,
+            precision=True,
+            mode=self.mode,
+        )
+        return proxy_copy
+
+    def dataless_proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a dataless proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        empty_copy = self.create_proxy(type_=self.return_proxy_leaf if type_ is None else type_, **kwargs)
+        empty_copy.time_axis = self.time_axis_type(
+            data=self.get_nanostamps(),
+            samperate=self.sample_rate,
+            axis=self.axis,
+            precision=True,
+            mode=self.mode,
+        )
+        return empty_copy
+
     # Data iterate slice
     def find_data_islice_proxy(
         self,

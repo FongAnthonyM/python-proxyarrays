@@ -300,6 +300,21 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
 
         super().construct(data=data, shape=shape, axis=axis, mode=mode, **kwargs)
 
+    def create_proxy(self, type_: type[BaseTimeProxy], *args: Any, **kwargs: Any) -> BaseTimeProxy:
+        """Creates a new proxy array with the same attributes as this proxy.
+
+        Args:
+            type_: The type of proxy array to create.
+            *args: The arguments for creating the proxy array.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The new proxy array.
+        """
+        if issubclass(type_, ContainerTimeAxis):
+            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
+        return super().create_proxy(*args, type_=type_, **kwargs)
+
     def empty_copy(self, *args: Any, **kwargs: Any) -> "ContainerTimeSeries":
         """Create a new copy of this object without data.
 
@@ -327,19 +342,33 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         new_copy.time_axis = self.time_axis.empty_copy()
         return new_copy
 
-    def create_proxy(self, type_: type[BaseTimeProxy], **kwargs: Any) -> BaseTimeProxy:
-        """Creates a new proxy array with the same attributes as this proxy.
+    def proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a copy proxy array with the same attributes as this proxy, default type is the return proxy leaf.
 
         Args:
             type_: The type of proxy array to create.
             **kwargs: The keyword arguments for creating the proxy array.
 
         Returns:
-            The new proxy array.
+            The copy of this proxy array.
         """
-        if issubclass(type_, ContainerTimeAxis):
-            kwargs = {"sample_rate": self.sample_rate_decimal, "precise": self._precise, "tzinfo": self.tzinfo} | kwargs
-        return super().create_proxy(type_=type_, **kwargs)
+        proxy_copy = super().proxy_leaf_copy(type_=type_, **kwargs)
+        proxy_copy.time_axis = self.time_axis.proxy_leaf_copy()
+        return proxy_copy
+
+    def dataless_proxy_leaf_copy(self, type_: type["BaseProxyArray"] | None = None, **kwargs: Any) -> "BaseProxyArray":
+        """Creates a dataless proxy array with the same attributes as this proxy, default type is the return proxy leaf.
+
+        Args:
+            type_: The type of proxy array to create.
+            **kwargs: The keyword arguments for creating the proxy array.
+
+        Returns:
+            The copy of this proxy array.
+        """
+        empty_copy = self.create_proxy(type_=self.return_proxy_leaf if type_ is None else type_, **kwargs)
+        empty_copy.time_axis = self.time_axis.proxy_leaf_copy()
+        return empty_copy
 
     def construct_resampler(self) -> Resample:
         """Constructs the resampler for this proxy.
@@ -1035,13 +1064,13 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
             The requested slice as a proxy.
         """
         t_slices = tuple(slices)
-        if dtype is None:
-            return self.create_return_proxy(data=self.data[t_slices], time_axis=self.time_axis[t_slices[self.axis]])
-        else:
-            return self.create_return_proxy(
-                data=self.data[t_slices].astype(dtype),
-                time_axis=self.time_axis[t_slices[self.axis]],
-            )
+
+        return self.create_return_proxy(
+            data=self.data[t_slices] if dtype is None else self.data[t_slices].astype(dtype),
+            time_axis=self.time_axis[t_slices[self.axis]],
+            sample_rate=self.sample_rate_decimal,
+            tzinfo=self.tzinfo,
+        )
 
     def shift_times(
         self,

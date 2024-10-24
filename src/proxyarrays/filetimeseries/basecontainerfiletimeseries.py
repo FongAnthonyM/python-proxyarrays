@@ -116,12 +116,12 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
         self.set_file(value)
 
     @property
-    def data(self) -> Any:
+    def _data(self) -> Any:
         """The numpy data of this file."""
         return self.get_data()
 
-    @data.setter
-    def data(self, value) -> None:
+    @_data.setter
+    def _data(self, value) -> None:
         if value is not None:
             self.set_data(value)
 
@@ -314,7 +314,7 @@ class BaseContainerFileTimeSeries(ContainerTimeSeries, BaseDirectoryTimeSeries):
 
         length = len(self)
         slices = list(slices)
-        full_slices = slices + [slice(None)] * (self.ndims - len(slices))
+        full_slices = slices + [slice(None)] * (self.ndim - len(slices))
         axis_slice = slices[axis]
         if isinstance(axis_slice, int):
             slice_size = axis_slice
