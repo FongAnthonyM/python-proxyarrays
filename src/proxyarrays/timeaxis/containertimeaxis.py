@@ -538,10 +538,10 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         # Create Slices
         diff = (stop_time - start_time)
         adjustment = 0 if (diff % istep) == 0 else 1
-        starts = np.array(range(0, int(diff // istep) + adjustment)) * step + start_time
+        starts = np.array(range(0, int(diff // istep) + adjustment)) * istep + start_time
         slices = np.zeros((len(starts), 2), dtype=int)
         slices[:, 0] = np.searchsorted(self.nanostamps, starts)
-        slices[:, 1] = np.searchsorted(self.nanostamps, starts + step)
+        slices[:, 1] = np.searchsorted(self.nanostamps, starts + int(step))
         return (slice(int(s), int(e)) for s, e in slices)
 
     def index_islice_deltatime(

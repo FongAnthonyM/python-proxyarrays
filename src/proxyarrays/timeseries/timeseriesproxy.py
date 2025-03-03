@@ -326,7 +326,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         if not isinstance(step, Decimal):
             step = Decimal(step) * 10 ** 9
         if not isinstance(istep, Decimal):
-            istep = step * istep
+            istep = step * Decimal(istep)
 
         # Get Data
         if start_proxy == stop_proxy:
