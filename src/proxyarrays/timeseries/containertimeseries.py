@@ -676,7 +676,7 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | Decimal | None = None,
-        istep: int | Decimal = 1,
+        istep: float | Decimal = 1,
         approx: bool = True,
         tails: bool = True,
     ) -> Generator[slice, None, None]:

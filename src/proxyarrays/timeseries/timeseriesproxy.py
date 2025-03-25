@@ -286,7 +286,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         start: datetime | float | int | np.dtype | None = None,
         stop: datetime | float | int | np.dtype | None = None,
         step: int | float | timedelta | Decimal | None = None,
-        istep: int = 1,
+        istep: float = 1,
         approx: bool = True,
         tails: bool = False,
     ) -> Generator[BaseTimeSeries, None, None]:
@@ -303,6 +303,7 @@ class TimeSeriesProxy(TimeProxy, BaseTimeSeries):
         Returns:
             The generator which yields data slices.
         """
+        # Get Time Axis
         if stop is not None:
             stop = nanostamp(stop)
         start_index, stop_index, _ = self.find_time_index_slice(start=start, stop=stop, approx=approx, tails=True)

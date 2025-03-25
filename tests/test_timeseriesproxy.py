@@ -5,13 +5,7 @@ Description:
 """
 
 # Standard Libraries #
-import cProfile
-import datetime
-import io
-import os
-import pathlib
-import pstats
-import timeit
+from datetime import timedelta
 
 # Third-Party Packages #
 import numpy as np
@@ -43,15 +37,15 @@ class TestTimeSeriesProxy(ClassTest):
         time_series = TimeSeriesProxy()
         generator = BlankTimeAxis(start=0, sample_rate=1024.0, shape=(100000,), precise=True)
         segments = (
-            (0, int(sample_rate * 10)),
-            (0, int(sample_rate * 1)),
+            (0, int(sample_rate * 100)),
+            (0, int(sample_rate * 30)),
+            (0, int(sample_rate * 0.1)),
             (0, int(sample_rate * 0.5)),
-            (0, int(sample_rate * 0.5)),
-            (0, int(sample_rate * 10)),
-            (100, int(sample_rate * 10)),
-            (0, int(sample_rate * 10)),
-            (0, int(sample_rate * 10.5)),
-            (0, int(sample_rate * 10)),
+            (0, int(sample_rate * 200)),
+            (100, int(sample_rate * 100)),
+            (0, int(sample_rate * 60)),
+            (0, int(sample_rate * 100.5)),
+            (0, int(sample_rate * 100)),
         )
         end = 0
 
@@ -97,6 +91,21 @@ class TestTimeSeriesProxy(ClassTest):
         assert len(chunks) == n_slices
 
     def test_find_data_islice_time(self):
+        sample_rate = 1024.0
+        channels = 50
+        time_series = self.create_time_series(sample_rate, channels)
+
+        start = time_series.start_datetime + timedelta(seconds=1.0)
+        stop = start + timedelta(minutes=10.0)
+        step = 1.0
+        istep = 0.1
+
+        iter_ = time_series.find_data_islice_time(start=start, stop=stop, step=step, istep=istep, approx=True, tails=True)
+        chunks = [c for c in iter_]
+        # assert all(((c.shape == step_shape) for c in chunks))
+        # assert len(chunks) == n_slices
+
+    def test_insert_missing(self):
         sample_rate = 1024.0
         channels = 50
         time_series = self.create_time_series(sample_rate, channels)

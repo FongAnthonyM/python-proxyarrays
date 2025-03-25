@@ -502,7 +502,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         start: datetime.datetime | float | int | np.dtype | None = None,
         stop: datetime.datetime | float | int | np.dtype | None = None,
         step: int | float | datetime.timedelta | Decimal | None = None,
-        istep: int | Decimal = 1,
+        istep: float | Decimal = 1.0,
         approx: bool = True,
         tails: bool = True,
     ) -> Generator[slice, None, None]:
@@ -533,7 +533,7 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
         if not isinstance(step, Decimal):
             step = Decimal(step) * 10 ** 9
         if not isinstance(istep, Decimal):
-            istep = step * istep
+            istep = step * Decimal(istep)
 
         # Create Slices
         diff = (stop_time - start_time)

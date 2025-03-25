@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterable, Iterator, Generator
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects.functions import singlekwargdispatch, MethodMultiplexer, CallableMultiplexObject
+from baseobjects.functions import singlekwargdispatch, MethodMultiplexer
 from baseobjects.typing import AnyCallable
 from baseobjects.cachingtools import CachingObject
 import numpy as np
@@ -33,7 +33,7 @@ Slice = slice
 
 # Classes #
 # Todo: Create a file/edit mode base object to inherit from
-class BaseProxyArray(CallableMultiplexObject, CachingObject):
+class BaseProxyArray(CachingObject):
     """A base which outlines the basis for a proxy array.
 
     Attributes:
