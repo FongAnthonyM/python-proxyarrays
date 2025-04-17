@@ -764,12 +764,12 @@ class BlankTimeProxy(BlankProxyArray, BaseTimeProxy):
 
             if start is None:
                 start = -samples
-            elif start > 0:
+            elif start >= 0:
                 start = start - samples
 
             if stop is None:
                 stop = 0
-            elif stop > 0:
+            elif stop >= 0:
                 stop = stop - samples
 
             if start > 0 or stop > 0:
