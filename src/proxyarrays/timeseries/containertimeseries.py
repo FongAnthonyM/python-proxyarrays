@@ -1,15 +1,16 @@
 """containertimeseries.py
 A time series proxy container that wraps an array like object to give it time series proxy functionality.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -34,7 +35,6 @@ from ..proxyarray import ContainerProxyArray
 from ..timeproxy import BaseTimeProxy
 from ..timeaxis import ContainerTimeAxis, BaseTimeAxis
 from .basetimeseries import BaseTimeSeries
-
 
 # Todo: Make an interpolator object
 # Todo: Make implement data mapping to reduce memory
@@ -1331,7 +1331,6 @@ class ContainerTimeSeries(ContainerProxyArray, BaseTimeSeries):
         )
 
         return (self.slice(s.start, s.stop, proxy=True) for s in inner_slices)  # need to fix
-
 
 # Assign Cyclic Definitions
 ContainerTimeSeries.default_return_proxy_node = ContainerTimeSeries

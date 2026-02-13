@@ -1,15 +1,16 @@
 """proxyarray.py
 A proxy for holding different data types which are similar to a numpy array.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -29,7 +30,6 @@ import numpy as np
 from .baseproxyarray import BaseProxyArray, Slice
 from proxyarrays.proxyarray.containerproxyarray import ContainerProxyArray
 
-
 # Definitions #
 # Classes #
 class ProxyIndex(NamedTuple):
@@ -37,11 +37,9 @@ class ProxyIndex(NamedTuple):
     start_index: int | None
     inner_index: int | None
 
-
 class SliceIndices(NamedTuple):
     start: ProxyIndex | int | None
     stop: ProxyIndex | int | None
-
 
 class ProxyArray(BaseProxyArray):
     """A proxy for holding different data types which are similar to a numpy array.
@@ -1243,7 +1241,6 @@ class ProxyArray(BaseProxyArray):
             return self
         else:
             return self.slices_array()
-
 
 # Assign Cyclic Definitions
 ProxyArray.default_return_proxy_type = ProxyArray

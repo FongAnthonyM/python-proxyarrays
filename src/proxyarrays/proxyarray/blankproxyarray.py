@@ -1,15 +1,16 @@
 """blankproxyarray.py
 A proxy for holding blank data such as NaNs, zeros, or a single number.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -24,7 +25,6 @@ import numpy as np
 # Local Packages #
 from .baseproxyarray import BaseProxyArray, Slice
 from .containerproxyarray import ContainerProxyArray
-
 
 # Definitions #
 # Classes #
@@ -465,7 +465,6 @@ class BlankProxyArray(BaseProxyArray):
         for inner_start in range(outer_start, adjusted_stop, outer_step):
             full_slices[axis] = slice(inner_start, inner_start + slice_size, axis_step)
             yield self.generate_slices(slices=full_slices, dtype=dtype)
-
 
 # Assign Cyclic Definitions
 BlankProxyArray.default_return_proxy_type = BlankProxyArray

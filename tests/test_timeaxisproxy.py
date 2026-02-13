@@ -4,6 +4,16 @@
 Description:
 """
 
+# Header #
+__package_name__ = "proxyarrays"
+
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
+
 # Standard Libraries #
 import cProfile
 import datetime
@@ -20,7 +30,6 @@ import pytest
 # Local Packages #
 from src.proxyarrays import TimeAxisProxy, ContainerTimeAxis, BlankTimeAxis
 
-
 # Definitions #
 # Classes #
 class ClassTest:
@@ -35,7 +44,6 @@ class ClassTest:
         with path.open() as f_object:
             lines = f_object.readlines()
         return lines
-
 
 class TestTimeAxisProxy(ClassTest):
 
@@ -84,7 +92,6 @@ class TestTimeAxisProxy(ClassTest):
         iter_ = time_axis.nanostamp_islice_time(start=0.0, stop=50.0, step=1.0, approx=True, tails=True)
         chunks = [c for c in iter_]
         print(chunks)
-
 
 # Main #
 if __name__ == "__main__":

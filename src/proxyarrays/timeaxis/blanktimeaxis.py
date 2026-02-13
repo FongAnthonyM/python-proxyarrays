@@ -1,15 +1,16 @@
 """blanktimeaxis.py
 A proxy for generating time axis information.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -23,7 +24,6 @@ import numpy as np
 from ..timeproxy import BlankTimeProxy
 from .basetimeaxis import BaseTimeAxis
 from .containertimeaxis import ContainerTimeAxis
-
 
 # Definitions #
 # Classes #
@@ -77,7 +77,6 @@ class BlankTimeAxis(BlankTimeProxy, BaseTimeAxis):
                 shape[self.axis] = slice(None)
 
         return self.generate_time(start=start, stop=stop, step=step, dtype=dtype)[tuple(shape)]
-
 
 # Assign Cyclic Definitions
 BlankTimeAxis.default_return_proxy_type = BlankTimeAxis

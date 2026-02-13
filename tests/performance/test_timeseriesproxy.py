@@ -4,6 +4,16 @@
 Description:
 """
 
+# Header #
+__package_name__ = "proxyarrays"
+
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
+
 # Standard Libraries #
 import cProfile
 import datetime
@@ -22,7 +32,6 @@ import pytest
 
 # Local Packages #
 from src.proxyarrays import TimeSeriesProxy, ContainerTimeSeries, BlankTimeSeries, BlankTimeAxis, ContainerTimeAxis
-
 
 # Definitions #
 # Classes #
@@ -74,7 +83,6 @@ class StatsMicro(Stats):
             print(f8(ct / cc * 1000000).rjust(12), end=" ", file=self.stream)
         print(func_std_string(func), file=self.stream)
 
-
 class ClassTest:
     """Default class tests that all classes should pass."""
 
@@ -87,7 +95,6 @@ class ClassTest:
         with path.open() as f_object:
             lines = f_object.readlines()
         return lines
-
 
 class TestTimeSeriesProxy(ClassTest):
 
@@ -196,7 +203,6 @@ class TestTimeSeriesProxy(ClassTest):
         ps = StatsMicro(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print(s.getvalue())
-
 
 # Main #
 if __name__ == "__main__":

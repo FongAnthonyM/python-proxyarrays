@@ -4,6 +4,16 @@
 Description:
 """
 
+# Header #
+__package_name__ = "proxyarrays"
+
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
+
 # Standard Libraries #
 from datetime import timedelta
 
@@ -13,7 +23,6 @@ import pytest
 
 # Local Packages #
 from src.proxyarrays import TimeSeriesProxy, ContainerTimeSeries, BlankTimeSeries, BlankTimeAxis, ContainerTimeAxis
-
 
 # Definitions #
 # Classes #
@@ -29,7 +38,6 @@ class ClassTest:
         with path.open() as f_object:
             lines = f_object.readlines()
         return lines
-
 
 class TestTimeSeriesProxy(ClassTest):
 

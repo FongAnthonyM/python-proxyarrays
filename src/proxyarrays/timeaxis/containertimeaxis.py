@@ -1,15 +1,16 @@
 """containertimeaxis.py
 A time axis proxy container that wraps an array like object to give it time axis proxy functionality.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -33,7 +34,6 @@ import numpy as np
 from ..proxyarray import BaseProxyArray, ContainerProxyArray
 from ..timeproxy import BaseTimeProxy
 from .basetimeaxis import BaseTimeAxis
-
 
 # Definitions #
 # Classes #
@@ -1252,7 +1252,6 @@ class ContainerTimeAxis(ContainerProxyArray, BaseTimeAxis):
                 return IndexDateTime(index, Timestamp.fromnanostamp(true_timestamp, tz=tz))
 
         raise IndexError("Timestamp out of range.")
-
 
 # Assign Cyclic Definitions
 ContainerTimeAxis.default_return_proxy_leaf = ContainerTimeAxis

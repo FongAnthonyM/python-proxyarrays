@@ -1,15 +1,16 @@
 """blanktimeseries.py
 A proxy for holding blank time series data such as NaNs, zeros, or a single number.
 """
-# Package Header #
-from ..header import *
 
 # Header #
-__author__ = __author__
-__credits__ = __credits__
-__maintainer__ = __maintainer__
-__email__ = __email__
+__package_name__ = "proxyarrays"
 
+__author__ = "Anthony Fong"
+__credits__ = ["Anthony Fong"]
+__copyright__ = "Copyright 2021, Anthony Fong"
+__license__ = "MIT"
+
+__version__ = "0.7.0"
 
 # Imports #
 # Standard Libraries #
@@ -24,7 +25,6 @@ import numpy as np
 from ..timeproxy import BlankTimeProxy
 from .basetimeseries import BaseTimeSeries
 from .containertimeseries import ContainerTimeSeries
-
 
 # Definitions #
 # Classes #
@@ -90,7 +90,6 @@ class BlankTimeSeries(BlankTimeProxy, BaseTimeSeries):
         )
 
         return (self.slice(s.start, s.stop, proxy=True) for s in inner_slices)  # need to fix
-
 
 # Assign Cyclic Definitions
 BlankTimeProxy.default_return_proxy_type = BlankTimeProxy

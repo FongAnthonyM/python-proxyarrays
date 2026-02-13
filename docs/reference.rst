@@ -1,13 +1,14 @@
-Reference
-=========
+API Reference
+=============
 
 .. contents::
     :local:
+    :depth: 2
     :backlinks: none
 
 
-proxyarrays.__main__
------------------------
+proxyarrays
+---------------------------
 
-.. automodule:: proxyarrays.__main__
+.. automodule:: proxyarrays
    :members:
